@@ -35,14 +35,3 @@ def build_system_map(start_path):
                 system_map["Other Projects"].append(root)
 
     return system_map
-
-if __name__ == "__main__":
-    home = os.path.expanduser("~")
-    my_map = build_system_map(home)
-    
-    print(f"\n--- TARS System Map for {home} ---")
-    for category, paths in my_map.items():
-        if paths:
-            print(f"\n[ {category} ]")
-            for p in paths:
-                print(f" -> {p}")

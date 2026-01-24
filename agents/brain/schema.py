@@ -9,7 +9,10 @@ class FileAction(str, Enum):
     UPDATE = "update"
     DELETE = "delete"
     MOVE = "move"
-
+    LIST = "list"
+    READ = "read"
+    CREATE_DIRECTORY = "create_directory"
+    
 class TarsState(TypedDict):
     # 1. History: The conversation between you and TARS
     messages: Annotated[List[BaseMessage], add_messages]

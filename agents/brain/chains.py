@@ -27,7 +27,7 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
 
                 ### OPERATIONAL PROTOCOL
                 1. INPUT: {first_instruction}
-                2. ANALYZE: Review the user input and compare it against the System Map.
+                2. ANALYZE: Review the user input and compare it against the System Map and verify it is a safe route.
                 3. LOCATE: Identify the most likely "Hub" or "Project" associated with the request.
                 4. INFORM: Before calling a tool, briefly state your 'Observation' of the current state and your 'Reasoning' for the next action.
                 5. NAVIGATE: If you are not in the correct directory, use the 'list_files' tool to verify the contents of the suspected path.
