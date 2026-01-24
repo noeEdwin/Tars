@@ -66,6 +66,7 @@ def execute_tools(state: TarsState) -> TarsState:
                     result = hands.move_path(path, dest)
                 elif action_type == FileAction.LIST:
                     result = hands.list_files(path)
+                    result = str(result) + "\n\nSYSTEM HINT: If you see [DIR] entries relevant to your search, you must LIST them next. Do not stop yet."
                 elif action_type == FileAction.READ:
                     result = hands.read_code(path)
                 elif action_type == FileAction.CREATE_DIRECTORY:

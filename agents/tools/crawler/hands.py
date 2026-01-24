@@ -27,10 +27,17 @@ class TarsHands:
 
     @staticmethod
     def list_files(path: str):
-        """Returns a list of files in a specific directory. 
-        Use this after finding a path in the System Map."""
+        """Returns a list of files in a specific directory, marking them as [FILE] or [DIR]."""
         try:
-            return os.listdir(path)
+            items = os.listdir(path)
+            detailed_list = []
+            for item in items:
+                full_path = os.path.join(path, item)
+                if os.path.isdir(full_path):
+                    detailed_list.append(f"[DIR]  {item}")
+                else:
+                    detailed_list.append(f"[FILE] {item}")
+            return detailed_list
         except Exception as e:
             return f"Error accessing {path}: {str(e)}"
 

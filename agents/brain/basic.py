@@ -63,8 +63,8 @@ workflow.add_edge(EXECUTION, ACTOR)
 app = workflow.compile()
 
 input_state = {
-    "messages": [HumanMessage(content="Find my Tars project and tell me what's in chains.py")],
+    "messages": [HumanMessage(content="In my project Tars in the file basic.py and the end of the file ONLY write ONE comment and nothing else, it must say: I DID IT")],
 }
 
 response = app.invoke(input_state)
-print(response["messages"][-1].content)
+print(response["messages"])

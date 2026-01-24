@@ -14,6 +14,10 @@ class FileAction(str, Enum):
     LIST = "list"
     READ = "read"
     CREATE_DIRECTORY = "create_directory"
+
+class FileMode(str, Enum):
+    APPEND = "append"
+    OVERWRITE = "overwrite"
     
 class TarsState(TypedDict):
     # 1. History: The conversation between you and TARS

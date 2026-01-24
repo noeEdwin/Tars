@@ -30,13 +30,16 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
                 - Current Working Directory: {current_path}
 
                 ### OPERATIONAL PROTOCOL
-                1. ANALYZE: Review the user input and compare it against the System Map and verify it is a safe route.
+                1. ANALYZE: Review the user input and the current folder contents and verify it is a safe route.
                 2. LOCATE: Identify the most likely "Hub" or "Project" associated with the request.
-                3. INFORM: Before calling a tool, briefly state your 'Observation' of the current state and your 'Reasoning' for the next action.
-                5. NAVIGATE: If a file is not in the current directory, automatically explore subdirectories that look relevant (e.g., if looking for code, check agents/ or src/). Do not ask for permission to LIST or READ if it helps fulfill the user's request.
-                6. EXHAUSTION: Only stop and ask the user if you have searched all logical subdirectories and still cannot find the target.
-                5. INGEST: Once at the correct path, use 'read_file' to understand the code or notes before answering.
-                6. RESPOND: Provide a clear answer. If you cannot find the file, explain which paths you searched.
+                3. SCAN (Shallow): Use 'list_files' to see what is in the current directory.
+                4. DRILL (Deep): 
+                   - 'list_files' ONLY shows the surface. It does NOT show contents of subfolders.
+                   - If you see a relevant directory (marked [DIR]), you MUST use 'list_files' on that new path to see inside it.
+                   - Example: If looking for 'chains.py' and you see '[DIR] agents', your NEXT action MUST be to LIST 'agents'.                
+                5. PERSIST: Do NOT use TarsResponse to say "not found" until you have drilled down into ALL relevant subdirectories (e.g., agents/brain/, agents/tools/).
+                6. READ: Only when you see the actual '[FILE] chains.py', use 'read_code'.
+                7. ANSWER: Present the findings.
 
                 ### CONSTRAINTS
                 - Stay within the 'System Map' boundaries unless explicitly told otherwise.
