@@ -1,4 +1,4 @@
-from agents.brain.schema import TarsState
+from brain.schema import TarsState
 import json
 from langchain_core.messages import AIMessage, ToolMessage
 from schema import FileAction
@@ -49,7 +49,7 @@ def execute_tools(state: TarsState) -> TarsState:
             content = args.get("content", "")
             dest = args.get("destination_path")
 
-            if not hads._is_safe(path):
+            if not hands._is_safe(path):
                 tool_messages.append(
                     ToolMessage(content="Error: Path is outside allowed boundaries.", tool_call_id=call_id)
                 )
