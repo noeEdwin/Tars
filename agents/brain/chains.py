@@ -46,6 +46,8 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
                 - If a path is ambiguous (e.g., two "homework" folders), ask for clarification before acting.
                 - Do not assume file contents; always read them if accuracy is required.
                 - If you are still searching, do not use TarsResponse. Continue using TarsAction until the information is found
+                - When using UPDATE, be careful with 'mode'. Use 'append' for adding logs/comments, but 'overwrite' if refactoring code.
+                - Do NOT use 'append' if you are providing the full file content; that will duplicate the code.
             """
         ),
         MessagesPlaceholder(variable_name="messages"),

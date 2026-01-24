@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import shutil
 
 class TarsHands:
     """A collection of tools for TARS to interact with the local filesystem."""

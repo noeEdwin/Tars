@@ -48,6 +48,10 @@ class TarsAction(BaseModel):
     """Schema for TARS to modify the filesystem."""
     action_type: FileAction = Field(description="The specific type of filesystem operation.")
     source_path: str = Field(description="The full path of the file to be acted upon.")
-    content: Optional[str] = Field(None, description="The new content (for CREATE or UPDATE).")
+    content: Optional[str] = Field(None, description="The content to write. If mode='append', this is added to the end. If mode='overwrite', this replaces lines in the file or the file itself.")
     destination_path: Optional[str] = Field(None, description="The target path (for MOVE).")
     reason: str = Field(description="A brief explanation of why this action is being taken.")
+    mode: FileMode = Field(
+        default=FileMode.APPEND, 
+        description="Crucial for UPDATE: 'append' to add new lines, 'overwrite' to replace some lines or the entire file."
+    )
