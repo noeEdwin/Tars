@@ -1,10 +1,65 @@
 import os
 from pathlib import Path
 import shutil
+import pymupdf
+from docx import Document
+import subprocess
+import tiktoken
+import re
 
 class TarsHands:
     """A collection of tools for TARS to interact with the local filesystem."""
+    @staticmethod
+    def clean_text(text: str) -> str:
+        """Elimina ruido innecesario para ahorrar tokens."""
+        # Elimina múltiples saltos de línea y espacios en blanco extra
+        text = re.sub(r'\n+', '\n', text)
+        text = re.sub(r' +', ' ', text)
+        # Elimina URLs básicas y pies de página comunes 
+        text = re.sub(r'http\S+', '', text)
+        return text.strip()
 
+    @staticmethod
+    def count_tokens(text: str, model="gpt-4o") -> int:
+        """Calcula cuántos tokens consume el texto realmente."""
+        enc = tiktoken.encoding_for_model(model)
+        return len(enc.encode(text))
+
+    @staticmethod
+    def read_document(path: str, max_tokens: int = 4000):
+        """It extract information from files PDF, DOCX o TXT."""
+        ext = Path(path).suffix.lower()
+        content = ""
+        try:
+            if ext == ".pdf":
+                with pymupdf.open(path) as doc:
+                    # Extraemos solo texto relevante
+                    content = "\n".join([page.get_text("text") for page in doc])
+            elif ext == ".docx":
+                doc = Document(path)
+                content = "\n".join([p.text for p in doc.paragraphs])
+            else:
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+            cleaned_content = TarsHands.clean_text(content)
+            num_tokens = TarsHands.count_tokens(cleaned_content)
+            if num_tokens > max_tokens:
+                print(f"⚠️ Alerta: Documento de {num_tokens} tokens. Recortando a {max_tokens}.")
+                return cleaned_content[:max_tokens * 4]
+
+            return cleaned_content
+        except Exception as e:
+            return f"Error al leer el documento {ext}: {str(e)}"
+
+    @staticmethod
+    def execute_command(command: str):
+        """Ejecuta comandos en la terminal del servidor (usar con precaución)."""
+        try:
+            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
+            return f"STDOUT: {result.stdout}\nSTDERR: {result.stderr}"
+        except Exception as e:
+            return f"Error de ejecución: {str(e)}"
 
     def __init__(self, home_dir="/home/lancelot"):
         self.home = Path(home_dir).resolve()

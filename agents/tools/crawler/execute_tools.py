@@ -18,9 +18,12 @@ def execute_tools(state: TarsState) -> TarsState:
 
     for tool_call in last_ai_message.tool_calls:
         call_id = tool_call["id"]
+        tool_name = tool_call["name"]
         args = tool_call["args"]
+        
+        result = "Error: Internal processing failure."
 
-        if tool_call["name"] == "TarsResponse":
+        if tool_name == "TarsResponse":
             paths_to_check = args.get("identified_paths", [])
             verification_results = {}
 
@@ -43,7 +46,7 @@ def execute_tools(state: TarsState) -> TarsState:
                 )
             )
 
-        if tool_call["name"] == "TarsAction":
+        elif tool_name == "TarsAction":
             action_type = args.get("action_type")
             path = args.get("source_path")
             content = args.get("content", "")
@@ -71,6 +74,10 @@ def execute_tools(state: TarsState) -> TarsState:
                     result = hands.read_code(path)
                 elif action_type == FileAction.CREATE_DIRECTORY:
                     result = hands.create_directory(path)
+                elif action_type == FileAction.READ_DOC:
+                    result = hands.read_document(path)
+                elif action_type == FileAction.EXECUTE:
+                    result = FileAction.execute_command(content)
                 else:
                     result = f"Action {action_type} not implemented."
             except Exception as e:
@@ -78,6 +85,16 @@ def execute_tools(state: TarsState) -> TarsState:
                 
             tool_messages.append(
                 ToolMessage(content=str(result), tool_call_id=call_id)
+            )
+        
+        # Catch any unhandled tools to prevent corrupted state
+        else:
+            print(f"[WARNING] Unhandled tool: '{tool_name}'")
+            tool_messages.append(
+                ToolMessage(
+                    content=f"Error: Unknown tool '{tool_name}'. Only TarsResponse and TarsAction are supported.",
+                    tool_call_id=call_id
+                )
             )
 
     return {"messages": tool_messages}

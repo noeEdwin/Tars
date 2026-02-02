@@ -1,16 +1,84 @@
-from schema import TarsAction
-from schema import TarsResponse
+from schema import TarsAction, TarsResponse
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
-from schema import TarsResponse, TarsAction
+
 from langchain_core.output_parsers.openai_tools import PydanticToolsParser
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 from tools.crawler.maping_computer import build_system_map
 import os
+from typing import Literal
+from langchain_ollama import ChatOllama
+from pydantic import BaseModel, Field
+
+class RouteQuery(BaseModel):
+    """Route a user query to the most appropriate expert."""
+    expert: Literal["coder", "linguist", "analyst", "general"] = Field(
+        description="The expert best suited to handle the user's request."
+    )
 
 home = os.path.expanduser("~")
 my_map = build_system_map(home)
+PROTOCOLS = {
+    "coder": """
+        ### CODER PROTOCOL
+        1. INVESTIGATE & ANALYZE
+            Action: Use TarsAction.READ (for code) or TarsAction.READ_DOC (for documentation) to ingest the target file.
+            Logic: Look for missing imports (e.g., shutil, fitz), syntax errors, or logical flaws (like the missing content argument in your previous execute_command call).
+            Environment: If dependencies are suspect, use TarsAction.EXECUTE with pip list or python --version to verify the environment.
+
+        2. REFACTOR (ATOMIZED UPDATES)
+            Action: Use TarsAction.UPDATE with mode='overwrite'.
+            Constraint: Do not just fix the error; improve the robustness. Ensure all try/except blocks are specific.
+            Safety: Before overwriting, ensure hands._is_safe(path) returns true (handled by the tool, but be aware of the blacklist).
+        3. VERIFY & TEST
+            Action: Use TarsAction.EXECUTE to run the script via terminal.
+            Command: python3 path/to/file.py.
+            Evaluation: Analyze STDOUT and STDERR. If STDERR is not empty, loop back to Step 1.
+
+        4. DOCUMENT & SYNC
+            Action: Call TarsResponse with a detailed content_report.
+            Validation: Specifically fill the identified_paths argument to confirm the file exists on disk after the changes.
+            Summary: List specifically what was added, deleted, or fixed in plain language for the user.
+    """,
+    "linguist": """
+        ### 1. DECONSTRUCT & ANALYZE (拆解与分析)
+            Linguistic Breakdown: For every sentence, provide the Character (Simplified/Traditional), Pinyin (with tone marks), and Literal vs. Idiomatic English Translation.
+            Grammar Spotlight: Identify HSK-level grammar patterns. If a sentence uses "把" (bǎ) or "被" (bèi) structures, explain the logic of the word order.
+            Vocabulary Tiering: Separate vocabulary into "Essential" (high frequency) and "Flavor" (specific to the text, e.g., cultivation terms in Lord of the Mysteries).
+        2. CULTURAL & LITERARY CONTEXT (文化背景)
+            World-Building Context: If analyzing Lord of the Mysteries, explain terms within the "Beyonder" (超凡者 - chāofánzhě) system. Relate them to Western fantasy tropes vs. Chinese "Xianxia" influences.
+            Etymology: Briefly explain the "radical" (部首) of a key character if it helps retention (e.g., why "魔" for Demon contains the radical for "ghost" 鬼).
+            Implicit Meaning: Explain "Face" (面子), social hierarchy, or specific honorifics used between characters in the text.
+
+        3. IMMERSION & APPLICATION (沉浸与应用)
+            Shadowing (跟读): Provide a "Chunking Guide"—breaking long sentences into natural breath groups for the user to practice aloud.
+            Role-Play (角色扮演): Design a scenario based on the current chapter.
+            Example: "You are Klein Moretti trying to buy a potion ingredient at the Black Market. Use '多少钱' and '便宜一点'."
+            Tool Integration: Use TarsAction.CREATE to generate a markdown "Flashcard" file in the user's directory containing the day's key phrases.
+    """,
+    "analyst": """
+        ### DOCUMENT ANALYST PROTOCOL
+        1. INGESTION & MAPPING (摄入与映射)
+            Action: Use TarsAction.LIST to identify relevant files, followed by TarsAction.READ_DOC (for PDF/DOCX) or TarsAction.READ (for plain text).
+            Validation: Before processing, TARS must confirm the document's encoding and integrity. If read_document returns an error, he must attempt a fallback to read_code if the extension allows.
+            Hierarchical Check: If the document is large, TARS should first map the "Table of Contents" or headers to create a mental index before full extraction.
+
+        2. SYNTHESIS & METADATA (综合与元数据)
+            Entity Extraction: Automatically isolate Key Stakeholders, Dates, Legal Jurisdictions, and Financial Figures.
+            Contextual Summarization: Create a "Level-1 Summary" (Executive Overview) and a "Level-2 Summary" (Detailed Breakdown by section).
+            Action: Use TarsAction.CREATE to save a .json or .md "Summary Report" in the project directory for the user’s future reference.
+
+        3. GROUNDED RAG & VERIFICATION (验证与问答)
+            Strict Source Attribution: Every claim made by TARS must be followed by a source locator (e.g., "[Page 4, Paragraph 2]").
+            Conflict Detection: If the document contains internal contradictions (e.g., two different dates for the same deadline), TARS must flag this as a "High Priority Risk."
+            The "No-Inference" Rule: If a user asks a question not covered in the text, TARS must explicitly state: "Information not found in the provided document," rather than hallucinating based on general knowledge.
+    """
+}
+
+def get_tars_expert():
+    return ChatOpenAI(model="gpt-4o")
 
 load_dotenv()
 
@@ -29,19 +97,9 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
                 - Current System Map: {system_map}
                 - Current Working Directory: {current_path}
 
-                ### OPERATIONAL PROTOCOL
-                1. ANALYZE: Review the user input and the current folder contents and verify it is a safe route.
-                2. LOCATE: Identify the most likely "Hub" or "Project" associated with the request.
-                3. SCAN (Shallow): Use 'list_files' to see what is in the current directory.
-                4. DRILL (Deep): 
-                   - 'list_files' ONLY shows the surface. It does NOT show contents of subfolders.
-                   - If you see a relevant directory (marked [DIR]), you MUST use 'list_files' on that new path to see inside it.
-                   - Example: If looking for 'chains.py' and you see '[DIR] agents', your NEXT action MUST be to LIST 'agents'.                
-                5. PERSIST: Do NOT use TarsResponse to say "not found" until you have drilled down into ALL relevant subdirectories (e.g., agents/brain/, agents/tools/).
-                6. READ: Only when you see the actual '[FILE] chains.py', use 'read_code'.
-                7. ANSWER: Present the findings.
-
-                ### CONSTRAINTS
+                ### PROTOCOL
+                    {protocol}
+                ### CONSTRAINTS 
                 - Stay within the 'System Map' boundaries unless explicitly told otherwise.
                 - If a path is ambiguous (e.g., two "homework" folders), ask for clarification before acting.
                 - Do not assume file contents; always read them if accuracy is required.
@@ -61,11 +119,7 @@ actor_prompt_template = actor_prompt_template.partial(
 )
 
 
-llm = ChatOpenAI(model="gpt-4o")
-
-
-tars_chain = actor_prompt_template | llm.bind_tools(
-    tools=[TarsResponse, TarsAction]
-)
+router_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0) 
+planner_chain = router_llm.with_structured_output(RouteQuery)
 
 validator = PydanticToolsParser(tools=[TarsResponse, TarsAction])

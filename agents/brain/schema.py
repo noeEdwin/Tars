@@ -14,6 +14,8 @@ class FileAction(str, Enum):
     LIST = "list"
     READ = "read"
     CREATE_DIRECTORY = "create_directory"
+    READ_DOC = "read_document"
+    EXECUTE = "execute_command"
 
 class FileMode(str, Enum):
     APPEND = "append"
@@ -35,6 +37,7 @@ class TarsState(TypedDict):
     # 5. Intent: The plan TARS has decided to follow
     next_steps: List[str]
     is_complete: bool
+    active_expert: str
 
 
 class TarsResponse(BaseModel):
