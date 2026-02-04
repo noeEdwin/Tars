@@ -33,8 +33,8 @@ def build_system_map(start_path, max_depth=3, max_files=50):
         for category, keywords in INTERESTS.items():
             if any(key in folder_name for key in keywords):
                     system_map[category].append(root)
-                tagged = True
-                break 
+                    tagged = True
+                    break 
         
         if not tagged:
             if any(f in ['manage.py', 'package.json', 'Modelfile', '.ipynb'] for f in files):
