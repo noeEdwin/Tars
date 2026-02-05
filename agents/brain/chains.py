@@ -1,16 +1,14 @@
 from schema import TarsAction, TarsResponse
-
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_openai import ChatOpenAI
-
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings  # Added OpenAIEmbeddings
 from langchain_core.output_parsers.openai_tools import PydanticToolsParser
-from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 from tools.crawler.maping_computer import build_system_map
 import os
 from typing import Literal
-from langchain_ollama import ChatOllama
 from pydantic import BaseModel, Field
+
+load_dotenv()
 
 class RouteQuery(BaseModel):
     """Route a user query to the most appropriate expert."""
@@ -20,6 +18,7 @@ class RouteQuery(BaseModel):
 
 home = os.path.expanduser("~")
 my_map = build_system_map(home)
+
 PROTOCOLS = {
     "coder": """
         ### CODER PROTOCOL
@@ -77,10 +76,30 @@ PROTOCOLS = {
     """
 }
 
-def get_tars_expert():
+def get_tars_expert(expert_type:str):
+    if expert_type == "linguist":
+        return ChatOpenAI(
+            model="deepseek-chat", # DeepSeek-V3
+            temperature=0.3,
+            base_url="https://api.deepseek.com",
+            api_key=os.getenv("DEEPSEEK_API_KEY")
+        )
+    elif expert_type == "coder":
+         return ChatOpenAI(
+            model="deepseek-reasoner", # DeepSeek-R1 
+            base_url="https://api.deepseek.com",
+            api_key=os.getenv("DEEPSEEK_API_KEY")
+        )
     return ChatOpenAI(model="gpt-4o")
 
-load_dotenv()
+def get_embeddings_model():
+    """
+    Centralized factory for the embedding model.
+    Using 'text-embedding-3-small' for efficiency and low cost.
+    """
+    return OpenAIEmbeddings(
+        model="text-embedding-3-small"
+    )
 
 pydantic_parser = PydanticToolsParser(tools=[TarsResponse, TarsAction])
 
@@ -121,5 +140,3 @@ actor_prompt_template = actor_prompt_template.partial(
 
 router_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0) 
 planner_chain = router_llm.with_structured_output(RouteQuery)
-
-validator = PydanticToolsParser(tools=[TarsResponse, TarsAction])

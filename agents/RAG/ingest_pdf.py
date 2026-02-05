@@ -1,24 +1,13 @@
 import pandas as pd
-from openai import OpenAI
 from dotenv import load_dotenv
-import psycopg2
-import os
+from agents.brain.chains import get_embeddings_model
+from agents.dataBase.connection import get_db_connection
 
 load_dotenv()
-client = OpenAI()
-
-def get_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        port=os.getenv("DB_PORT")
-    )
 
 def ingest_hsk_data(file_path):
     try:
-        # 1. Leer el CSV
+        embedding_model = get_embeddings_model()
         df = pd.read_csv(file_path)
         conn = get_db_connection()
         cur = conn.cursor()
@@ -27,11 +16,7 @@ def ingest_hsk_data(file_path):
 
         for _, row in df.iterrows():
             # 2. Generar el embedding (1536 dimensiones para text-embedding-3-small)
-            response = client.embeddings.create(
-                input=row['contenido_zh'],
-                model="text-embedding-3-small"
-            )
-            embedding = response.data[0].embedding
+            embedding_vector = embedding_model.embed_query(row['contenido_zh'])
 
             # 3. Insertar con Taxonomía completa
             query = """
@@ -46,7 +31,7 @@ def ingest_hsk_data(file_path):
                 int(row['nivel_hsk']), 
                 row['categoria'], 
                 row['tipo_item'], 
-                embedding
+                embedding_vector
             ))
 
         conn.commit()
