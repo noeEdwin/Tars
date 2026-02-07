@@ -77,6 +77,7 @@ PROTOCOLS = {
 }
 
 def get_tars_expert(expert_type:str):
+    
     if expert_type == "linguist":
         return ChatOpenAI(
             model="deepseek-chat", # DeepSeek-V3

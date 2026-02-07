@@ -3,6 +3,10 @@ from pathlib import Path
 
 # Add the agents directory to sys.path so sibling packages can be found
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Add the project root to sys.path so ChatMessage can be found
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
+from ChatMessage.infraestructure.tts.google_tts import send_tts_request
 from RAG.save_memory import save_memory, get_db_uri
 from RAG.retrieve import retrieve_knowledge
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -151,7 +155,15 @@ if __name__ == "__main__":
                                 final_answer = tc['args'].get('message', 'No message content')
                                 print(f"AI: {final_answer}")
                                 save_memory("assistant", final_answer)
+                                try:
+                                    send_tts_request(final_answer)
+                                except Exception as e:
+                                    print(f"TTS Error: {e}")
                                 handled_as_final = True
                     
                     if hasattr(msg, 'content') and msg.content and msg.type == 'ai':
                         print("AI: " + msg.content)
+                        try:
+                            send_tts_request(msg.content)
+                        except Exception as e:
+                            print(f"TTS Error: {e}")
