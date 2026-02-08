@@ -1,2 +1,3 @@
 agents/.env
 .env
+kokoro-v1.0.onnx

@@ -76,7 +76,7 @@ def send_tts_request(text: str):
     credentials = get_credentials()
     client = texttospeech.TextToSpeechClient(credentials=credentials)
 
-    voice_name = "cmn-CN-Chirp3-HD-Charon" 
+    voice_name = "cmn-CN-Chirp3-HD-Algenib" 
     language_code = "cmn-CN"
     
     streaming_config = texttospeech.StreamingSynthesizeConfig(
