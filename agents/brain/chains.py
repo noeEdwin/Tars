@@ -12,9 +12,12 @@ load_dotenv()
 
 class RouteQuery(BaseModel):
     """Route a user query to the most appropriate expert."""
-    expert: Literal["coder", "linguist", "analyst", "general"] = Field(
-        description="The expert best suited to handle the user's request."
+    expert: Literal["coder", "tars_roleplay", "analyst", "general"] = Field(
+        description="The expert best suited to handle the user's request. Use 'tars_roleplay' for any language learning, practice, or roleplay requests."
     )
+
+
+
 
 home = os.path.expanduser("~")
 my_map = build_system_map(home)
@@ -41,21 +44,54 @@ PROTOCOLS = {
             Validation: Specifically fill the identified_paths argument to confirm the file exists on disk after the changes.
             Summary: List specifically what was added, deleted, or fixed in plain language for the user.
     """,
-    "linguist": """
-        ### 1. DECONSTRUCT & ANALYZE (拆解与分析)
-            Linguistic Breakdown: For every sentence, provide the Character (Simplified/Traditional), Pinyin (with tone marks), and Literal vs. Idiomatic English Translation.
-            Grammar Spotlight: Identify HSK-level grammar patterns. If a sentence uses "把" (bǎ) or "被" (bèi) structures, explain the logic of the word order.
-            Vocabulary Tiering: Separate vocabulary into "Essential" (high frequency) and "Flavor" (specific to the text, e.g., cultivation terms in Lord of the Mysteries).
-        2. CULTURAL & LITERARY CONTEXT (文化背景)
-            World-Building Context: If analyzing Lord of the Mysteries, explain terms within the "Beyonder" (超凡者 - chāofánzhě) system. Relate them to Western fantasy tropes vs. Chinese "Xianxia" influences.
-            Etymology: Briefly explain the "radical" (部首) of a key character if it helps retention (e.g., why "魔" for Demon contains the radical for "ghost" 鬼).
-            Implicit Meaning: Explain "Face" (面子), social hierarchy, or specific honorifics used between characters in the text.
+    "tars_engineer": """
+        ### TARS ENGINEER PROTOCOL (高级工程师)
+        1. PERSONA: You are a Senior Software Engineer at a top tech company in Beijing.
+        2. LANGUAGE: Use professional technical Chinese (e.g., '架构', '算法', '并发', '解耦'). 
+        3. GOAL: Teach the user how to discuss code in Chinese.
+        
+        ### INTERACTION
+        - When realizing requirements: "我们可以考虑一下这个架构..." (We could consider this architecture...)
+        - When reviewing code: "这段代码的耦合度太高了..." (This code has high coupling...)
+        - Always provide the Pingyin and English translation for key technical terms.
+    """,
+    "tars_sales": """
+        ### TARS SALES PROTOCOL (销售总监)
+        1. PERSONA: You are a Sales Director navigating high-stakes business deals.
+        2. LANGUAGE: Use formal, respectful business Chinese ('敬语', '商务礼仪').
+        3. GOAL: Teach the user business negotiation and etiquette.
+        
+        ### INTERACTION
+        - Opening: "幸会幸会 (Xìnghuì xìnghuì) - A pleasure to meet you."
+        - Negotiation: "这个价格我们恐怕很难接受..." (I'm afraid we can't accept this price...)
+        - Focus on 'Face' (面子) and indirect communication.
+    """,
+    "tars_roleplay": """
+        ### TARS ROLEPLAY PROTOCOL (沉浸式体验)
+        1. GOAL: General immersion in daily life scenarios (Travel, Shopping, Ordering food).
+        2. LANGUAGE & LEVEL: 
+            - PRIMARY: Chinese (Mandarin).
+            - SECONDARY: Spanish (for explanations ONLY if user is struggling).
+            - ACCENT: The system uses native voices for each language, so you can mix them naturally.
+            
+        3. OUTPUT FORMAT (STRICT):
+            - You must output in this EXACT format for every response:
+            
+            [Hanzi]
+            (Pinyin)
+            [Spanish Translation]
+            
+            Example:
+            你好！欢迎光临。
+            (Nǐ hǎo! Huānyíng guānglín.)
+            ¡Hola! Bienvenido.
 
-        3. IMMERSION & APPLICATION (沉浸与应用)
-            Shadowing (跟读): Provide a "Chunking Guide"—breaking long sentences into natural breath groups for the user to practice aloud.
-            Role-Play (角色扮演): Design a scenario based on the current chapter.
-            Example: "You are Klein Moretti trying to buy a potion ingredient at the Black Market. Use '多少钱' and '便宜一点'."
-            Tool Integration: Use TarsAction.CREATE to generate a markdown "Flashcard" file in the user's directory containing the day's key phrases.
+        4. ADAPTATION:
+            - Beginners (HSK 1-2): Keep sentences short. You MAY add a brief Spanish tip if they made a mistake.
+            - Advanced: Stick to Chinese.
+        5. INTERACTION:
+            - Always stay in character.
+            - Always END with a simple question.
     """,
     "analyst": """
         ### DOCUMENT ANALYST PROTOCOL
@@ -78,19 +114,35 @@ PROTOCOLS = {
 
 def get_tars_expert(expert_type:str):
     
-    if expert_type == "linguist":
-        return ChatOpenAI(
-            model="deepseek-chat", # DeepSeek-V3
-            temperature=0.3,
-            base_url="https://api.deepseek.com",
-            api_key=os.getenv("DEEPSEEK_API_KEY")
-        )
-    elif expert_type == "coder":
+    if expert_type == "coder":
          return ChatOpenAI(
             model="deepseek-reasoner", # DeepSeek-R1 
             base_url="https://api.deepseek.com",
             api_key=os.getenv("DEEPSEEK_API_KEY")
         )
+    elif expert_type == "analyst":
+        return ChatOpenAI(model="gpt-4o") # Strong reasoning for docs
+    
+    # For TARS (Roleplay/Engineer/Sales) or General or "linguist" legacy
+    # For TARS (Engineer/Sales) - Use DeepSeek if available
+    if os.getenv("DEEPSEEK_API_KEY") and expert_type in ["tars_engineer", "tars_sales"]:
+         return ChatOpenAI(
+            model="deepseek-chat", # DeepSeek-V3 for conversational fluency
+            temperature=0.3,
+            base_url="https://api.deepseek.com",
+            api_key=os.getenv("DEEPSEEK_API_KEY")
+        )
+
+    # LATENCY PRIORITY:
+    # tars_roleplay needs to be < 2.5s. DeepSeek V3 is ~4s.
+    # We force gpt-4o-mini for roleplay specifically.
+    if expert_type == "tars_roleplay":
+        return ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+    
+    # Fallback/Default for other TARS modes if no DeepSeek key: Use Mini for speed
+    if expert_type in ["tars_engineer", "tars_sales"]:
+        return ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+
     return ChatOpenAI(model="gpt-4o")
 
 def get_embeddings_model():
@@ -129,7 +181,7 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
             """
         ),
         MessagesPlaceholder(variable_name="messages"),
-        ("system", "Answer the user's question above using the required format.")
+        ("system", "Answer the user's question above. REMEMBER: Follow your PROTOCOL strictly. If your protocol says CHINESE ONLY, do not speak Spanish.")
     ]
 )
 

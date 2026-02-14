@@ -38,6 +38,12 @@ class TarsState(TypedDict):
     next_steps: List[str]
     is_complete: bool
     active_expert: str
+    
+    # 6. Explicit Mode: User-selected mode (e.g., "engineer", "roleplay", "coder")
+    user_mode: Optional[str]
+    
+    # 7. Roleplay Spec: Specific persona for Roleplay mode
+    selected_role: Optional[str]
 
 
 class TarsResponse(BaseModel):
