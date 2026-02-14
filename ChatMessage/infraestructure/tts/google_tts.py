@@ -68,16 +68,31 @@ def play_stream(audio_generator):
             player_process.stdin.close()
         player_process.wait()
 
-def send_tts_request(text: str):
+# Constants for Voices
+VOICE_MAPPING = {
+    "zh": {
+        "name": "cmn-CN-Chirp3-HD-Algenib", # or cmn-CN-Neural2-C
+        "code": "cmn-CN"
+    },
+    "es": {
+        "name": "es-ES-Chirp3-HD-Puck", # Chirp 3 HD is required for streaming
+        "code": "es-ES" 
+    }
+}
+
+def send_tts_request(text: str, voice_name: str = None, language_code: str = None):
     """
-    Generates speech from text using Google Cloud TTS and streams it to the speakers.
-    Defaults to a Chinese male voice (cmn-CN-Neural2-C) for the Pingo persona.
+    Generates speech from text using Google Cloud TTS and streams it.
+    Allows overriding voice/language for mixed-language support.
     """
     credentials = get_credentials()
     client = texttospeech.TextToSpeechClient(credentials=credentials)
 
-    voice_name = "cmn-CN-Chirp3-HD-Algenib" 
-    language_code = "cmn-CN"
+    # Defaults to Chinese if not specified (Legacy behavior)
+    if not voice_name:
+        voice_name = VOICE_MAPPING["zh"]["name"]
+    if not language_code:
+        language_code = VOICE_MAPPING["zh"]["code"]
     
     streaming_config = texttospeech.StreamingSynthesizeConfig(
         voice=texttospeech.VoiceSelectionParams(
@@ -89,21 +104,79 @@ def send_tts_request(text: str):
         )
     )
 
+    def chunk_text(text, max_chars=100):
+        """Splits text into chunks of max_chars, respecting sentence boundaries."""
+        chunks = []
+        current_chunk = ""
+        # Split by common sentence delimiters (Chinese & Spanish)
+        sentences = text.replace('。', '。|').replace('！', '！|').replace('？', '？|').replace('.', '.|').replace('!', '!|').replace('?', '?|').split('|')
+        
+        for sentence in sentences:
+            if len(current_chunk) + len(sentence) <= max_chars:
+                current_chunk += sentence
+            else:
+                if current_chunk:
+                    chunks.append(current_chunk)
+                current_chunk = sentence
+                
+        if current_chunk:
+            chunks.append(current_chunk)
+            
+        return chunks
+
     def request_generator(text_input):
         # 1. First request: Config only
         yield texttospeech.StreamingSynthesizeRequest(
             streaming_config=streaming_config
         )
 
-        yield texttospeech.StreamingSynthesizeRequest(
-            input=texttospeech.StreamingSynthesisInput(text=text_input)
-        )
+        # 2. Iterate over chunks
+        chunks = chunk_text(text_input)
+        for chunk in chunks:
+            if chunk.strip():
+                yield texttospeech.StreamingSynthesizeRequest(
+                    input=texttospeech.StreamingSynthesisInput(text=chunk)
+                )
 
     try:
         responses = client.streaming_synthesize(request_generator(text))
         play_stream(responses)
     except Exception as e:
         print(f"Google TTS Error: {e}")
+
+def speak_mixed_text(text: str):
+    """
+    Intelligently switches voices based on text content (Hanzi vs Latin).
+    """
+    import re
+    
+    # Regex to split: Captures Chinese sequences. 
+    # Everything else (Latin/Spanish/Numbers) is considered 'other' -> Spanish Voice
+    # Pattern explanation: 
+    # ([\u4e00-\u9fff，。？！“”]+) captures chunks of Chinese + punctuation.
+    # ([\u4e00-\u9fff，。？！“”]+) captures chunks of Chinese + punctuation.
+    parts = re.split(r'([\u4e00-\u9fff，。？！“”]+)', text)
+    
+    for part in parts:
+        if not part.strip():
+            continue
+            
+        # Check if this part is Chinese
+        if re.search(r'[\u4e00-\u9fff]', part):
+            # Use Chinese Voice
+            send_tts_request(
+                part, 
+                voice_name=VOICE_MAPPING["zh"]["name"], 
+                language_code=VOICE_MAPPING["zh"]["code"]
+            )
+        else:
+            # Use Spanish Voice (for Pinyin/Spanish/English)
+            if re.search(r'[a-zA-Z0-9]', part):
+                send_tts_request(
+                    part, 
+                    voice_name=VOICE_MAPPING["es"]["name"], 
+                    language_code=VOICE_MAPPING["es"]["code"]
+                )
 
 if __name__ == "__main__":
     # Test the module
