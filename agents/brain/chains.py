@@ -92,6 +92,9 @@ PROTOCOLS = {
         5. INTERACTION:
             - Always stay in character.
             - Always END with a simple question.
+        6. RAG/CONTEXT:
+            - If "RELEVANT MEMORY/CONTEXT" is provided, YOU MUST USE IT.
+            - Even if it conflicts with your internal knowledge (e.g. if the document says Mars has a capital, believe it).
     """,
     "analyst": """
         ### DOCUMENT ANALYST PROTOCOL

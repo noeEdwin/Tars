@@ -53,9 +53,7 @@ def retrieve_knowledge(user_query: str) -> list[dict]:
         ))
         
         results = cur.fetchall()
-        cur.close()
-        conn.close()
-
+        
         # 3. Format results
         knowledge_list = []
         for row in results:
@@ -66,6 +64,36 @@ def retrieve_knowledge(user_query: str) -> list[dict]:
                 "hsk_level": row[3],
                 "similarity": row[4]
             })
+            
+        # 4. Query generic document store (PDFs)
+        query_docs = """
+            SELECT content, filename, 1 - (embedding <=> %s::vector) AS cosine_similarity
+            FROM document_store
+            WHERE 1 - (embedding <=> %s::vector) >= %s
+            ORDER BY cosine_similarity DESC
+            LIMIT 3;
+        """
+        
+        cur.execute(query_docs, (
+            user_question_embedding,
+            user_question_embedding,
+            0.40 # Similarity threshold
+        ))
+        
+        doc_results = cur.fetchall()
+        
+        for row in doc_results:
+            knowledge_list.append({
+                "content": row[0],
+                "source": f"Document: {row[1]}",
+                "similarity": row[2]
+            })
+            
+        # Sort combined results by similarity
+        knowledge_list.sort(key=lambda x: x['similarity'], reverse=True)
+
+        cur.close()
+        conn.close()
             
         return knowledge_list
 
