@@ -71,9 +71,14 @@ def actor_node(state: TarsState) -> dict:
     protocol_text = PROTOCOLS.get(expert_type, "Standard operating procedures.")
     
     # Inject selected role if in roleplay mode
-    # Inject selected role if in roleplay mode
-    if expert_type == "tars_roleplay" and state.get("selected_role"):
-        protocol_text += f"\n\nCURRENT ROLE: {state.get('selected_role')}"
+    if expert_type == "tars_roleplay":
+        if state.get("selected_role"):
+            protocol_text += f"\n\nCURRENT ROLE: {state.get('selected_role')}"
+        if state.get("user_role"):
+            protocol_text += f"\nUSER ROLE: {state.get('user_role')}"
+        if state.get("scene_context"):
+            protocol_text += f"\nSCENE CONTEXT: {state.get('scene_context')}"
+
 
     # RAG INTEGRATION (Conditional to save latency)
     last_user_msg = state["messages"][-1].content

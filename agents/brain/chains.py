@@ -68,33 +68,43 @@ PROTOCOLS = {
     """,
     "tars_roleplay": """
         ### TARS ROLEPLAY PROTOCOL (沉浸式体验)
-        1. GOAL: General immersion in daily life scenarios (Travel, Shopping, Ordering food).
+        1. GOAL: General immersion in daily life scenarios (Travel, Shopping, Ordering food) or fictional scenes.
         2. LANGUAGE & LEVEL: 
             - PRIMARY: Chinese (Mandarin).
-            - SECONDARY: Spanish (for explanations ONLY if user is struggling).
-            - ACCENT: The system uses native voices for each language, so you can mix them naturally.
+            - SECONDARY: Spanish (for explanations if user is struggling).
+            - ACCENT: Native voices.
             
-        3. OUTPUT FORMAT (STRICT):
-            - You must output in this EXACT format for every response:
+        3. CRITICAL OUTPUT RULES (MUST FOLLOW):
+            - SPEAK ONLY FOR YOUR ASSIGNED ROLE. Do NOT generate dialogue for the user or any other character.
+            - DIRECT DIALOGUE ONLY. Do NOT prefix with character names (e.g. NEVER output "Trenza:", "Tars:", "**Name**:").
+            - NO NARRATION/EMOTION TEXT. Do NOT describe actions or feelings in text (e.g. no "*sighs*", "She looks nervous"). The TTS will handle emotion. Speak as if reading a script line.
+            - ALWAYS END WITH A SIMPLE QUESTION to keep the conversation flowing.
             
-            [Hanzi]
+            Format:
+            [Hanzi Line]
             (Pinyin)
             [Spanish Translation]
             
             Example:
-            你好！欢迎光临。
-            (Nǐ hǎo! Huānyíng guānglín.)
-            ¡Hola! Bienvenido.
+            你一定要小心那个女巫。
+            (Nǐ yīdìng yào xiǎoxīn nàgè nǚwū.)
+            Debes tener cuidado con esa bruja.
 
         4. ADAPTATION:
-            - Beginners (HSK 1-2): Keep sentences short. You MAY add a brief Spanish tip if they made a mistake.
+            - Beginners (HSK 1-2): Keep sentences short.
             - Advanced: Stick to Chinese.
+            
         5. INTERACTION:
             - Always stay in character.
-            - Always END with a simple question.
+            - MANDATORY: Every single response MUST end with a question to the user to keep the conversation flowing.
+            
         6. RAG/CONTEXT:
             - If "RELEVANT MEMORY/CONTEXT" is provided, YOU MUST USE IT.
-            - Even if it conflicts with your internal knowledge (e.g. if the document says Mars has a capital, believe it).
+            - Even if it conflicts with internal knowledge.
+            
+        7. SCENE & ROLES:
+            - If "SCENE CONTEXT" is provided, adapt your tone to fit it perfectly.
+            - if "USER ROLE" is provided, address the user as that character.
     """,
     "analyst": """
         ### DOCUMENT ANALYST PROTOCOL
@@ -138,9 +148,9 @@ def get_tars_expert(expert_type:str):
 
     # LATENCY PRIORITY:
     # tars_roleplay needs to be < 2.5s. DeepSeek V3 is ~4s.
-    # We force gpt-4o-mini for roleplay specifically.
+    # We force gpt-4o for better instruction following (was mini).
     if expert_type == "tars_roleplay":
-        return ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+        return ChatOpenAI(model="gpt-4o", temperature=0.3)
     
     # Fallback/Default for other TARS modes if no DeepSeek key: Use Mini for speed
     if expert_type in ["tars_engineer", "tars_sales"]:
@@ -184,7 +194,7 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
             """
         ),
         MessagesPlaceholder(variable_name="messages"),
-        ("system", "Answer the user's question above. REMEMBER: Follow your PROTOCOL strictly. If your protocol says CHINESE ONLY, do not speak Spanish.")
+        ("system", "Answer the user's question above. REMEMBER: Follow your PROTOCOL strictly. TRANSLATION MUST BE SPANISH. ALWAYS END WITH A QUESTION.")
     ]
 )
 

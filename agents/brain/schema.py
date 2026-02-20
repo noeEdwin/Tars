@@ -43,7 +43,10 @@ class TarsState(TypedDict):
     user_mode: Optional[str]
     
     # 7. Roleplay Spec: Specific persona for Roleplay mode
+    # 7. Roleplay Spec: Specific persona for Roleplay mode
     selected_role: Optional[str]
+    scene_context: Optional[str]
+    user_role: Optional[str]
 
 
 class TarsResponse(BaseModel):
