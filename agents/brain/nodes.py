@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from ChatMessage.infraestructure.tts.google_tts import speak_mixed_text
+from ChatMessage.infraestructure.stt.openai_stt import record_and_transcribe
 from RAG.save_memory import save_memory, get_db_uri
 from RAG.retrieve import retrieve_knowledge
 from langgraph.checkpoint.postgres import PostgresSaver
@@ -257,11 +258,14 @@ if __name__ == "__main__":
 
         while True:
             try:
-                user_input = input("User: ")
+                user_input = record_and_transcribe()
+                if not user_input:
+                    continue
+                print(f"User: {user_input}")
             except KeyboardInterrupt:
                 break
                 
-            if (user_input in ["exit", "end"]):
+            if (user_input.lower() in ["exit", "end"]):
                 break
             else:
                 # Get current state to calculate offset
