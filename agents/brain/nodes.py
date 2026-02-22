@@ -7,8 +7,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from ChatMessage.infraestructure.tts.google_tts import speak_mixed_text
-from ChatMessage.infraestructure.stt.openai_stt import record_and_transcribe
-from RAG.save_memory import save_memory, get_db_uri
 from RAG.retrieve import retrieve_knowledge
 from langgraph.checkpoint.postgres import PostgresSaver
 from dotenv import load_dotenv
