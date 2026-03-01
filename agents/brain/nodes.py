@@ -78,6 +78,14 @@ def actor_node(state: TarsState) -> dict:
         if state.get("scene_context"):
             protocol_text += f"\nSCENE CONTEXT: {state.get('scene_context')}"
 
+    # Inject User Info constraints if available
+    user_info = state.get("user_info")
+    if user_info:
+        protocol_text += f"\n\n### USER PROFILE\n"
+        protocol_text += f"You are the Chinese tutor for {user_info.get('username', 'the user')}. "
+        protocol_text += f"Adjust your language to an HSK {user_info.get('hsk_level', 1)} level. "
+        protocol_text += f"The user is interested in {user_info.get('interest_area', 'general topics')}, try to use related examples."
+
 
     # RAG INTEGRATION (Conditional to save latency)
     last_user_msg = state["messages"][-1].content
@@ -105,6 +113,7 @@ def actor_node(state: TarsState) -> dict:
         threading.Thread(target=speak_mixed_text, args=(response.content,)).start()
     
     # Also handle TarsResponse tool calls if present
+    messages_to_return = [response]
     if response.tool_calls:
         for tc in response.tool_calls:
             if tc.get("name") == "TarsResponse":
@@ -112,8 +121,15 @@ def actor_node(state: TarsState) -> dict:
                 if msg:
                      import threading
                      threading.Thread(target=speak_mixed_text, args=(msg,)).start()
+                # Inject a dummy ToolMessage to satisfy OpenAI API for the next turn
+                messages_to_return.append(
+                    ToolMessage(
+                        content="TarsResponse executed successfully.",
+                        tool_call_id=tc["id"]
+                    )
+                )
 
-    return {"messages": [response]}
+    return {"messages": messages_to_return}
 
 
 def tools_node(state: TarsState) -> dict:

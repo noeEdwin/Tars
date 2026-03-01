@@ -14,8 +14,10 @@ load_dotenv()
 
 from agents.brain.nodes import workflow, config
 from agents.RAG.ingest_document import ingest_pdf
-from agents.RAG.save_memory import get_db_uri, save_memory
+from agents.RAG.save_memory import save_memory, get_db_uri
 from ChatMessage.infraestructure.stt.openai_stt import record_and_transcribe
+from agents.dataBase.user_management import create_user, get_user_data, ensure_conversation_exists
+from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.checkpoint.postgres import PostgresSaver
 
 def main():
@@ -32,25 +34,72 @@ def main():
     
     input_mode = "text" # Default to text
 
+    # 1. Configuración inicial de Usuario (Estructura Noe)
+    nombre_usuario = input("Who are you?: ").strip()
+    if not nombre_usuario:
+        nombre_usuario = "diego"
+        
+    password_usuario = "mi_clave_segura_123" # <--- Default as requested
+    
+    # Registramos al usuario si no existe con nivel inicial
+    create_user(nombre_usuario, password_usuario, hsk_level=1, interest_area="Ingeniería")
+    user_info = get_user_data(nombre_usuario)
+    
+    if not user_info:
+        print("❌ Could not load user. Exiting.")
+        return
+
+    # 2. Definimos el ID de conversación (Relacional)
+    current_conv_id = 2
+    ensure_conversation_exists(current_conv_id, user_info['id'])
+    
     with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
         checkpointer.setup()
+        
+        # Guardaremos el ID de coversacion en la config del checkpointer
+        config = {
+            "configurable": {
+                "thread_id": str(current_conv_id) # Usa current_conv_id para aislar estados
+            }
+        }
+        
         app = workflow.compile(checkpointer=checkpointer)
         
-        # Auto-recovery logic from nodes.py
+        # Auto-recovery logic: Deep heal any unresolved tool calls across full history
         snapshot = app.get_state(config)
         if snapshot.values and "messages" in snapshot.values:
-            last_msg = snapshot.values["messages"][-1]
-            if hasattr(last_msg, "tool_calls") and last_msg.tool_calls:
-                print("System: Detected interrupted session. healing connection...")
-                tool_msgs = []
-                for tc in last_msg.tool_calls:
-                    tool_msgs.append(
-                        ToolMessage(
-                            content="System: The tool execution was interrupted by the user in the previous session.",
-                            tool_call_id=tc["id"]
+            messages = snapshot.values["messages"]
+            msgs_to_update = []
+            
+            for i, msg in enumerate(messages):
+                if isinstance(msg, AIMessage) and hasattr(msg, "tool_calls") and msg.tool_calls:
+                    # Check if the next message is a ToolMessage
+                    has_tool_response = False
+                    if i + 1 < len(messages):
+                        next_msg = messages[i+1]
+                        if isinstance(next_msg, ToolMessage):
+                            has_tool_response = True
+                            
+                    if not has_tool_response:
+                        print(f"System: Healing unresolved tool call in history (Msg ID: {msg.id})...")
+                        # Flatten the tool calls into the message content and remove tool calls
+                        fallback_content = msg.content
+                        if not fallback_content:
+                            for tc in msg.tool_calls:
+                                if tc.get("name") == "TarsResponse":
+                                    fallback_content = "Tars: " + str(tc.get("args", {}).get("message", ""))
+                                    break
+                                    
+                        msgs_to_update.append(
+                            AIMessage(
+                                id=msg.id,
+                                content=fallback_content or "[Unresolved Tool Call]",
+                                tool_calls=[]
+                            )
                         )
-                    )
-                app.update_state(config, {"messages": tool_msgs})
+            
+            if msgs_to_update:
+                app.update_state(config, {"messages": msgs_to_update})
 
         while True:
             try:
@@ -60,7 +109,7 @@ def main():
                         continue
                     print(f"User (Voice): {user_input}")
                 else:
-                    user_input = input("User: ").strip()
+                    user_input = input(f"User ({user_info['username']}): ").strip()
                     if not user_input:
                         continue
             except KeyboardInterrupt:
@@ -125,7 +174,7 @@ def main():
                 continue
 
             # Standard Chat Interaction
-            save_memory("user", user_input)
+            save_memory("user", user_input, current_conv_id)
             messages = [HumanMessage(content=user_input)]
             
             # Get current state to calculate offset
@@ -134,8 +183,12 @@ def main():
             existing_messages = current_values.get("messages", [])
             start_len = len(existing_messages)
             
+            # Pasamos user_info junto con los mensajes al estado
             result = app.invoke(
-                {"messages": messages}, 
+                {
+                    "messages": messages,
+                    "user_info": user_info
+                }, 
                 config=config
             )
             
@@ -149,7 +202,7 @@ def main():
                         if tc['name'] == 'TarsResponse':
                             final_answer = tc['args'].get('message', 'No message content')
                             print(f"Tars: {final_answer}")
-                            save_memory("assistant", final_answer)
+                            save_memory("assistant", final_answer, current_conv_id)
                 
                 # Logic for TEXT RESPONSES
                 if isinstance(msg, AIMessage) and not getattr(msg, 'tool_calls', None):

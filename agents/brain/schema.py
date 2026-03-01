@@ -47,6 +47,9 @@ class TarsState(TypedDict):
     selected_role: Optional[str]
     scene_context: Optional[str]
     user_role: Optional[str]
+    
+    # 8. User Data: Explicit User configuration
+    user_info: Optional[Dict[str, str]]
 
 
 class TarsResponse(BaseModel):

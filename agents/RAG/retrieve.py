@@ -6,55 +6,55 @@ from dataBase.connection import get_db_connection
 
 def retrieve_knowledge(user_query: str) -> list[dict]:
     """
-    Retrieves the most relevant knowledge from the 'base_conocimiento' table using vector similarity.
+    Retrieves the most relevant knowledge from the 'public.knowledge_base' table using vector similarity.
     Returns a list of dictionaries containing the content and metadata.
     """
     try:
-        # 1. Generate embedding for the query
+        # 1. Generar el embedding para la consulta del usuario
         user_question_embedding = get_embedding(user_query)
         
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # Ensure extension exists (good practice, though usually done once)
-        cur.execute("CREATE EXTENSION IF NOT EXISTS vector")
-
-        # 2. Execute similarity search with deduplication
-        # - Calculates cosine distance (1 - distance = similarity)
-        # - Ranks by similarity
-        # - Partitions by content to ensure we don't get 5 copies of the same word
+        # 2. Ejecutar búsqueda de similitud con nombres de columnas actualizados (Supabase)
+        # Se usa 'content' en lugar de 'contenido_zh' para coincidir con la migración.
         query = """
             WITH ranked_knowledge AS (
                 SELECT 
-                    contenido_zh,
+                    content,
                     pinyin,
-                    traduccion_es,
-                    nivel_hsk,
+                    translation_es,
+                    hsk_level,
                     1 - (embedding <=> %s::vector) AS cosine_similarity,
                     ROW_NUMBER() OVER (
-                        PARTITION BY contenido_zh 
+                        PARTITION BY content 
                         ORDER BY 1 - (embedding <=> %s::vector) DESC
                     ) as rn
-                FROM base_conocimiento
+                FROM public.knowledge_base
                 WHERE 1 - (embedding <=> %s::vector) >= %s
             )
-            SELECT contenido_zh, pinyin, traduccion_es, nivel_hsk, cosine_similarity
+            SELECT content, pinyin, translation_es, hsk_level, cosine_similarity
             FROM ranked_knowledge 
             WHERE rn = 1 
             ORDER BY cosine_similarity DESC
             LIMIT 5;
         """
         
+        # Nota: Asegúrate de que tu tabla en Supabase tenga estas columnas:
+        # content, pinyin, translation_es, hsk_level
+        
         cur.execute(query, (
             user_question_embedding,
             user_question_embedding,
             user_question_embedding,
-            0.50 # Similarity threshold (adjustable)
+            0.50 # Umbral de similitud ajustable
         ))
         
         results = cur.fetchall()
-        
-        # 3. Format results
+        cur.close()
+        conn.close()
+
+        # 3. Formatear resultados para el agente
         knowledge_list = []
         for row in results:
             knowledge_list.append({
@@ -65,38 +65,9 @@ def retrieve_knowledge(user_query: str) -> list[dict]:
                 "similarity": row[4]
             })
             
-        # 4. Query generic document store (PDFs)
-        query_docs = """
-            SELECT content, filename, 1 - (embedding <=> %s::vector) AS cosine_similarity
-            FROM document_store
-            WHERE 1 - (embedding <=> %s::vector) >= %s
-            ORDER BY cosine_similarity DESC
-            LIMIT 3;
-        """
-        
-        cur.execute(query_docs, (
-            user_question_embedding,
-            user_question_embedding,
-            0.40 # Similarity threshold
-        ))
-        
-        doc_results = cur.fetchall()
-        
-        for row in doc_results:
-            knowledge_list.append({
-                "content": row[0],
-                "source": f"Document: {row[1]}",
-                "similarity": row[2]
-            })
-            
-        # Sort combined results by similarity
-        knowledge_list.sort(key=lambda x: x['similarity'], reverse=True)
-
-        cur.close()
-        conn.close()
-            
         return knowledge_list
 
     except Exception as e:
+        # Este print te avisará si falta alguna columna en la tabla de Supabase
         print(f"⚠️ Error retrieving knowledge: {e}")
         return []

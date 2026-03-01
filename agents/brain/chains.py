@@ -12,7 +12,7 @@ load_dotenv()
 
 class RouteQuery(BaseModel):
     """Route a user query to the most appropriate expert."""
-    expert: Literal["coder", "tars_roleplay", "analyst", "general"] = Field(
+    expert: Literal[ "tars_roleplay", "analyst", "general"] = Field(
         description="The expert best suited to handle the user's request. Use 'tars_roleplay' for any language learning, practice, or roleplay requests."
     )
 
@@ -23,27 +23,6 @@ home = os.path.expanduser("~")
 my_map = build_system_map(home)
 
 PROTOCOLS = {
-    "coder": """
-        ### CODER PROTOCOL
-        1. INVESTIGATE & ANALYZE
-            Action: Use TarsAction.READ (for code) or TarsAction.READ_DOC (for documentation) to ingest the target file.
-            Logic: Look for missing imports (e.g., shutil, fitz), syntax errors, or logical flaws (like the missing content argument in your previous execute_command call).
-            Environment: If dependencies are suspect, use TarsAction.EXECUTE with pip list or python --version to verify the environment.
-
-        2. REFACTOR (ATOMIZED UPDATES)
-            Action: Use TarsAction.UPDATE with mode='overwrite'.
-            Constraint: Do not just fix the error; improve the robustness. Ensure all try/except blocks are specific.
-            Safety: Before overwriting, ensure hands._is_safe(path) returns true (handled by the tool, but be aware of the blacklist).
-        3. VERIFY & TEST
-            Action: Use TarsAction.EXECUTE to run the script via terminal.
-            Command: python3 path/to/file.py.
-            Evaluation: Analyze STDOUT and STDERR. If STDERR is not empty, loop back to Step 1.
-
-        4. DOCUMENT & SYNC
-            Action: Call TarsResponse with a detailed content_report.
-            Validation: Specifically fill the identified_paths argument to confirm the file exists on disk after the changes.
-            Summary: List specifically what was added, deleted, or fixed in plain language for the user.
-    """,
     "tars_engineer": """
         ### TARS ENGINEER PROTOCOL (高级工程师)
         1. PERSONA: You are a Senior Software Engineer at a top tech company in Beijing.
@@ -79,11 +58,11 @@ PROTOCOLS = {
             - DIRECT DIALOGUE ONLY. Do NOT prefix with character names (e.g. NEVER output "Trenza:", "Tars:", "**Name**:").
             - NO NARRATION/EMOTION TEXT. Do NOT describe actions or feelings in text (e.g. no "*sighs*", "She looks nervous"). The TTS will handle emotion. Speak as if reading a script line.
             - ALWAYS END WITH A SIMPLE QUESTION to keep the conversation flowing.
-            
-            Format:
-            [Hanzi Line]
-            (Pinyin)
-            [Spanish Translation]
+            - STRICT FORMATTING MANDATORY RULE: WHENEVER you generate text in Chinese, you MUST structure EVERY single sentence strictly in 3 lines:
+                [Hanzi Line]
+                (Pinyin)
+                [Spanish Translation]
+            Under no circumstances should you leave a Chinese sentence without its Spanish translation!
             
             Example:
             你一定要小心那个女巫。
@@ -127,13 +106,8 @@ PROTOCOLS = {
 
 def get_tars_expert(expert_type:str):
     
-    if expert_type == "coder":
-         return ChatOpenAI(
-            model="deepseek-reasoner", # DeepSeek-R1 
-            base_url="https://api.deepseek.com",
-            api_key=os.getenv("DEEPSEEK_API_KEY")
-        )
-    elif expert_type == "analyst":
+
+    if expert_type == "analyst":
         return ChatOpenAI(model="gpt-4o") # Strong reasoning for docs
     
     # For TARS (Roleplay/Engineer/Sales) or General or "linguist" legacy
