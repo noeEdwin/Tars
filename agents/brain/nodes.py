@@ -12,60 +12,24 @@ from langgraph.checkpoint.postgres import PostgresSaver
 from dotenv import load_dotenv
 from langchain_core.messages import ToolMessage, HumanMessage, SystemMessage, AIMessage
 from langgraph.graph import END, START, StateGraph
-from tools.crawler.execute_tools import execute_tools
-from schema import TarsState, TarsAction, TarsResponse
-from typing import Literal
-from chains import planner_chain, PROTOCOLS, get_tars_expert, actor_prompt_template
+from brain.schema import TarsState
+from brain.chains import PROTOCOLS, get_tars_expert, actor_prompt_template
 from langgraph.checkpoint.postgres import PostgresSaver
 from langchain_openai import ChatOpenAI
 
 load_dotenv()
-ROUTER = "router"
 ACTOR = "tars_actor"
-EXECUTION = "execute_tools"
 TRANSLATOR = "translator_node"
 
 
-def router_node(state: TarsState) -> dict:
-    """Analyze the user message and assign an expert."""
-    # 1. Explicit Mode Check (from Frontend)
-    user_mode = state.get("user_mode")
-    if user_mode and user_mode in PROTOCOLS:
-        return {"active_expert": user_mode}
-
-    # 2. Sticky Routing (Stay in Tars modes unless exit)
-    current_expert = state.get("active_expert", "")
-    last_content = state["messages"][-1].content.lower()
-    
-    # Simple exit keywords to break the sticky mode
-    exit_keywords = ["exit", "quit", "menu", "stop", "change mode", "salir", "menu"]
-    
-    if current_expert in ["tars_roleplay", "tars_engineer", "tars_sales"]:
-        if not any(keyword in last_content for keyword in exit_keywords):
-            return {"active_expert": current_expert}
-        
-    # 3. Default Router (LLM)
-    decision = planner_chain.invoke(last_content)
-    
-    expert = decision.expert
-        
-    return {"active_expert": expert}
-
 def actor_node(state: TarsState) -> dict:
-    """The dynamic brain: Uses the expert assigned by the router."""
-    expert_type = state.get("active_expert", "general")
+    """The dynamic brain: Uses the expert assigned by the user."""
+    expert_type = state.get("user_mode", "tars_roleplay")
     
     # 1. Get the specific model for this expert
     llm_expert = get_tars_expert(expert_type=expert_type)
     
-    # 2. Bind the tools to this specific expert model
-    # LATENCY OPTIMIZATION: Tars Roleplay should just chat. Tools add overhead.
-    if expert_type in ["tars_roleplay", "tars_engineer", "tars_sales"]:
-        llm_with_tools = llm_expert # No tools
-    else:
-        tools = [TarsResponse, TarsAction]
-        llm_with_tools = llm_expert.bind_tools(tools)
-    
+
     # 3. Create the dynamic chain with the correct protocol
     protocol_text = PROTOCOLS.get(expert_type, "Standard operating procedures.")
     
@@ -91,35 +55,17 @@ def actor_node(state: TarsState) -> dict:
         except Exception as e:
             print(f"RAG Error (Ignored): {e}")
         
-    dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_with_tools
+    dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
     
     response = dynamic_chain.invoke(state)
     
-    # 4. Asynchronous TTS (Fire and Forget)
-    # We use the new mixed-language support
-    # 4. Asynchronous TTS (Fire and Forget)
-    # We use the new mixed-language support
     if response.content:
         import threading
         # We no longer filter for just Chinese. We want the full response with mixed voices.
         threading.Thread(target=speak_mixed_text, args=(response.content,)).start()
     
-    # Also handle TarsResponse tool calls if present
-    if response.tool_calls:
-        for tc in response.tool_calls:
-            if tc.get("name") == "TarsResponse":
-                msg = tc.get("args", {}).get("message")
-                if msg:
-                     import threading
-                     threading.Thread(target=speak_mixed_text, args=(msg,)).start()
 
     return {"messages": [response]}
-
-
-def tools_node(state: TarsState) -> dict:
-    """The hands: Executes the filesystem actions."""
-    result = execute_tools(state)
-    return {"messages": result["messages"]}
 
 
 def translator_node(state: TarsState) -> dict:
@@ -130,17 +76,16 @@ def translator_node(state: TarsState) -> dict:
     """
     last_message = state["messages"][-1]
     
-    # Only process legitimate text responses (not tool calls)
-    if isinstance(last_message, AIMessage) and not last_message.tool_calls:
-        original_text = last_message.content
-        if not original_text:
-            return {}
+
+    original_text = last_message.content
+    if not original_text:
+        return {}
             
-        # Use a fast model for this pure formatting task
-        translator_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    # Use a fast model for this pure formatting task
+    translator_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
         
-        system_prompt = """
-        You are a linguistic formatter. Your job is to take the input text (which may be Chinese, English, or mixed) and format it for a Spanish speaker learning Chinese.
+    system_prompt = """
+    You are a linguistic formatter. Your job is to take the input text (which may be Chinese, English, or mixed) and format it for a Spanish speaker learning Chinese.
         
         RULES:
         1. If the text contains Chinese sentences:
@@ -155,70 +100,30 @@ def translator_node(state: TarsState) -> dict:
            [Spanish Translation]
            
         4. Do NOT verify the facts, just format the language.
-        """
+    """
         
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=original_text)
-        ]
+    messages = [
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=original_text)
+    ]
         
-        response = translator_llm.invoke(messages)
+    response = translator_llm.invoke(messages)
         
         # Overwrite the previous message to avoid duplication in history/frontend
         # We use the same ID as the last message so LangGraph's add_messages strategy updates it.
-        new_msg = AIMessage(id=last_message.id, content=response.content)
+    new_msg = AIMessage(id=last_message.id, content=response.content)
         
-        return {"messages": [new_msg]}
-        
-    return {}
+    return {"messages": [new_msg]}
 
-
-def should_continue(state: TarsState) -> Literal["tools", "translator", "end"]:
-    """The router: Determines if we need more actions."""
-    last_message = state["messages"][-1]
-    active_expert = state.get("active_expert", "")
-    
-    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
-        # Check if it's TarsResponse (Final Answer)
-        for tc in last_message.tool_calls:
-            if tc.get("name") == "TarsResponse":
-                # If we were in Tars Roleplay, we are done (formatting is done by actor)
-                if active_expert.startswith("tars_"):
-                    return "end"
-                return "end" # Or translator? Usually general -> end
-
-        return "tools"
-    
-    # If done, determine output path
-    active_expert = state.get("active_expert", "")
-    
-    # LATENCY OPTIMIZATION:
-    if active_expert.startswith("tars_"):
-        return "end"
-        
-    return "end"
 
 
 workflow = StateGraph(TarsState)
 
 workflow.add_node(ACTOR, actor_node)
-workflow.add_node(EXECUTION, tools_node)
-workflow.add_node(ROUTER, router_node)
 workflow.add_node(TRANSLATOR, translator_node)
 
-workflow.add_edge(START, ROUTER)
-workflow.add_edge(ROUTER, ACTOR)
-
-workflow.add_conditional_edges(
-    ACTOR,
-    should_continue,
-    {
-        "tools": EXECUTION,
-        "translator": TRANSLATOR,
-        "end": END
-    }
-)
-workflow.add_edge(EXECUTION, ACTOR)
+workflow.add_edge(START, ACTOR)
+workflow.add_edge(ACTOR, TRANSLATOR)
 workflow.add_edge(TRANSLATOR, END)
 
 # Configuration is defined here, but app compilation moves to main block
