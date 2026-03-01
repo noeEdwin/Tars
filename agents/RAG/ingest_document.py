@@ -14,7 +14,7 @@ from dataBase.connection import get_db_connection
 
 load_dotenv()
 
-def ingest_pdf(file_path: str):
+def ingest_pdf(file_path: str, user_id: int = None):
     """
     Reads a PDF file, splits it into chunks, generates embeddings,
     and stores them in the document_store table.
@@ -62,11 +62,18 @@ def ingest_pdf(file_path: str):
         
         inserted_count = 0
         for chunk, embedding in zip(chunks, embeddings):
-            query = """
-                INSERT INTO document_store (filename, content, embedding)
-                VALUES (%s, %s, %s)
-            """
-            cur.execute(query, (filename, chunk, embedding))
+            if user_id is not None:
+                query = """
+                    INSERT INTO document_store (filename, content, embedding, user_id)
+                    VALUES (%s, %s, %s, %s)
+                """
+                cur.execute(query, (filename, chunk, embedding, user_id))
+            else:
+                query = """
+                    INSERT INTO document_store (filename, content, embedding)
+                    VALUES (%s, %s, %s)
+                """
+                cur.execute(query, (filename, chunk, embedding))
             inserted_count += 1
             
         conn.commit()
