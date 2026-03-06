@@ -53,15 +53,19 @@ def get_scene_from_filename(user_id: str, filename: str):
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute("SELECT content FROM document_store WHERE user_id = %s AND filename = %s ORDER BY id LIMIT 3", (int(user_id), filename))
-        chunks = [row[0] for row in cur.fetchall()]
+        cur.execute("SELECT id, content FROM document_store WHERE user_id = %s AND filename = %s ORDER BY id LIMIT 3", (int(user_id), filename))
+        rows = cur.fetchall()
         cur.close()
         conn.close()
+        
+        doc_id = rows[0][0] if rows else None
+        chunks = [row[1] for row in rows]
         excerpt = "\n".join(chunks)
-        return f"Roleplay based on document: {filename}\nExcerpt:\n{excerpt}"
+        
+        return doc_id, f"Roleplay based on document: {filename}\nExcerpt:\n{excerpt}"
     except Exception as e:
         print(f"Error fetching scene content: {e}")
-        return filename
+        return None, filename
 
 def main():
     print("🤖 Tars CLI - Multi-Modal Edition")
@@ -102,12 +106,13 @@ def main():
         print("2. Upload a new one")
         rp_choice = input("Choice (1/2): ").strip()
         
+        doc_id = None
         if rp_choice == "2":
             file_path = input("Enter the path to the PDF file: ").strip()
             if os.path.exists(file_path):
                 ingest_pdf(file_path, user_id=int(user_id))
                 filename = os.path.basename(file_path)
-                scene = get_scene_from_filename(user_id, filename)
+                doc_id, scene = get_scene_from_filename(user_id, filename)
                 print(f"Loaded context from newly uploaded file: {filename}")
             else:
                 print("File not found. Using empty custom scene.")
@@ -128,7 +133,7 @@ def main():
                     choice_idx = int(doc_choice) - 1
                     if 0 <= choice_idx < len(filenames):
                         selected_filename = filenames[choice_idx]
-                        scene = get_scene_from_filename(user_id, selected_filename)
+                        doc_id, scene = get_scene_from_filename(user_id, selected_filename)
                         print(f"Loaded context from: {selected_filename}")
                     else:
                         scene = input("Scene Description: ").strip()
@@ -164,6 +169,7 @@ def main():
                 "scene_context": scene,
                 "user_role": user_role,
                 "selected_role": tars_role,
+                "selected_source": str(doc_id) if doc_id else None,
                 "messages": [HumanMessage(content=sys_msg_text)]
             }
             # App invoke to get the first greeting from Tars

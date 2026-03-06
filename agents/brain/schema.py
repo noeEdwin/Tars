@@ -24,3 +24,4 @@ class TarsState(TypedDict):
     selected_role: Optional[str]
     scene_context: Optional[str]
     user_role: Optional[str]
+    selected_source: Optional[str] # Or doc_id, useful for fetching DB personas
