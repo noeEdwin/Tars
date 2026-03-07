@@ -10,11 +10,12 @@ from dotenv import load_dotenv
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from brain.chains import get_embeddings_model
+from brain.identity_agent import extract_cast_from_text
 from dataBase.connection import get_db_connection
 
 load_dotenv()
 
-def ingest_pdf(file_path: str):
+def ingest_pdf(file_path: str, user_id: int = None):
     """
     Reads a PDF file, splits it into chunks, generates embeddings,
     and stores them in the document_store table.
@@ -62,14 +63,38 @@ def ingest_pdf(file_path: str):
         
         inserted_count = 0
         for chunk, embedding in zip(chunks, embeddings):
-            query = """
-                INSERT INTO document_store (filename, content, embedding)
-                VALUES (%s, %s, %s)
-            """
-            cur.execute(query, (filename, chunk, embedding))
+            if user_id is not None:
+                query = """
+                    INSERT INTO document_store (filename, content, embedding, user_id)
+                    VALUES (%s, %s, %s, %s)
+                """
+                cur.execute(query, (filename, chunk, embedding, user_id))
+            else:
+                query = """
+                    INSERT INTO document_store (filename, content, embedding)
+                    VALUES (%s, %s, %s)
+                """
+                cur.execute(query, (filename, chunk, embedding))
             inserted_count += 1
             
         conn.commit()
+        
+        # Determine the doc_id to run Layer A Cast Sweep
+        try:
+            if user_id is not None:
+                cur.execute("SELECT id FROM document_store WHERE filename = %s AND user_id = %s LIMIT 1", (filename, user_id))
+            else:
+                cur.execute("SELECT id FROM document_store WHERE filename = %s LIMIT 1", (filename,))
+            row = cur.fetchone()
+            
+            if row:
+                doc_id = row[0]
+                # Combine first ~3000 chars of the text to give to the Identity Agent for Cast Sweep
+                sweep_text = text[:3000] 
+                extract_cast_from_text(sweep_text, doc_id)
+        except Exception as e:
+            print(f"⚠️ Could not perform Cast Sweep: {e}")
+            
         cur.close()
         conn.close()
         
