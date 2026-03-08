@@ -17,64 +17,13 @@ load_dotenv()
 
 from agents.brain.nodes import workflow, config
 from agents.RAG.ingest_document import ingest_pdf
-from agents.RAG.save_memory import get_db_uri, save_memory
+from agents.RAG.save_memory import get_db_uri, save_long_term_memory
 from ChatMessage.infraestructure.stt.openai_stt import record_and_transcribe
 from langgraph.checkpoint.postgres import PostgresSaver
-from dataBase.connection import get_db_connection
-
-def get_user_id_from_username(username: str):
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT id FROM users WHERE username = %s LIMIT 1", (username,))
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        return row[0] if row else None
-    except Exception as e:
-        print(f"Error fetching user_id for {username}: {e}")
-        return None
-
-def get_roleplay_contexts(user_id: str):
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        # Get distinct filenames
-        cur.execute("SELECT DISTINCT filename FROM document_store WHERE user_id = %s", (int(user_id),))
-        docs = [row[0] for row in cur.fetchall()]
-        cur.close()
-        conn.close()
-        return docs
-    except Exception as e:
-        print(f"Error fetching from document_store: {e}")
-        return []
-
-def get_scene_from_filename(user_id: str, filename: str):
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT id, content FROM document_store WHERE user_id = %s AND filename = %s ORDER BY id LIMIT 3", (int(user_id), filename))
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
-        
-        doc_id = rows[0][0] if rows else None
-        chunks = [row[1] for row in rows]
-        excerpt = "\n".join(chunks)
-        
-        return doc_id, f"Roleplay based on document: {filename}\nExcerpt:\n{excerpt}"
-    except Exception as e:
-        print(f"Error fetching scene content: {e}")
-        return None, filename
+from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename
+from dataBase.user_management import get_or_create_active_conversation
 
 def main():
-    print("🤖 Tars CLI - Multi-Modal Edition")
-    print("commands:")
-    print("  /upload <path_to_pdf>  - Ingest a PDF file")
-    print("  /voice                 - Toggle Voice Input (STT)")
-    print("  /text                  - Toggle Text Input")
-    print("  /exit, quit            - Quit")
-    print("-" * 50)
 
     DB_URI = get_db_uri()
     
@@ -153,6 +102,8 @@ def main():
         current_mode = "tars_normal"
         print("\n✅ Normal Mode Started. Tars is your HSK tutor.")
         
+    conversation_id = get_or_create_active_conversation(int(user_id), current_mode)
+        
     # Update config with new thread_id
     config["configurable"]["thread_id"] = thread_id
 
@@ -166,6 +117,7 @@ def main():
             current_state_update = {
                 "user_mode": "tars_roleplay",
                 "active_expert": "tars_roleplay",
+                "user_id": int(user_id),
                 "scene_context": scene,
                 "user_role": user_role,
                 "selected_role": tars_role,
@@ -182,7 +134,7 @@ def main():
                         if tc['name'] == 'TarsResponse':
                             final_answer = tc['args'].get('message', 'No message content')
                             print(f"Tars ({tars_role}): {final_answer}")
-                            save_memory("assistant", final_answer)
+                            save_long_term_memory(conversation_id, "assistant", final_answer)
                 elif isinstance(last_msg, AIMessage) and not getattr(last_msg, 'tool_calls', None):
                     print(f"Tars ({tars_role}): {last_msg.content}")
 
@@ -240,12 +192,13 @@ def main():
                 continue
 
             # Standard Chat Interaction
-            save_memory("user", user_input)
+            save_long_term_memory(conversation_id, "user", user_input)
             
             # Formally declare the user mode in the state payload 
             current_state_update = {
                 "user_mode": current_mode,
                 "active_expert": current_mode,
+                "user_id": int(user_id),
                 "messages": [HumanMessage(content=user_input)]
             }
             
@@ -270,7 +223,7 @@ def main():
                         if tc['name'] == 'TarsResponse':
                             final_answer = tc['args'].get('message', 'No message content')
                             print(f"Tars: {final_answer}")
-                            save_memory("assistant", final_answer)
+                            save_long_term_memory(conversation_id, "assistant", final_answer)
                 
                 # Logic for TEXT RESPONSES
                 if isinstance(msg, AIMessage) and not getattr(msg, 'tool_calls', None):

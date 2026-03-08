@@ -100,6 +100,19 @@ def actor_node(state: TarsState) -> dict:
 
     # RAG INTEGRATION (Conditional to save latency)
     last_user_msg = state["messages"][-1].content
+    user_id = state.get("user_id")
+
+    # LONG-TERM VECTOR MEMORY (Isolated by user)
+    memory_context = ""
+    if user_id and len(last_user_msg) > 5:
+        from RAG.save_memory import retrieve_user_memory
+        try:
+            memories = retrieve_user_memory(int(user_id), last_user_msg, limit=3)
+            if memories:
+                memory_context = "\n=== RELEVANT PAST MEMORIES ===\n" + "\n".join(memories) + "\n==============================\n"
+        except Exception as e:
+            print(f"Memory Retrieval Error: {e}")
+
     # Only retrieve if message is substantial (not just "ok" or "hello")
     if len(last_user_msg) > 10:
         try:
@@ -107,12 +120,37 @@ def actor_node(state: TarsState) -> dict:
             context_docs = retrieve_knowledge(last_user_msg)
             if context_docs:
                 if isinstance(context_docs, list):
-                    context_docs = "\n".join([f"- {item.get('content', '')}" for item in context_docs if isinstance(item, dict)])
+                    formatted_docs = []
+                    for item in context_docs:
+                        if isinstance(item, dict):
+                            # Default handler for generic nodes
+                            if 'content' in item:
+                                formatted_docs.append(f"- {item.get('content', '')}")
+                            # New handler for HSK Grammar Base
+                            elif 'contenido_zh' in item:
+                                zh = item.get('contenido_zh', '')
+                                pinyin = item.get('pinyin', '')
+                                trad = item.get('traduccion_es', '')
+                                pos = item.get('pos', '')
+                                grammar = item.get('grammar_ref', '')
+                                
+                                node_str = f"- {zh} ({pinyin}) - Significado: {trad}"
+                                if pos:
+                                    node_str += f", POS: {pos}"
+                                if grammar:
+                                    node_str += f", Regla HSK: {grammar}"
+                                    
+                                formatted_docs.append(node_str)
+                                
+                    context_docs = "\n".join(formatted_docs)
                 protocol_text = protocol_text.replace("{context}", context_docs)
             else:
                 protocol_text = protocol_text.replace("{context}", "No relevant memories found for this interaction.")
         except Exception as e:
             print(f"RAG Error (Ignored): {e}")
+            
+    if memory_context:
+        protocol_text += f"\n\n{memory_context}"
         
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
     

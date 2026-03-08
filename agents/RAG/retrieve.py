@@ -17,31 +17,29 @@ def retrieve_knowledge(user_query: str) -> list[dict]:
         cur = conn.cursor()
         
         # 2. Ejecutar búsqueda de similitud con nombres de columnas actualizados (Supabase)
-        # Se usa 'content' en lugar de 'contenido_zh' para coincidir con la migración.
         query = """
             WITH ranked_knowledge AS (
                 SELECT 
-                    content,
+                    contenido_zh,
                     pinyin,
-                    translation_es,
-                    hsk_level,
+                    traduccion_es,
+                    nivel_hsk,
+                    pos,
+                    grammar_ref,
                     1 - (embedding <=> %s::vector) AS cosine_similarity,
                     ROW_NUMBER() OVER (
-                        PARTITION BY content 
+                        PARTITION BY contenido_zh 
                         ORDER BY 1 - (embedding <=> %s::vector) DESC
                     ) as rn
-                FROM public.knowledge_base
+                FROM public.base_conocimiento
                 WHERE 1 - (embedding <=> %s::vector) >= %s
             )
-            SELECT content, pinyin, translation_es, hsk_level, cosine_similarity
+            SELECT contenido_zh, pinyin, traduccion_es, nivel_hsk, pos, grammar_ref, cosine_similarity
             FROM ranked_knowledge 
             WHERE rn = 1 
             ORDER BY cosine_similarity DESC
             LIMIT 5;
         """
-        
-        # Nota: Asegúrate de que tu tabla en Supabase tenga estas columnas:
-        # content, pinyin, translation_es, hsk_level
         
         cur.execute(query, (
             user_question_embedding,
@@ -58,11 +56,13 @@ def retrieve_knowledge(user_query: str) -> list[dict]:
         knowledge_list = []
         for row in results:
             knowledge_list.append({
-                "content": row[0],
+                "contenido_zh": row[0],
                 "pinyin": row[1],
-                "translation": row[2],
+                "traduccion_es": row[2],
                 "hsk_level": row[3],
-                "similarity": row[4]
+                "pos": row[4],
+                "grammar_ref": row[5],
+                "similarity": row[6]
             })
             
         return knowledge_list

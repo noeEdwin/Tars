@@ -1,0 +1,518 @@
+ID,lesson_id,contenido_zh,Pinyin,traduccion_es,POS,grammar_ref,titulo_es_leccion
+L1-0001,12.0,爱,ài,amar,V,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0002,0.0,爱好,àihào,pasatiempo,V/N,,Vocabulario General
+L1-0003,0.0,八,bā,ocho,Num,,Vocabulario General
+L1-0004,0.0,爸爸,bàba,papá,N,,Vocabulario General
+L1-0004,0.0,爸,bà,papá,N,,Vocabulario General
+L1-0005,13.0,吧,ba,partícula de sugerencia,Aux,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0006,0.0,白,bái,blanco,Adj,,Vocabulario General
+L1-0007,0.0,白天,báitiān,día,N,,Vocabulario General
+L1-0008,1.1,百,bǎi,cien,Num,,Hola
+L1-0009,8.0,班,bān,clase,N/M,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0010,0.0,半,bàn,mitad,Num,,Vocabulario General
+L1-0011,0.0,半年,bàn nián,medio año,,,Vocabulario General
+L1-0012,0.0,半天,bàntiān,medio día,,,Vocabulario General
+L1-0013,0.0,帮,bāng,ayudar,V,,Vocabulario General
+L1-0014,0.0,帮忙,bāngmáng,ayuda,,,Vocabulario General
+L1-0015,10.0,包,bāo,bolso,N/M/V,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0016,0.0,包子,bāozi,bollo al vapor,N,,Vocabulario General
+L1-0017,0.0,杯,bēi,taza,M,,Vocabulario General
+L1-0018,15.0,杯子,bēizi,vaso,N,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0019,0.0,北,běi,norte,N,,Vocabulario General
+L1-0020,0.0,北边,běibian,lado norte,N,,Vocabulario General
+L1-0021,11.0,北京,Běijīng,pekín,N,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0022,2.0,本,běn,libro,M,,Gracias
+L1-0023,0.0,本子,běnzi,cuaderno,N,,Vocabulario General
+L1-0024,1.1,比,bǐ,comparar,Prep/V,,Hola
+L1-0025,0.0,别,bié,no,Adv,,Vocabulario General
+L1-0026,0.0,别的,biéde,otros,Pron,,Vocabulario General
+L1-0027,0.0,别人,biérén,otras personas,Pron,,Vocabulario General
+L1-0028,0.0,病,bìng,enfermedad,N/V,,Vocabulario General
+L1-0029,0.0,病人,bìngrén,paciente,N,,Vocabulario General
+L1-0030,0.0,不大,bù dà,no muy,,,Vocabulario General
+L1-0031,0.0,不对,bùduì,incorrecto,Adj,,Vocabulario General
+L1-0032,2.0,不客气,bù kèqì,de nada,,,Gracias
+L1-0033,0.0,不用,bùyòng,no es necesario,Adv,,Vocabulario General
+L1-0034,1.1,不,bù,no,Adv,,Hola
+L1-0035,0.0,菜,cài,verdura,N,,Vocabulario General
+L1-0036,0.0,茶,chá,té,N,,Vocabulario General
+L1-0037,0.0,差,chà,faltar,V/Adj,,Vocabulario General
+L1-0038,0.0,常,cháng,a menudo,Adv,,Vocabulario General
+L1-0039,0.0,常常,chángcháng,frecuentemente,Adv,,Vocabulario General
+L1-0040,0.0,唱,chàng,cantar,V,,Vocabulario General
+L1-0041,0.0,唱歌,chànggē,cantar canciones,,,Vocabulario General
+L1-0042,5.0,车,chē,coche,N,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0043,0.0,车票,chēpiào,billete de autobús,N,,Vocabulario General
+L1-0044,0.0,车上,chē shang,en el coche,,,Vocabulario General
+L1-0045,6.0,车站,chēzhàn,estación,N,G1.2 (Verbos Modales),Sé hablar chino
+L1-0046,8.0,吃,chī,comer,V,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0047,11.0,吃饭,chīfàn,comer,,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0048,6.0,出,chū,salir,V,G1.2 (Verbos Modales),Sé hablar chino
+L1-0049,0.0,出来,chūlái,salir,,,Vocabulario General
+L1-0050,0.0,出去,chūqù,salir,,,Vocabulario General
+L1-0051,0.0,穿,chuān,ponerse (ropa),V,,Vocabulario General
+L1-0052,0.0,床,chuáng,cama,N,,Vocabulario General
+L1-0053,0.0,次,cì,clasificador para eventos,M,,Vocabulario General
+L1-0054,5.0,从,cóng,desde,Prep,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0055,0.0,错,cuò,incorrecto / error,Adj/N,,Vocabulario General
+L1-0056,13.0,打,dǎ,golpear / jugar (deportes),V,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0057,0.0,打车,dǎchē,tomar un taxi,,,Vocabulario General
+L1-0058,9.0,打电话,dǎ diànhuà,llamar por teléfono,,G1.4 (Pronombres Interrogativos) | G1.1 (Sustantivos de Posición),¿Dónde trabaja tu hijo?
+L1-0059,0.0,打开,dǎkāi,abrir,,,Vocabulario General
+L1-0060,0.0,打球,dǎ qiú,jugar a la pelota,,,Vocabulario General
+L1-0061,2.0,大,dà,grande,Adj,,Gracias
+L1-0062,0.0,大学,dàxué,universidad,N,,Vocabulario General
+L1-0063,0.0,大学生,dàxuéshēng,estudiante universitario,N,,Vocabulario General
+L1-0064,0.0,到,dào,llegar,V,,Vocabulario General
+L1-0065,0.0,得到,dédào,obtener,,,Vocabulario General
+L1-0066,5.0,地,de,partícula para adverbios,Aux,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0067,6.0,的,de,partícula posesiva,Aux,G1.2 (Verbos Modales),Sé hablar chino
+L1-0068,0.0,等,děng,esperar,V,,Vocabulario General
+L1-0069,5.0,地,dì,suelo / tierra,N,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0070,15.0,地点,dìdiǎn,lugar (sitio específico),N,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0071,0.0,地方,dìfang,lugar (en general),N,,Vocabulario General
+L1-0072,0.0,地上,dìshang,en el suelo,,,Vocabulario General
+L1-0073,0.0,地图,dìtú,mapa,N,,Vocabulario General
+L1-0074,0.0,弟弟,dìdi,hermano menor,N,,Vocabulario General
+L1-0074,0.0,弟,dì,hermano menor,N,,Vocabulario General
+L1-0075,0.0,第,dì,prefijo ordinal,Prefix,,Vocabulario General
+L1-0075,0.0,第二,dì-èr,segundo,Num,,Vocabulario General
+L1-0076,1.1,点,diǎn,punto / gota / marcar / hora,M/V/N,,Hola
+L1-0077,11.0,电,diàn,electricidad,N,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0078,13.0,电话,diànhuà,teléfono,N,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0079,15.0,电脑,diànnǎo,computadora,N,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0080,13.0,电视,diànshì,televisión,N,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0081,0.0,电视机,diànshìjī,televisor,N,,Vocabulario General
+L1-0082,11.0,电影,diànyǐng,película,N,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0083,14.0,电影院,diànyǐngyuàn,cine,N,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0084,6.0,东,dōng,este,N,G1.2 (Verbos Modales),Sé hablar chino
+L1-0085,0.0,东边,dōngbian,lado este,N,,Vocabulario General
+L1-0086,13.0,东西,dōngxi,cosa,N,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0087,0.0,动,dòng,moverse,V,,Vocabulario General
+L1-0088,0.0,动作,dòngzuò,movimiento / acción,N,,Vocabulario General
+L1-0089,14.0,都,dōu,ambos / todo,Adv,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0090,6.0,读,dú,leer,V,G1.2 (Verbos Modales),Sé hablar chino
+L1-0091,0.0,读书,dúshū,estudiar,,,Vocabulario General
+L1-0092,10.0,对,duì,correcto,Adj,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0093,1.1,对不起,duìbuqǐ,perdón / disculparse,V,,Hola
+L1-0094,5.0,多,duō,mucho / cuánto,Adj/Pron,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0095,8.0,多少,duōshao,cuánto / cuántos,Pron,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0096,0.0,饿,è,hambriento,Adj/V,,Vocabulario General
+L1-0097,9.0,儿子,érzi,hijo,N,G1.4 (Pronombres Interrogativos) | G1.1 (Sustantivos de Posición),¿Dónde trabaja tu hijo?
+L1-0098,1.1,二,èr,dos,Num,,Hola
+L1-0099,12.0,饭,fàn,comida,N,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0100,0.0,饭店,fàndiàn,restaurante,N,,Vocabulario General
+L1-0101,0.0,房间,fángjiān,habitación,N,,Vocabulario General
+L1-0102,0.0,房子,fángzi,casa,N,,Vocabulario General
+L1-0103,0.0,放,fàng,poner,V,,Vocabulario General
+L1-0104,0.0,放假,fàngjià,tener vacaciones,,,Vocabulario General
+L1-0105,0.0,放学,fàngxué,salir de la escuela,,,Vocabulario General
+L1-0106,15.0,飞,fēi,volar,V,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0107,15.0,飞机,fēijī,avión,N,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0108,0.0,非常,fēicháng,muy,Adv,,Vocabulario General
+L1-0109,0.0,分,fēn,minuto,N/M,,Vocabulario General
+L1-0110,0.0,风,fēng,viento,N,,Vocabulario General
+L1-0111,0.0,干,gān,seco,Adj,,Vocabulario General
+L1-0112,0.0,干净,gānjìng,limpio,Adj,,Vocabulario General
+L1-0113,0.0,干,gàn,hacer,V,,Vocabulario General
+L1-0114,0.0,干什么,gàn shénme,hacer qué,,,Vocabulario General
+L1-0115,10.0,高,gāo,alto,Adj,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0116,15.0,高兴,gāoxìng,contento,Adj,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0117,0.0,告诉,gàosu,decir,V,,Vocabulario General
+L1-0118,0.0,哥哥,gēge,hermano mayor,N,,Vocabulario General
+L1-0118,0.0,哥,gē,hermano mayor,N,,Vocabulario General
+L1-0119,0.0,歌,gē,canción,N,,Vocabulario General
+L1-0120,8.0,个,gè,clasificador para objetos generales,M,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0121,13.0,给,gěi,dar,V/Prep,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0122,0.0,跟,gēn,con,Prep/Conj/V,,Vocabulario General
+L1-0123,9.0,工人,gōngrén,obrero,N,G1.4 (Pronombres Interrogativos) | G1.1 (Sustantivos de Posición),¿Dónde trabaja tu hijo?
+L1-0124,9.0,工作,gōngzuò,trabajar,V/N,G1.4 (Pronombres Interrogativos) | G1.1 (Sustantivos de Posición),¿Dónde trabaja tu hijo?
+L1-0125,0.0,关,guān,cerrar,V,,Vocabulario General
+L1-0126,0.0,关上,guānshang,cerrar,,,Vocabulario General
+L1-0127,0.0,贵,guì,caro,Adj,,Vocabulario General
+L1-0128,1.1,国,guó,país,N,,Hola
+L1-0129,0.0,国家,guójiā,país,N,,Vocabulario General
+L1-0130,0.0,国外,guó wài,extranjero,,,Vocabulario General
+L1-0131,0.0,过,guò,pasar,V,,Vocabulario General
+L1-0132,14.0,还,hái,todavía,Adv,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0133,0.0,还是,háishi,o,Adv/Conj,,Vocabulario General
+L1-0134,0.0,还有,hái yǒu,además,,,Vocabulario General
+L1-0135,0.0,孩子,háizi,niño,N,,Vocabulario General
+L1-0136,6.0,汉语,Hànyǔ,idioma chino,N,G1.2 (Verbos Modales),Sé hablar chino
+L1-0137,0.0,汉字,Hànzì,carácter chino,N,,Vocabulario General
+L1-0138,1.1,好,hǎo,bueno,Adj,,Hola
+L1-0139,6.0,好吃,hǎochī,delicioso,Adj,G1.2 (Verbos Modales),Sé hablar chino
+L1-0140,12.0,好看,hǎokàn,bonito,Adj,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0141,0.0,好听,hǎotīng,agradable al oído,Adj,,Vocabulario General
+L1-0142,0.0,好玩儿,hǎowánr,divertido,Adj,,Vocabulario General
+L1-0143,7.0,号,hào,número,N/M,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0144,8.0,喝,hē,beber,V,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0145,10.0,和,hé,y,Prep/Conj,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0146,6.0,很,hěn,muy,Adv,G1.2 (Verbos Modales),Sé hablar chino
+L1-0147,14.0,后,hòu,detrás,N,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0148,0.0,后边,hòubian,parte de atrás,N,,Vocabulario General
+L1-0149,0.0,后天,hòutiān,pasado mañana,N,,Vocabulario General
+L1-0150,0.0,花,huā,flor,N,,Vocabulario General
+L1-0151,0.0,话,huà,palabra,N,,Vocabulario General
+L1-0152,0.0,坏,huài,malo,Adj,,Vocabulario General
+L1-0153,14.0,还,huán,devolver,V,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0154,3.0,回,huí,regresar,V,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0155,0.0,回答,huídá,responder,V/N,,Vocabulario General
+L1-0156,0.0,回到,huídào,volver a,V,,Vocabulario General
+L1-0157,0.0,回家,huí jiā,ir a casa,,,Vocabulario General
+L1-0158,14.0,回来,huílái,volver,,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0159,0.0,回去,huíqù,regresar,,,Vocabulario General
+L1-0160,15.0,会,huì,saber,V,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0161,14.0,火车,huǒchē,tren,N,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0162,6.0,机场,jīchǎng,aeropuerto,N,G1.2 (Verbos Modales),Sé hablar chino
+L1-0163,0.0,机票,jīpiào,billete de avión,N,,Vocabulario General
+L1-0164,0.0,鸡蛋,jīdàn,huevo,N,,Vocabulario General
+L1-0165,11.0,几,jǐ,cuántos,Num/Pron,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0166,0.0,记,jì,memorizar,V,,Vocabulario General
+L1-0167,0.0,记得,jìde,recordar,V,,Vocabulario General
+L1-0168,0.0,记住,jìzhù,recordar,,,Vocabulario General
+L1-0169,5.0,家,jiā,hogar,N/M,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0170,0.0,家里,jiā li,en casa,,,Vocabulario General
+L1-0171,0.0,家人,jiārén,familia,N,,Vocabulario General
+L1-0172,9.0,间,jiān,habitación,M,G1.4 (Pronombres Interrogativos) | G1.1 (Sustantivos de Posición),¿Dónde trabaja tu hijo?
+L1-0173,2.0,见,jiàn,ver,V,,Gracias
+L1-0174,0.0,见面,jiànmiàn,reunirse,,,Vocabulario General
+L1-0175,0.0,教,jiāo,enseñar,V,,Vocabulario General
+L1-0176,5.0,叫,jiào,llamar,V,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0177,0.0,教学楼,jiàoxuélóu,edificio de enseñanza,N,,Vocabulario General
+L1-0178,0.0,姐姐,jiějie,hermana mayor,N,,Vocabulario General
+L1-0178,0.0,姐,jiě,hermana,N,,Vocabulario General
+L1-0179,0.0,介绍,jièshào,presentar,V,,Vocabulario General
+L1-0180,5.0,今年,jīnnián,este año,N,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0181,7.0,今天,jīntiān,hoy,N,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0182,0.0,进,jìn,entrar,V,,Vocabulario General
+L1-0183,0.0,进来,jìnlái,entrar,,,Vocabulario General
+L1-0184,0.0,进去,jìnqù,entrar,,,Vocabulario General
+L1-0185,0.0,九,jiǔ,nueve,Num,,Vocabulario General
+L1-0186,0.0,就,jiù,simplemente,Adv,,Vocabulario General
+L1-0187,0.0,觉得,juéde,sentir,V,,Vocabulario General
+L1-0188,14.0,开,kāi,abrir,V,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0189,14.0,开车,kāichē,conducir,,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0190,0.0,开会,kāihuì,tener una reunión,,,Vocabulario General
+L1-0191,0.0,开玩笑,kāi wánxiào,bromear,,,Vocabulario General
+L1-0192,13.0,看,kàn,mirar,V,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0193,0.0,看病,kànbìng,ir al médico,,,Vocabulario General
+L1-0194,0.0,看到,kàndào,ver,,,Vocabulario General
+L1-0195,14.0,看见,kànjiàn,ver,,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0196,0.0,考,kǎo,examinar,V,,Vocabulario General
+L1-0197,0.0,考试,kǎoshì,examen,,,Vocabulario General
+L1-0198,0.0,渴,kě,sediento,Adj,,Vocabulario General
+L1-0199,9.0,课,kè,clase,N,G1.4 (Pronombres Interrogativos) | G1.1 (Sustantivos de Posición),¿Dónde trabaja tu hijo?
+L1-0200,0.0,课本,kèběn,libro de texto,N,,Vocabulario General
+L1-0201,0.0,课文,kèwén,texto de la lección,N,,Vocabulario General
+L1-0202,2.0,口,kǒu,boca,M/N,,Gracias
+L1-0203,8.0,块,kuài,yuan (unidad monetaria),N/M,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0204,0.0,快,kuài,rápido,Adj/Adv,,Vocabulario General
+L1-0205,12.0,来,lái,venir,V,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0206,0.0,来到,láidào,llegar,V,,Vocabulario General
+L1-0207,0.0,老,lǎo,viejo,Adj,,Vocabulario General
+L1-0208,0.0,老人,lǎorén,persona mayor,N,,Vocabulario General
+L1-0209,0.0,老师,lǎoshī,profesor,N,,Vocabulario General
+L1-0210,3.0,了,le,partícula de cambio de estado,Aux,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0211,0.0,累,lèi,cansado,Adj,,Vocabulario General
+L1-0212,12.0,冷,lěng,frío,Adj,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0213,10.0,里,lǐ,interior,N,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0213,10.0,里,lǐ,interior,N,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0214,0.0,里边,lǐbian,adentro,N,,Vocabulario General
+L1-0215,0.0,两,liǎng,dos,Num,,Vocabulario General
+L1-0216,0.0,零,líng,cero,Num,,Vocabulario General
+L1-0216,0.0,〇,líng,cero,Num,,Vocabulario General
+L1-0217,1.1,六,liù,seis,Num,,Hola
+L1-0218,0.0,楼,lóu,edificio,N,,Vocabulario General
+L1-0219,0.0,楼上,lóu shàng,piso de arriba,,,Vocabulario General
+L1-0220,0.0,楼下,lóu xià,piso de abajo,,,Vocabulario General
+L1-0221,0.0,路,lù,camino,N/M,,Vocabulario General
+L1-0222,0.0,路口,lùkǒu,intersección,N,,Vocabulario General
+L1-0223,0.0,路上,lùshang,en el camino,N,,Vocabulario General
+L1-0224,2.0,妈妈,māma,mamá,N,,Gracias
+L1-0224,0.0,妈,mā,mamá,N,,Vocabulario General
+L1-0225,0.0,马路,mǎlù,calle,N,,Vocabulario General
+L1-0226,0.0,马上,mǎshàng,inmediatamente,Adv,,Vocabulario General
+L1-0227,3.0,吗,ma,partícula interrogativa,Aux,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0228,13.0,买,mǎi,comprar,V,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0229,0.0,慢,màn,lento,Adj,,Vocabulario General
+L1-0230,0.0,忙,máng,ocupado,Adj,,Vocabulario General
+L1-0231,0.0,毛,máo,mao (décima parte de un yuan),M,,Vocabulario General
+L1-0232,10.0,没,méi,no,Adv/V,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0233,0.0,没关系,méi guānxi,no importa,,,Vocabulario General
+L1-0234,0.0,没什么,méi shénme,no es nada,,,Vocabulario General
+L1-0235,0.0,没事儿,méishìr,no pasa nada,,,Vocabulario General
+L1-0236,0.0,没有,méiyǒu,no tener,V/Adv,,Vocabulario General
+L1-0237,0.0,妹妹,mèimei,hermana menor,N,,Vocabulario General
+L1-0237,0.0,妹,mèi,hermana menor,N,,Vocabulario General
+L1-0238,3.0,门,mén,puerta,N/M,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0239,0.0,门口,ménkǒu,entrada,N,,Vocabulario General
+L1-0240,0.0,门票,ménpiào,entrada (boleto),N,,Vocabulario General
+L1-0241,0.0,们,men,sufijo plural,Suffix,,Vocabulario General
+L1-0241,0.0,朋友们,péngyoumen,amigos (plural),N,,Vocabulario General
+L1-0242,8.0,米饭,mǐfàn,arroz (cocido),N,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0243,0.0,面包,miànbāo,pan,N,,Vocabulario General
+L1-0244,0.0,面条儿,miàntiáor,fideos,N,,Vocabulario General
+L1-0245,3.0,名字,míngzi,nombre,N,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0246,0.0,明白,míngbai,entender / claro,Adj/V,,Vocabulario General
+L1-0247,0.0,明年,míngnián,próximo año,N,,Vocabulario General
+L1-0248,7.0,明天,míngtiān,mañana,N,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0249,0.0,拿,ná,tomar / agarrar,V,,Vocabulario General
+L1-0250,0.0,哪,nǎ,cuál / qué,Pron,,Vocabulario General
+L1-0251,0.0,哪里,nǎlǐ,dónde,Pron,,Vocabulario General
+L1-0251,0.0,哪里,nǎlǐ,dónde,Pron,,Vocabulario General
+L1-0252,0.0,哪儿,nǎr,dónde,Pron,,Vocabulario General
+L1-0253,0.0,哪些,nǎxiē,cuáles,Pron,,Vocabulario General
+L1-0254,0.0,那,nà,ese / aquel,Pron,,Vocabulario General
+L1-0255,0.0,那边,nàbiān,allá / ese lado,Pron,,Vocabulario General
+L1-0256,0.0,那里,nàlǐ,allí,Pron,,Vocabulario General
+L1-0256,0.0,那里,nàlǐ,allí,Pron,,Vocabulario General
+L1-0257,0.0,那儿,nàr,allí,Pron,,Vocabulario General
+L1-0258,0.0,那些,nàxiē,esos / aquellos,Pron,,Vocabulario General
+L1-0259,0.0,奶,nǎi,leche,N,,Vocabulario General
+L1-0260,2.0,奶奶,nǎinai,abuela (paterna),N,,Gracias
+L1-0261,0.0,男,nán,masculino,Adj,,Vocabulario General
+L1-0262,0.0,男孩儿,nánháir,niño,N,,Vocabulario General
+L1-0263,0.0,男朋友,nánpéngyou,novio,N,,Vocabulario General
+L1-0264,0.0,男人,nánrén,hombre,N,,Vocabulario General
+L1-0265,0.0,男生,nánshēng,estudiante masculino,N,,Vocabulario General
+L1-0266,0.0,南,nán,sur,N,,Vocabulario General
+L1-0267,0.0,南边,nánbian,lado sur,N,,Vocabulario General
+L1-0268,0.0,难,nán,difícil,Adj,,Vocabulario General
+L1-0269,7.0,呢,ne,partícula de pregunta suave o continuativa,Aux,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0270,10.0,能,néng,poder (habilidad),V,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0271,1.1,你,nǐ,tú,Pron,,Hola
+L1-0272,8.0,你们,nǐmen,ustedes,Pron,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0273,15.0,年,nián,año (clasificador),M,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0274,1.1,您,nín,usted (formal),Pron,,Hola
+L1-0275,0.0,牛奶,niúnǎi,leche (de vaca),N,,Vocabulario General
+L1-0276,0.0,女,nǚ,femenino,Adj,,Vocabulario General
+L1-0277,5.0,女儿,nǚ'ér,hija,N,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0278,0.0,女孩儿,nǚháir,niña,N,,Vocabulario General
+L1-0279,0.0,女朋友,nǚpéngyou,novia,N,,Vocabulario General
+L1-0280,0.0,女人,nǚrén,mujer,N,,Vocabulario General
+L1-0281,0.0,女生,nǚshēng,estudiante femenina,N,,Vocabulario General
+L1-0282,0.0,旁边,pángbiān,al lado,N,,Vocabulario General
+L1-0283,0.0,跑,pǎo,correr,V,,Vocabulario General
+L1-0284,4.0,朋友,péngyou,amigo,N,G1.4 (Pronombres Interrogativos) | G1.6 (Pronombres Demostrativos),Ella es mi profesora de chino
+L1-0285,0.0,票,piào,boleto / entrada,N,,Vocabulario General
+L1-0286,4.0,七,qī,siete,Num,G1.4 (Pronombres Interrogativos) | G1.6 (Pronombres Demostrativos),Ella es mi profesora de chino
+L1-0287,0.0,起,qǐ,levantarse / comenzar,V,,Vocabulario General
+L1-0288,0.0,起床,qǐchuáng,levantarse de la cama,,,Vocabulario General
+L1-0289,0.0,起来,qǐlái,levantarse (verbo compuesto),,,Vocabulario General
+L1-0289,0.0,起来,qǐlái,levantarse (verbo compuesto),,,Vocabulario General
+L1-0290,0.0,汽车,qìchē,coche,N,,Vocabulario General
+L1-0291,11.0,前,qián,antes (de la hora),N,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0292,0.0,前边,qiánbian,delante,N,,Vocabulario General
+L1-0293,0.0,前天,qiántiān,anteayer,N,,Vocabulario General
+L1-0294,8.0,钱,qián,dinero,N,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0295,0.0,钱包,qiánbāo,cartera,N,,Vocabulario General
+L1-0296,10.0,请,qǐng,por favor (verbo),V,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0297,0.0,请假,qǐngjià,pedir permiso (para ausentarse),,,Vocabulario General
+L1-0298,0.0,请进,qǐng jìn,"pase, por favor",,,Vocabulario General
+L1-0299,7.0,请问,qǐngwèn,"disculpe, por favor (verbo)",V,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0300,0.0,请坐,qǐng zuò,"siéntese, por favor",,,Vocabulario General
+L1-0301,0.0,球,qiú,pelota,N,,Vocabulario General
+L1-0302,14.0,去,qù,ir,V,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0303,0.0,去年,qùnián,el año pasado,N,,Vocabulario General
+L1-0304,12.0,热,rè,caliente / calentarse,Adj/V,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0305,2.0,人,rén,persona,N,,Gracias
+L1-0306,0.0,认识,rènshi,conocer / conocimiento,V/N,,Vocabulario General
+L1-0307,0.0,认真,rènzhēn,"serio, cuidadoso",Adj,,Vocabulario General
+L1-0308,15.0,日,rì,día,N,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0309,0.0,日期,rìqī,fecha,N,,Vocabulario General
+L1-0310,0.0,肉,ròu,carne,N,,Vocabulario General
+L1-0311,1.1,三,sān,tres,Num,,Hola
+L1-0312,0.0,山,shān,montaña,N,,Vocabulario General
+L1-0313,0.0,商场,shāngchǎng,centro comercial,N,,Vocabulario General
+L1-0314,10.0,商店,shāngdiàn,tienda,N,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0315,2.0,上,shàng,arriba / subir,N/V,,Gracias
+L1-0316,0.0,上班,shàngbān,ir a trabajar,,,Vocabulario General
+L1-0317,0.0,上边,shàngbian,parte superior,N,,Vocabulario General
+L1-0318,0.0,上车,shàng chē,subir al vehículo,,,Vocabulario General
+L1-0319,0.0,上次,shàng cì,la última vez,,,Vocabulario General
+L1-0320,0.0,上课,shàngkè,dar clase / asistir a clase,,,Vocabulario General
+L1-0321,0.0,上网,shàngwǎng,navegar por internet,,,Vocabulario General
+L1-0322,13.0,上午,shàngwǔ,mañana (antes del mediodía),N,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0323,0.0,上学,shàngxué,ir a la escuela,,,Vocabulario General
+L1-0324,8.0,少,shǎo,poco / reducir,Adj/V,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0325,4.0,谁,shéi,quién,Pr,G1.4 (Pronombres Interrogativos) | G1.6 (Pronombres Demostrativos),Ella es mi profesora de chino
+L1-0325,4.0,谁,shuí,quién,Pr,G1.4 (Pronombres Interrogativos) | G1.6 (Pronombres Demostrativos),Ella es mi profesora de chino
+L1-0326,0.0,身上,shēnshang,en el cuerpo,N,,Vocabulario General
+L1-0327,12.0,身体,shēntǐ,salud,N,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0328,3.0,什么,shénme,qué,Pron,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0329,0.0,生病,shēngbìng,enfermarse,,,Vocabulario General
+L1-0330,0.0,生气,shēngqì,enfadarse,,,Vocabulario General
+L1-0331,0.0,生日,shēngrì,cumpleaños,N,,Vocabulario General
+L1-0332,1.1,十,shí,diez,Num,,Hola
+L1-0333,14.0,时候,shíhou,momento,N,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0334,0.0,时间,shíjiān,tiempo,N,,Vocabulario General
+L1-0335,0.0,事,shì,asunto,N,,Vocabulario General
+L1-0336,0.0,试,shì,probar,V,,Vocabulario General
+L1-0337,2.0,是,shì,ser,V,,Gracias
+L1-0338,0.0,是不是,shì bu shì,¿es o no es?,,,Vocabulario General
+L1-0339,0.0,手,shǒu,mano,N,,Vocabulario General
+L1-0340,0.0,手机,shǒujī,teléfono móvil,N,,Vocabulario General
+L1-0341,7.0,书,shū,libro,N,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0342,0.0,书包,shūbāo,mochila,N,,Vocabulario General
+L1-0343,0.0,书店,shūdiàn,librería,N,,Vocabulario General
+L1-0344,7.0,树,shù,árbol,N,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0345,5.0,水,shuǐ,agua,N,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0346,12.0,水果,shuǐguǒ,fruta,N,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0347,13.0,睡,shuì,dormir,V,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0348,13.0,睡觉,shuìjiào,dormir (acción),,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0349,6.0,说,shuō,hablar,V,G1.2 (Verbos Modales),Sé hablar chino
+L1-0350,0.0,说话,shuōhuà,hablar (conversar),,,Vocabulario General
+L1-0351,5.0,四,sì,cuatro,Num,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0352,0.0,送,sòng,enviar,V,,Vocabulario General
+L1-0353,5.0,岁,suì,año (de edad),M,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0354,4.0,他,tā,él,Pron,G1.4 (Pronombres Interrogativos) | G1.6 (Pronombres Demostrativos),Ella es mi profesora de chino
+L1-0355,0.0,他们,tāmen,ellos,Pron,,Vocabulario General
+L1-0356,4.0,她,tā,ella,Pron,G1.4 (Pronombres Interrogativos) | G1.6 (Pronombres Demostrativos),Ella es mi profesora de chino
+L1-0357,0.0,她们,tāmen,ellas,Pron,,Vocabulario General
+L1-0358,0.0,太,tài,demasiado,Adv,,Vocabulario General
+L1-0359,1.1,天,tiān,día,N/M,,Hola
+L1-0360,12.0,天气,tiānqì,clima,N,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0361,0.0,听,tīng,escuchar,V,,Vocabulario General
+L1-0362,0.0,听到,tīngdào,oír,,,Vocabulario General
+L1-0363,0.0,听见,tīngjiàn,oír (percibir),,,Vocabulario General
+L1-0364,0.0,听写,tīngxiě,dictado,V,,Vocabulario General
+L1-0365,4.0,同学,tóngxué,compañero de clase,N,G1.4 (Pronombres Interrogativos) | G1.6 (Pronombres Demostrativos),Ella es mi profesora de chino
+L1-0366,0.0,图书馆,túshūguǎn,biblioteca,N,,Vocabulario General
+L1-0367,0.0,外,wài,exterior,N,,Vocabulario General
+L1-0368,0.0,外边,wàibian,afuera,N,,Vocabulario General
+L1-0369,0.0,外国,wàiguó,país extranjero,N,,Vocabulario General
+L1-0370,0.0,外语,wàiyǔ,idioma extranjero,N,,Vocabulario General
+L1-0371,0.0,玩儿,wánr,jugar,V,,Vocabulario General
+L1-0372,0.0,晚,wǎn,tarde,Adj,,Vocabulario General
+L1-0373,0.0,晚饭,wǎnfàn,cena,N,,Vocabulario General
+L1-0374,0.0,晚上,wǎnshang,noche,N,,Vocabulario General
+L1-0375,0.0,网上,wǎng shang,en línea,,,Vocabulario General
+L1-0376,0.0,网友,wǎngyǒu,amigo de internet,N,,Vocabulario General
+L1-0377,0.0,忘,wàng,olvidar,V,,Vocabulario General
+L1-0378,0.0,忘记,wàngjì,olvidar,V,,Vocabulario General
+L1-0379,0.0,问,wèn,preguntar,V,,Vocabulario General
+L1-0380,5.0,我,wǒ,yo,Pron,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0381,11.0,我们,wǒmen,nosotros,Pron,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0382,6.0,五,wǔ,cinco,Num,G1.2 (Verbos Modales),Sé hablar chino
+L1-0383,0.0,午饭,wǔfàn,almuerzo,N,,Vocabulario General
+L1-0384,6.0,西,xī,oeste,N,G1.2 (Verbos Modales),Sé hablar chino
+L1-0385,0.0,西边,xībian,lado oeste,N,,Vocabulario General
+L1-0386,0.0,洗,xǐ,lavar,V,,Vocabulario General
+L1-0387,0.0,洗手间,xǐshǒujiān,baño,N,,Vocabulario General
+L1-0388,13.0,喜欢,xǐhuan,gustar,V,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0389,1.1,下,xià,abajo / bajar,N/V,,Hola
+L1-0390,0.0,下班,xiàbān,salir del trabajo,,,Vocabulario General
+L1-0391,0.0,下边,xiàbian,parte inferior,N,,Vocabulario General
+L1-0392,0.0,下车,xià chē,bajarse del vehículo,,,Vocabulario General
+L1-0393,0.0,下次,xià cì,próxima vez,,,Vocabulario General
+L1-0394,0.0,下课,xiàkè,terminar la clase,,,Vocabulario General
+L1-0395,0.0,下午,xiàwǔ,tarde,N,,Vocabulario General
+L1-0396,0.0,下雨,xià yǔ,llover,,,Vocabulario General
+L1-0397,0.0,先,xiān,primero,Adv,,Vocabulario General
+L1-0398,15.0,先生,xiānsheng,señor,N,G1.36 (Estructura de Énfasis 是...的),Vine en avión
+L1-0399,11.0,现在,xiànzài,ahora,N,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0400,8.0,想,xiǎng,querer / pensar,V,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0401,2.0,小,xiǎo,pequeño,Adj,,Gracias
+L1-0402,5.0,小孩儿,xiǎoháir,niño,N,G1.4 (Pronombres Interrogativos) | G1.46 (Preguntas con partículas de cantidad/lugar),Su hija tiene veinte años este año
+L1-0403,12.0,小姐,xiǎojiě,señorita,N,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0404,0.0,小朋友,xiǎopéngyǒu,niño pequeño,N,,Vocabulario General
+L1-0405,0.0,小时,xiǎoshí,hora,N,,Vocabulario General
+L1-0406,0.0,小学,xiǎoxué,escuela primaria,N,,Vocabulario General
+L1-0407,0.0,小学生,xiǎoxuéshēng,estudiante de primaria,N,,Vocabulario General
+L1-0408,0.0,笑,xiào,reír,V,,Vocabulario General
+L1-0409,0.0,写,xiě,escribir,V,,Vocabulario General
+L1-0410,2.0,谢谢,xièxie,gracias,V,,Gracias
+L1-0411,0.0,新,xīn,nuevo,Adj,,Vocabulario General
+L1-0412,0.0,新年,xīnnián,año nuevo,N,,Vocabulario General
+L1-0413,7.0,星期,xīngqī,semana,N,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0414,0.0,星期日,xīngqīrì,domingo,N,,Vocabulario General
+L1-0415,7.0,星期天,xīngqītiān,domingo,N,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0416,0.0,行,xíng,estar bien / funcionar,V/Adj,,Vocabulario General
+L1-0417,0.0,休息,xiūxi,descansar,V,,Vocabulario General
+L1-0418,13.0,学,xué,aprender,V,G1.42 (Estado Progresivo - 在/正在) | G1.22 (Partícula Modal 吧),Él está aprendiendo a cocinar comida china
+L1-0419,3.0,学生,xuéshēng,estudiante,N,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0420,0.0,学习,xuéxí,estudiar,V,,Vocabulario General
+L1-0421,7.0,学校,xuéxiào,escuela,N,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0422,0.0,学院,xuéyuàn,facultad,N,,Vocabulario General
+L1-0423,0.0,要,yào,querer / necesitar,V,,Vocabulario General
+L1-0424,0.0,爷爷,yéye,abuelo,N,,Vocabulario General
+L1-0425,11.0,也,yě,también,Adv,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0426,0.0,页,yè,página,M,,Vocabulario General
+L1-0427,1.2,一,yī,uno,Num,,Hola
+L1-0428,14.0,衣服,yīfu,ropa,N,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0429,9.0,医生,yīshēng,médico,N,G1.4 (Pronombres Interrogativos) | G1.1 (Sustantivos de Posición),¿Dónde trabaja tu hijo?
+L1-0430,0.0,医院,yīyuàn,hospital,N,,Vocabulario General
+L1-0431,0.0,一半,yībàn,mitad,Num,,Vocabulario General
+L1-0432,0.0,一会儿,yīhuìr,un momento,,,Vocabulario General
+L1-0433,0.0,一块儿,yīkuàir,juntos,N/Adv,,Vocabulario General
+L1-0434,0.0,一下儿,yīxiàr,un poco,,,Vocabulario General
+L1-0435,0.0,一样,yīyàng,igual,Adj,,Vocabulario General
+L1-0436,0.0,一边,yībiān,un lado,N/Adv,,Vocabulario General
+L1-0437,0.0,一点儿,yīdiǎnr,un poco,,,Vocabulario General
+L1-0438,0.0,一起,yīqǐ,juntos,Adv/N,,Vocabulario General
+L1-0439,0.0,一些,yīxiē,algunos,,,Vocabulario General
+L1-0440,0.0,用,yòng,usar,V,,Vocabulario General
+L1-0441,8.0,有,yǒu,tener,V,G1.2 (Verbos Modales) | G1.46 (Preguntas con partículas de cantidad/lugar) | G1.8 (Clasificadores Nominales),Quiero beber té
+L1-0442,0.0,有的,yǒude,algunos,Pron,,Vocabulario General
+L1-0443,0.0,有名,yǒumíng,famoso,,,Vocabulario General
+L1-0444,0.0,有时候,yǒushíhou,a veces,Adv,,Vocabulario General
+L1-0444,0.0,有时,yǒushí,a veces,Adv,,Vocabulario General
+L1-0445,0.0,有些,yǒuxiē,algunos,Pr,,Vocabulario General
+L1-0445,0.0,有一些,yǒuyīxiē,tener algunos,Pr,,Vocabulario General
+L1-0446,0.0,有用,yǒuyòng,ser útil,V,,Vocabulario General
+L1-0447,0.0,右,yòu,derecha,N,,Vocabulario General
+L1-0448,0.0,右边,yòubian,lado derecho,N,,Vocabulario General
+L1-0449,12.0,雨,yǔ,lluvia,N,G1.4 (Pronombres Interrogativos),¿Qué tiempo hará mañana?
+L1-0450,0.0,元,yuán,yuan (unidad monetaria),M,,Vocabulario General
+L1-0451,0.0,远,yuǎn,lejos,Adj,,Vocabulario General
+L1-0452,3.0,月,yuè,mes,N,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0453,0.0,再,zài,de nuevo,Adv,,Vocabulario General
+L1-0454,2.0,再见,zàijiàn,adiós,V,,Gracias
+L1-0455,2.0,在,zài,estar en,V/Prep/Adv,,Gracias
+L1-0456,9.0,在家,zàijiā,estar en casa,V,G1.4 (Pronombres Interrogativos) | G1.1 (Sustantivos de Posición),¿Dónde trabaja tu hijo?
+L1-0457,0.0,早,zǎo,temprano,Adj,,Vocabulario General
+L1-0458,11.0,早饭,zǎofàn,desayuno,N,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0459,0.0,早上,zǎoshang,mañana,N,,Vocabulario General
+L1-0460,6.0,怎么,zěnme,cómo,Pron,G1.2 (Verbos Modales),Sé hablar chino
+L1-0461,11.0,站,zhàn,estación,N,G1.44 (Expresión de Tiempo: Hora),¿Qué hora es ahora?
+L1-0462,0.0,找,zhǎo,buscar,V,,Vocabulario General
+L1-0463,0.0,找到,zhǎodào,encontrar,,,Vocabulario General
+L1-0464,4.0,这,zhè,este,Pron,G1.4 (Pronombres Interrogativos) | G1.6 (Pronombres Demostrativos),Ella es mi profesora de chino
+L1-0465,0.0,这边,zhèbiān,aquí,Pron,,Vocabulario General
+L1-0466,0.0,这里,zhèlǐ,aquí,Pron,,Vocabulario General
+L1-0467,0.0,这儿,zhèr,aquí,Pron,,Vocabulario General
+L1-0468,14.0,这些,zhèxiē,estos,Pron,G1.41 (Estado Completo - 了) | G1.15 (Preposiciones de Tiempo/Lugar),Ella compró bastante ropa
+L1-0469,0.0,着,zhe,partícula de aspecto continuo,Aux,,Vocabulario General
+L1-0470,0.0,真,zhēn,muy,Adv/Adj,,Vocabulario General
+L1-0471,0.0,真的,zhēn de,de verdad,,,Vocabulario General
+L1-0472,0.0,正,zhèng,justo,Adv,,Vocabulario General
+L1-0473,0.0,正在,zhèngzài,estar en proceso de,Adv,,Vocabulario General
+L1-0474,0.0,知道,zhīdào,saber,V,,Vocabulario General
+L1-0475,0.0,知识,zhīshi,conocimiento,N,,Vocabulario General
+L1-0476,3.0,中,zhōng,centro,N,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0477,6.0,中国,Zhōngguó,china,N,G1.2 (Verbos Modales),Sé hablar chino
+L1-0478,3.0,中间,zhōngjiān,en medio,N,G1.4 (Pronombres Interrogativos),¿Cómo te llamas?
+L1-0479,0.0,中文,Zhōngwén,chino (idioma),N,,Vocabulario General
+L1-0480,0.0,中午,zhōngwǔ,mediodía,N,,Vocabulario General
+L1-0481,0.0,中学,zhōngxué,escuela secundaria,N,,Vocabulario General
+L1-0482,0.0,中学生,zhōngxuéshēng,estudiante de secundaria,N,,Vocabulario General
+L1-0483,0.0,重,zhòng,pesado,Adj,,Vocabulario General
+L1-0484,0.0,重要,zhòngyào,importante,Adj,,Vocabulario General
+L1-0485,0.0,住,zhù,vivir,V,,Vocabulario General
+L1-0486,0.0,准备,zhǔnbèi,preparar,V,,Vocabulario General
+L1-0487,10.0,桌子,zhuōzi,mesa,N,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0488,0.0,字,zì,carácter,N,,Vocabulario General
+L1-0489,9.0,子,zi,sufijo nominal,Suffix,G1.4 (Pronombres Interrogativos) | G1.1 (Sustantivos de Posición),¿Dónde trabaja tu hijo?
+L1-0489,10.0,桌子,zhuōzi,mesa,N,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0490,0.0,走,zǒu,caminar,V,,Vocabulario General
+L1-0491,0.0,走路,zǒulù,caminar (andar a pie),,,Vocabulario General
+L1-0492,0.0,最,zuì,más,Adv,,Vocabulario General
+L1-0493,0.0,最好,zuìhǎo,lo mejor,Adv,,Vocabulario General
+L1-0494,0.0,最后,zuìhòu,el final,N,,Vocabulario General
+L1-0495,7.0,昨天,zuótiān,ayer,N,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0496,7.0,左,zuǒ,izquierda,N,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
+L1-0497,0.0,左边,zuǒbian,lado izquierdo,N,,Vocabulario General
+L1-0498,10.0,坐,zuò,sentarse,V,G1.1 (Sustantivos de Posición) | G1.37 (Oraciones de Existencia - 有) | G1.2 (Verbos Modales) | G1.45 (Preguntas con 吗),¿Puedo sentarme aquí?
+L1-0499,0.0,坐下,zuò xia,sentarse (tomar asiento),,,Vocabulario General
+L1-0500,7.0,做,zuò,hacer,V,G1.44 (Expresión de Tiempo: Fecha),¿A qué estamos hoy?
