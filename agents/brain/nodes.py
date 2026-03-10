@@ -101,6 +101,19 @@ def actor_node(state: TarsState) -> dict:
     # RAG INTEGRATION (Conditional to save latency)
     last_user_msg = state["messages"][-1].content
     user_id = state.get("user_id")
+    current_lesson = state.get("current_lesson", 1)
+    
+    # 4. Inject Static JSON Lesson Map ONLY for Normal Mode
+    if expert_type == "tars_normal":
+        from RAG.retrieve import get_lesson_plan_context, get_all_knowledge_for_lesson
+        
+        lesson_blueprint = get_lesson_plan_context(current_lesson)
+        if lesson_blueprint:
+            protocol_text += f"\n\n{lesson_blueprint}"
+            
+        lesson_db_knowledge = get_all_knowledge_for_lesson(current_lesson)
+        if lesson_db_knowledge:
+            protocol_text += f"\n{lesson_db_knowledge}"
 
     # LONG-TERM VECTOR MEMORY (Isolated by user)
     memory_context = ""
@@ -117,7 +130,7 @@ def actor_node(state: TarsState) -> dict:
     if len(last_user_msg) > 10:
         try:
             # We assume retrieve_knowledge handles the vector store query
-            context_docs = retrieve_knowledge(last_user_msg)
+            context_docs = retrieve_knowledge(last_user_msg, current_lesson=current_lesson)
             if context_docs:
                 if isinstance(context_docs, list):
                     formatted_docs = []

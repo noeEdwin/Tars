@@ -28,3 +28,6 @@ class TarsState(TypedDict):
     
     # User Identification for Memory Isolation
     user_id: Optional[int]
+    
+    # Educational Context
+    current_lesson: Optional[int]

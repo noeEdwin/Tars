@@ -111,13 +111,17 @@ def main():
         checkpointer.setup()
         app = workflow.compile(checkpointer=checkpointer)
         
+        snapshot = app.get_state(config)
+        is_empty_thread = not (snapshot.values and "messages" in snapshot.values)
+        
         # Initialize state based on mode
-        if mode_choice == "2":
+        if mode_choice == "2" and is_empty_thread:
             sys_msg_text = f"SYSTEM UPDATE: User has initiated a roleplay.\nSCENE: {scene}\nUSER ROLE: {user_role}\nTARS ROLE: {tars_role}\n\n PLEASE ADOPT THIS PERSONA IMMEDIATELY."
             current_state_update = {
                 "user_mode": "tars_roleplay",
                 "active_expert": "tars_roleplay",
                 "user_id": int(user_id),
+                "current_lesson": 1,
                 "scene_context": scene,
                 "user_role": user_role,
                 "selected_role": tars_role,
@@ -138,7 +142,31 @@ def main():
                 elif isinstance(last_msg, AIMessage) and not getattr(last_msg, 'tool_calls', None):
                     print(f"Tars ({tars_role}): {last_msg.content}")
 
+        elif mode_choice == "1" and is_empty_thread:
+            sys_msg_text = f"SYSTEM UPDATE: A new Chinese learning session has started. Introduce yourself briefly as the HSK Teacher. DO NOT ask the user what they want to learn. State what you are going to teach right now and directly ask them a question or start an exercise to make them speak immediately."
+            current_state_update = {
+                "user_mode": "tars_normal",
+                "active_expert": "tars_normal",
+                "user_id": int(user_id),
+                "current_lesson": 1,
+                "messages": [HumanMessage(content=sys_msg_text)]
+            }
+            # App invoke to get the first greeting from Tars
+            result = app.invoke(current_state_update, config=config)
+            output_messages = result.get("messages", [])
+            if output_messages:
+                last_msg = output_messages[-1]
+                if hasattr(last_msg, 'tool_calls') and last_msg.tool_calls:
+                    for tc in last_msg.tool_calls:
+                        if tc['name'] == 'TarsResponse':
+                            final_answer = tc['args'].get('message', 'No message content')
+                            print(f"Tars: {final_answer}")
+                            save_long_term_memory(conversation_id, "assistant", final_answer)
+                elif isinstance(last_msg, AIMessage) and not getattr(last_msg, 'tool_calls', None):
+                    print(f"Tars: {last_msg.content}")
+
         # Auto-recovery logic from nodes.py
+        # Refresh snapshot after possible initialization
         snapshot = app.get_state(config)
         if snapshot.values and "messages" in snapshot.values:
             last_msg = snapshot.values["messages"][-1]
@@ -199,6 +227,7 @@ def main():
                 "user_mode": current_mode,
                 "active_expert": current_mode,
                 "user_id": int(user_id),
+                "current_lesson": 1,
                 "messages": [HumanMessage(content=user_input)]
             }
             
