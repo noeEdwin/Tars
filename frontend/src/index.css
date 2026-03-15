@@ -1,0 +1,154 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg-dark: #050505;
+  /* Deep, almost pure black */
+  --bg-surface: #100d0e;
+  /* Slightly lighter for cards */
+  --text-main: #ffffff;
+  --text-muted: #8e8e8e;
+
+  --neon-orange: #ffaa00;
+  --neon-pink: #ff2a6d;
+  --neon-red: #f10034;
+  --neon-purple: #b026ff;
+
+  --card-border: rgba(255, 255, 255, 0.05);
+  --card-hover-bg: #161214;
+  --card-hover-border: rgba(255, 255, 255, 0.08);
+
+  --avatar-bg: #f1bfb0;
+  --avatar-shadow: rgba(241, 191, 176, 0.2);
+  --avatar-border: rgba(255, 255, 255, 0.1);
+
+  --streak-bg: rgba(251, 191, 36, 0.1);
+  --streak-border: rgba(251, 191, 36, 0.3);
+
+  --mic-shadow-1: rgba(241, 0, 52, 0.4);
+  --mic-shadow-inset: rgba(255, 42, 109, 0.4);
+  --mic-hover-shadow-1: rgba(241, 0, 52, 0.6);
+  --mic-hover-shadow-inset: rgba(255, 42, 109, 0.5);
+
+  --mode-icon-normal-bg: rgba(248, 113, 113, 0.1);
+  --mode-icon-normal-border: rgba(248, 113, 113, 0.2);
+  --mode-icon-normal-shadow: rgba(248, 113, 113, 0.15);
+  --mode-icon-roleplay-bg: rgba(217, 70, 239, 0.1);
+  --mode-icon-roleplay-border: rgba(217, 70, 239, 0.2);
+  --mode-icon-roleplay-shadow: rgba(217, 70, 239, 0.15);
+
+  --mic-bg: #1a1516;
+
+  --nav-bar-bg: #0c090a;
+  --nav-bar-shadow: rgba(0, 0, 0, 0.5);
+  --nav-item-hover: rgba(255, 255, 255, 0.05);
+  --nav-item-active: rgba(241, 0, 52, 0.1);
+  --container-shadow: rgba(0, 0, 0, 0.5);
+  --arrow-bg: rgba(255, 255, 255, 0.03);
+  --arrow-bg-hover: rgba(255, 255, 255, 0.08);
+
+  font-family: 'Outfit', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: var(--text-main);
+  background-color: var(--bg-dark);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme='light'] {
+  --bg-dark: #f0f2f5;
+  --bg-surface: #ffffff;
+  --text-main: #1a1a1a;
+  --text-muted: #6b7280;
+
+  --neon-orange: #f59e0b;
+  --neon-pink: #e11d48;
+  --neon-red: #dc2626;
+  --neon-purple: #9333ea;
+
+  --card-border: rgba(0, 0, 0, 0.05);
+  --card-hover-bg: #f9fafb;
+  --card-hover-border: rgba(0, 0, 0, 0.1);
+
+  --avatar-bg: #fbcbc0;
+  --avatar-shadow: rgba(251, 203, 192, 0.5);
+  --avatar-border: rgba(0, 0, 0, 0.05);
+
+  --streak-bg: rgba(245, 158, 11, 0.15);
+  --streak-border: rgba(245, 158, 11, 0.3);
+
+  --mic-shadow-1: rgba(220, 38, 38, 0.3);
+  --mic-shadow-inset: rgba(225, 29, 72, 0.3);
+  --mic-hover-shadow-1: rgba(220, 38, 38, 0.5);
+  --mic-hover-shadow-inset: rgba(225, 29, 72, 0.4);
+
+  --mode-icon-normal-bg: rgba(239, 68, 68, 0.15);
+  --mode-icon-normal-border: rgba(239, 68, 68, 0.3);
+  --mode-icon-normal-shadow: rgba(239, 68, 68, 0.2);
+  --mode-icon-roleplay-bg: rgba(217, 70, 239, 0.15);
+  --mode-icon-roleplay-border: rgba(217, 70, 239, 0.3);
+  --mode-icon-roleplay-shadow: rgba(217, 70, 239, 0.2);
+
+  --mic-bg: rgba(239, 68, 68, 0.15);
+
+  --nav-bar-bg: #ffffff;
+  --nav-bar-shadow: rgba(0, 0, 0, 0.1);
+  --nav-item-hover: rgba(0, 0, 0, 0.05);
+  --nav-item-active: rgba(220, 38, 38, 0.1);
+  --container-shadow: rgba(0, 0, 0, 0.1);
+  --arrow-bg: rgba(0, 0, 0, 0.05);
+  --arrow-bg-hover: rgba(0, 0, 0, 0.1);
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body,
+html {
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-dark);
+}
+
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.mobile-container {
+  width: 100%;
+  max-width: 420px;
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-dark);
+  padding: 24px 24px 80px 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 0 50px var(--container-shadow);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+@media (min-width: 421px) {
+  .mobile-container {
+    min-height: 850px;
+    height: 98vh;
+    border-radius: 40px;
+    border: 1px solid var(--card-border);
+    margin: 10px 0;
+  }
+}

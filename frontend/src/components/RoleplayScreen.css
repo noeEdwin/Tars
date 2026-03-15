@@ -1,0 +1,403 @@
+/* Custom CSS variables for the Roleplay Screen imitating Tailwind theme */
+.roleplay-container {
+    --primary: #ED2939;
+    --mexican-pink: #E4007C;
+    --gold-accent: #D4AF37;
+    --slate-100: #f1f5f9;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+
+    font-family: 'Outfit', sans-serif;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    position: relative;
+    z-index: 10;
+    margin-bottom: 40px;
+    /* Space for BottomNav */
+}
+
+/* Specific to Roleplay screen overrides for light mode */
+:root[data-theme='light'] .roleplay-container {
+    --slate-100: #0f172a;
+    --slate-300: #334155;
+    --slate-400: #64748b;
+    --slate-500: #94a3b8;
+}
+
+.rp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0 24px 0;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+}
+
+.icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.icon-btn:hover {
+    background-color: var(--nav-item-hover);
+}
+
+.rp-title {
+    font-family: 'Crimson Pro', serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--slate-100);
+    margin: 0;
+}
+
+.rp-main {
+    flex: 1;
+    padding: 0 4px;
+}
+
+/* Upload Section */
+.upload-section {
+    margin-bottom: 32px;
+    margin-top: 8px;
+}
+
+.upload-btn {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 2px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.upload-bg-glow {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, var(--primary), var(--mexican-pink), var(--gold-accent));
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.upload-btn:hover .upload-bg-glow {
+    opacity: 1;
+}
+
+.upload-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background-color: var(--bg-dark);
+    border-radius: 10px;
+    padding: 16px 24px;
+}
+
+.upload-icon {
+    color: var(--primary);
+    transition: transform 0.3s;
+}
+
+.upload-btn:hover .upload-icon {
+    transform: scale(1.1);
+}
+
+.upload-text {
+    font-family: 'Crimson Pro', serif;
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--slate-100);
+    letter-spacing: 0.5px;
+}
+
+.upload-subtext {
+    text-align: center;
+    font-size: 12px;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--slate-400);
+    margin-top: 12px;
+}
+
+/* List Section */
+.list-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+    margin-bottom: 4px;
+}
+
+.list-title {
+    font-family: 'Crimson Pro', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--slate-300);
+    margin: 0;
+}
+
+.file-badge {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--mexican-pink);
+    background-color: rgba(228, 0, 124, 0.1);
+    padding: 4px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Glass Cards */
+.rp-glass-card {
+    background: var(--bg-surface);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.rp-glass-card:hover {
+    background-color: var(--card-hover-bg);
+}
+
+.glow-circle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 128px;
+    height: 128px;
+    border-radius: 50%;
+    margin-right: -64px;
+    margin-top: -64px;
+    filter: blur(34px);
+}
+
+.glow-primary {
+    background-color: rgba(237, 41, 57, 0.05);
+}
+
+.glow-gold {
+    background-color: rgba(212, 175, 55, 0.05);
+}
+
+.card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.doc-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--slate-100);
+    margin: 0;
+    line-height: 1.25;
+    transition: color 0.2s;
+}
+
+.group-card:hover .title-primary {
+    color: var(--primary);
+}
+
+.group-card:hover .title-gold {
+    color: var(--gold-accent);
+}
+
+.group-card:hover .title-pink {
+    color: var(--mexican-pink);
+}
+
+.doc-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--slate-500);
+    font-size: 12px;
+}
+
+.icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon-primary {
+    background-color: rgba(237, 41, 57, 0.1);
+    color: var(--primary);
+}
+
+.icon-gold {
+    background-color: rgba(212, 175, 55, 0.1);
+    color: var(--gold-accent);
+}
+
+.icon-pink {
+    background-color: rgba(228, 0, 124, 0.1);
+    color: var(--mexican-pink);
+}
+
+.card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--card-border);
+}
+
+.tag-group {
+    display: flex;
+    margin-left: 8px;
+    /* account for negative margin on tags */
+}
+
+.tag {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1px solid var(--bg-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: white;
+    margin-left: -8px;
+}
+
+.tag-js {
+    background-color: var(--slate-700);
+}
+
+.tag-ui {
+    background-color: var(--slate-800);
+}
+
+.tag-tr {
+    background-color: var(--slate-700);
+}
+
+.tag-en {
+    background-color: var(--slate-800);
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #d12030;
+}
+
+.neon-glow-primary {
+    box-shadow: 0 0 15px rgba(237, 41, 57, 0.4);
+}
+
+.btn-gold {
+    background-color: transparent;
+    color: var(--gold-accent);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.btn-gold:hover {
+    background-color: rgba(212, 175, 55, 0.1);
+}
+
+.neon-border-gold {
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+}
+
+.btn-ghost {
+    background-color: var(--nav-item-hover);
+    color: var(--slate-300);
+    border: none;
+}
+
+.btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.last-practiced {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    color: var(--slate-500);
+}
+
+/* Decor */
+.bg-decor {
+    position: fixed;
+    width: 80%;
+    height: 40%;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: -10;
+}
+
+.top-right {
+    top: -10%;
+    right: -20%;
+    background-color: rgba(237, 41, 57, 0.1);
+    filter: blur(120px);
+}
+
+.bottom-left {
+    bottom: -10%;
+    left: -20%;
+    background-color: rgba(228, 0, 124, 0.1);
+    filter: blur(120px);
+}

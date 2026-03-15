@@ -1,0 +1,90 @@
+.mode-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 24px;
+}
+
+.mode-card {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 20px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.mode-card:hover {
+    background-color: var(--card-hover-bg);
+    border: 1px solid var(--card-hover-border);
+    transform: translateY(-2px);
+}
+
+.mode-icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+.normal-mode {
+    background-color: var(--mode-icon-normal-bg);
+    border: 1px solid var(--mode-icon-normal-border);
+    box-shadow: inset 0 0 10px var(--mode-icon-normal-shadow);
+}
+
+.roleplay-mode {
+    background-color: var(--mode-icon-roleplay-bg);
+    border: 1px solid var(--mode-icon-roleplay-border);
+    box-shadow: inset 0 0 10px var(--mode-icon-roleplay-shadow);
+}
+
+.mode-icon {
+    filter: drop-shadow(0 0 6px currentColor);
+}
+
+.mode-text {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.mode-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-main);
+    margin: 0;
+    margin-bottom: 4px;
+}
+
+.mode-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.mode-arrow {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--arrow-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.mode-card:hover .mode-arrow {
+    background-color: var(--arrow-bg-hover);
+}

@@ -1,0 +1,301 @@
+.signin-container {
+    /* Full page — no bottom margin for BottomNav since it's hidden on this view */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 100%;
+    padding: 40px 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background mesh overlay */
+.signin-bg-mesh {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 0% 0%, rgba(255, 51, 51, 0.15) 0%, transparent 35%),
+        radial-gradient(circle at 100% 100%, rgba(228, 0, 124, 0.1) 0%, transparent 35%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.signin-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+}
+
+/* Logo */
+.signin-logo-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.signin-logo-img {
+    width: 200px;
+    height: auto;
+    object-fit: contain;
+}
+
+:root[data-theme='light'] .signin-logo-img {
+    width: 280px;
+}
+
+/* Heading */
+.signin-heading {
+    text-align: center;
+}
+
+.signin-title {
+    font-family: 'Crimson Pro', serif;
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 8px 0;
+    line-height: 1.1;
+}
+
+.signin-subtitle {
+    color: var(--text-muted);
+    font-weight: 300;
+    font-size: 15px;
+    margin: 0;
+}
+
+/* Form */
+.signin-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.signin-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.signin-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4px;
+}
+
+.signin-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-left: 4px;
+}
+
+.signin-forgot {
+    font-size: 12px;
+    font-weight: 600;
+    color: #e4007c;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.signin-forgot:hover {
+    opacity: 0.8;
+}
+
+/* Input wrapper */
+.signin-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    height: 56px;
+    transition: all 0.2s ease;
+}
+
+:root[data-theme='light'] .signin-input-wrapper {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.signin-input-wrapper:focus-within {
+    border-color: rgba(255, 51, 51, 0.5);
+    box-shadow: 0 0 0 2px rgba(255, 51, 51, 0.05);
+}
+
+.signin-input-icon {
+    position: absolute;
+    left: 16px;
+    color: var(--text-muted);
+    pointer-events: none;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+.signin-input-wrapper:focus-within .signin-input-icon {
+    color: #ff3333;
+}
+
+.signin-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-size: 15px;
+    font-family: inherit;
+    padding: 0 48px 0 48px;
+    height: 100%;
+}
+
+.signin-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.4;
+}
+
+.signin-eye-btn {
+    position: absolute;
+    right: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.signin-eye-btn:hover {
+    color: var(--text-main);
+}
+
+/* Sign In Button */
+.signin-btn {
+    width: 100%;
+    height: 56px;
+    background: linear-gradient(to right, #ff3333, #e4007c);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    margin-top: 4px;
+    box-shadow: 0 0 20px rgba(255, 51, 51, 0.3);
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.signin-btn:hover {
+    opacity: 0.9;
+}
+
+.signin-btn:active {
+    transform: scale(0.98);
+}
+
+/* Divider */
+.signin-divider {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 8px 0;
+}
+
+.signin-divider-line {
+    flex: 1;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='light'] .signin-divider-line {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.signin-divider-text {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    white-space: nowrap;
+}
+
+/* Social buttons */
+.signin-social {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.signin-google-btn {
+    width: 100%;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--text-main);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: inherit;
+}
+
+:root[data-theme='light'] .signin-google-btn {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.signin-google-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.signin-google-logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+}
+
+.signin-register-text {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    margin: 0;
+}
+
+.signin-register-link {
+    color: #ffd700;
+    font-weight: 600;
+    text-decoration: none;
+    margin-left: 4px;
+}
+
+.signin-register-link:hover {
+    text-decoration: underline;
+}

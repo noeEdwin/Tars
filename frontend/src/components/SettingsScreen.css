@@ -1,0 +1,247 @@
+.settings-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    position: relative;
+    z-index: 10;
+    margin-bottom: 80px;
+    overflow-y: auto;
+}
+
+/* Header */
+.settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 32px 24px 24px 24px;
+}
+
+.settings-title {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text-main);
+    margin: 0;
+}
+
+/* Main content */
+.settings-main {
+    flex: 1;
+    padding: 0 24px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+/* Section label */
+.settings-section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 0 0 12px 4px;
+}
+
+/* Frosted glass group */
+.settings-group {
+    background: var(--bg-surface);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    overflow: visible;
+    /* overflow: hidden prevented button click events from registering */
+}
+
+/* Single row */
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.settings-row:hover {
+    background-color: var(--nav-item-hover);
+}
+
+.settings-row.border-bottom {
+    border-bottom: 1px solid var(--card-border);
+}
+
+.settings-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icon-primary {
+    background-color: rgba(241, 0, 52, 0.1);
+    color: #f10034;
+}
+
+.icon-muted {
+    background-color: var(--nav-item-hover);
+    color: var(--text-muted);
+}
+
+.settings-row-content {
+    flex: 1;
+}
+
+.settings-row-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.settings-row-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 2px 0 0 0;
+}
+
+/* Voice speed bar */
+.voice-speed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.voice-speed-track {
+    flex: 1;
+    height: 4px;
+    background-color: var(--card-border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.voice-speed-fill {
+    width: 50%;
+    height: 100%;
+    background-color: #f10034;
+    border-radius: 999px;
+}
+
+.voice-speed-label {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+/* Toggle switch */
+.toggle-switch {
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    overflow: visible;
+    padding: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
+    transition: background-color 0.3s ease;
+}
+
+.toggle-on {
+    background-color: #f10034;
+}
+
+.toggle-off {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+:root[data-theme='light'] .toggle-off {
+    background-color: rgba(0, 0, 0, 0.15);
+}
+
+.toggle-thumb {
+    position: absolute;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: white;
+    transition: transform 0.3s ease;
+}
+
+.thumb-on {
+    transform: translateX(24px);
+}
+
+.thumb-off {
+    transform: translateX(4px);
+}
+
+/* Footer */
+.settings-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 16px;
+}
+
+.logout-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(241, 0, 52, 0.2);
+    background-color: transparent;
+    color: #f10034;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.logout-btn:hover {
+    background-color: rgba(241, 0, 52, 0.1);
+}
+
+.settings-version {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    opacity: 0.6;
+    margin: 0;
+}
+
+/* Decorative blurs */
+.settings-decor {
+    position: fixed;
+    width: 256px;
+    height: 256px;
+    border-radius: 50%;
+    background-color: rgba(241, 0, 52, 0.05);
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: -10;
+}
+
+.settings-decor.top-right {
+    top: 0;
+    right: 0;
+}
+
+.settings-decor.bottom-left {
+    bottom: 0;
+    left: 0;
+}
