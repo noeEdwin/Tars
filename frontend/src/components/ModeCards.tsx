@@ -1,17 +1,18 @@
 import { BookOpen, MessageSquare, ChevronRight } from 'lucide-react';
 import './ModeCards.css';
-import type { ViewState } from '../App';
+import type { ViewState, SessionConfig } from '../App';
 
 interface ModeCardsProps {
     setCurrentView: (view: ViewState) => void;
+    startConversation: (config: SessionConfig) => void;
 }
 
-export default function ModeCards({ setCurrentView }: ModeCardsProps) {
+export default function ModeCards({ setCurrentView, startConversation }: ModeCardsProps) {
     return (
         <div className="mode-cards-container">
 
             {/* Normal Mode Card */}
-            <div className="mode-card">
+            <div className="mode-card" onClick={() => startConversation({ mode: 'tars_normal' })}>
                 <div className="mode-icon-box normal-mode">
                     <BookOpen strokeWidth={2.5} size={24} color="#f87171" className="mode-icon" />
                 </div>

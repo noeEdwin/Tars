@@ -10,14 +10,28 @@ import PersonalInfoScreen from './components/PersonalInfoScreen';
 import SignInScreen from './components/SignInScreen';
 import SignUpScreen from './components/SignUpScreen';
 import ForgotPasswordScreen from './components/ForgotPasswordScreen';
+import ConversationContainer from './components/ConversationContainer';
 import './index.css';
 import './App.css';
 
-export type ViewState = 'home' | 'roleplay' | 'profile' | 'settings' | 'personal-info' | 'sign-in' | 'sign-up' | 'forgot-password';
+export type ViewState = 'home' | 'roleplay' | 'profile' | 'settings' | 'personal-info' | 'sign-in' | 'sign-up' | 'forgot-password' | 'conversation';
+
+export interface SessionConfig {
+    mode: 'tars_normal' | 'tars_roleplay';
+    filename?: string;
+    tars_role?: string;
+    user_role?: string;
+}
 
 function App() {
   const [isLightMode, setIsLightMode] = useState(false);
   const [currentView, setCurrentView] = useState<ViewState>('home');
+  const [sessionConfig, setSessionConfig] = useState<SessionConfig>({ mode: 'tars_normal' });
+
+  const startConversation = (config: SessionConfig) => {
+    setSessionConfig(config);
+    setCurrentView('conversation');
+  };
 
   useEffect(() => {
     if (isLightMode) {
@@ -34,13 +48,17 @@ function App() {
       {currentView === 'home' && (
         <>
           <Header isLightMode={isLightMode} toggleTheme={toggleTheme} />
-          <MicButton />
-          <ModeCards setCurrentView={setCurrentView} />
+          <MicButton setCurrentView={setCurrentView} />
+          <ModeCards setCurrentView={setCurrentView} startConversation={startConversation} />
         </>
       )}
 
       {currentView === 'roleplay' && (
-        <RoleplayScreen setCurrentView={setCurrentView} />
+        <RoleplayScreen setCurrentView={setCurrentView} startConversation={startConversation} />
+      )}
+
+      {currentView === 'conversation' && (
+        <ConversationContainer setCurrentView={setCurrentView} sessionConfig={sessionConfig} />
       )}
 
       {currentView === 'profile' && (
@@ -67,7 +85,7 @@ function App() {
         <ForgotPasswordScreen setCurrentView={setCurrentView} />
       )}
 
-      {currentView !== 'sign-in' && currentView !== 'sign-up' && currentView !== 'forgot-password' && currentView !== 'settings' && currentView !== 'personal-info' && (
+      {currentView !== 'sign-in' && currentView !== 'sign-up' && currentView !== 'forgot-password' && currentView !== 'settings' && currentView !== 'personal-info' && currentView !== 'conversation' && (
         <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
       )}
     </div>

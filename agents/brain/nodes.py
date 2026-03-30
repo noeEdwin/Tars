@@ -169,11 +169,8 @@ def actor_node(state: TarsState) -> dict:
     
     response = dynamic_chain.invoke(state)
     
-    if response.content:
-        import threading
-        # We no longer filter for just Chinese. We want the full response with mixed voices.
-        threading.Thread(target=speak_mixed_text, args=(response.content,)).start()
-    
+    # Audio generation delegating to API.py for frontend playback.
+    # We no longer play audio on the server via ffplay.
 
     return {"messages": [response]}
 

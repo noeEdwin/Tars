@@ -1,12 +1,40 @@
-import { ChevronLeft, Info, CloudUpload, Calendar, FileText, Play, CornerDownLeft, History } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ChevronLeft, Info, CloudUpload, Calendar, FileText, Play } from 'lucide-react';
 import './RoleplayScreen.css';
-import type { ViewState } from '../App';
+import type { ViewState, SessionConfig } from '../App';
 
 interface RoleplayScreenProps {
     setCurrentView: (view: ViewState) => void;
+    startConversation: (config: SessionConfig) => void;
 }
 
-export default function RoleplayScreen({ setCurrentView }: RoleplayScreenProps) {
+export default function RoleplayScreen({ setCurrentView, startConversation }: RoleplayScreenProps) {
+    const [files, setFiles] = useState<string[]>([]);
+    
+    useEffect(() => {
+        fetch(`http://${window.location.hostname}:8000/roleplay/files?user_id=1`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.files) setFiles(data.files);
+            })
+            .catch(err => console.error("Error fetching roleplay files:", err));
+    }, []);
+
+    const handleStartSession = (filename: string) => {
+        const userRole = window.prompt("What is your character's role?", "Customer");
+        if (!userRole) return; // User cancelled
+        
+        const tarsRole = window.prompt("What is Tars' character role?", "Barista");
+        if (!tarsRole) return; // User cancelled
+        
+        startConversation({
+            mode: 'tars_roleplay',
+            filename,
+            user_role: userRole,
+            tars_role: tarsRole
+        });
+    };
+
     return (
         <div className="roleplay-container">
             {/* Header */}
@@ -40,89 +68,50 @@ export default function RoleplayScreen({ setCurrentView }: RoleplayScreenProps) 
                 <div className="list-section">
                     <div className="list-header">
                         <h2 className="list-title">Your Knowledge Base</h2>
-                        <span className="file-badge">3 Files</span>
+                        <span className="file-badge">{files.length} Files</span>
                     </div>
 
-                    {/* Card 1 */}
-                    <div className="rp-glass-card group-card border-primary">
-                        <div className="glow-circle glow-primary"></div>
-                        <div className="card-top">
-                            <div className="card-info">
-                                <h3 className="doc-title title-primary">React_Architecture.pdf</h3>
-                                <div className="doc-meta">
-                                    <Calendar size={14} />
-                                    <span>Oct 12, 2023</span>
+                    {files.length === 0 && (
+                        <div style={{ textAlign: 'center', opacity: 0.5, marginTop: '20px', fontSize: '14px' }}>
+                            Loading your files...
+                        </div>
+                    )}
+
+                    {files.map((file, idx) => {
+                        const colors = ['primary', 'gold', 'pink'];
+                        const color = colors[idx % colors.length];
+                        
+                        return (
+                            <div key={file} className={`rp-glass-card group-card border-${color}`}>
+                                {color !== 'pink' && <div className={`glow-circle glow-${color}`}></div>}
+                                <div className="card-top">
+                                    <div className="card-info">
+                                        <h3 className={`doc-title title-${color}`}>{file}</h3>
+                                        <div className="doc-meta">
+                                            <Calendar size={14} />
+                                            <span>Recently Uploaded</span>
+                                        </div>
+                                    </div>
+                                    <div className={`icon-box icon-${color}`}>
+                                        <FileText size={20} />
+                                    </div>
+                                </div>
+
+                                <div className="card-bottom">
+                                    <div className="tag-group">
+                                        <div className="tag tag-js">SCENARIO</div>
+                                    </div>
+                                    <button 
+                                        className={`action-btn btn-${color} neon-glow-${color}`}
+                                        onClick={() => handleStartSession(file)}
+                                    >
+                                        <span>Start Session</span>
+                                        <Play size={16} fill="currentColor" />
+                                    </button>
                                 </div>
                             </div>
-                            <div className="icon-box icon-primary">
-                                <FileText size={20} />
-                            </div>
-                        </div>
-
-                        <div className="card-bottom">
-                            <div className="tag-group">
-                                <div className="tag tag-js">JS</div>
-                                <div className="tag tag-ui">UI</div>
-                            </div>
-                            <button className="action-btn btn-primary neon-glow-primary">
-                                <span>Start Session</span>
-                                <Play size={16} fill="currentColor" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Card 2 */}
-                    <div className="rp-glass-card group-card border-gold">
-                        <div className="glow-circle glow-gold"></div>
-                        <div className="card-top">
-                            <div className="card-info">
-                                <h3 className="doc-title title-gold">Business_Travel_Guide.pdf</h3>
-                                <div className="doc-meta">
-                                    <Calendar size={14} />
-                                    <span>Sep 28, 2023</span>
-                                </div>
-                            </div>
-                            <div className="icon-box icon-gold">
-                                <FileText size={20} />
-                            </div>
-                        </div>
-
-                        <div className="card-bottom">
-                            <div className="tag-group">
-                                <div className="tag tag-tr">TR</div>
-                                <div className="tag tag-en">EN</div>
-                            </div>
-                            <button className="action-btn btn-gold neon-border-gold">
-                                <span>Resume</span>
-                                <CornerDownLeft size={16} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Card 3 */}
-                    <div className="rp-glass-card group-card border-pink">
-                        <div className="card-top">
-                            <div className="card-info">
-                                <h3 className="doc-title title-pink">Coffee_Shop_Dialogues.txt</h3>
-                                <div className="doc-meta">
-                                    <Calendar size={14} />
-                                    <span>Aug 15, 2023</span>
-                                </div>
-                            </div>
-                            <div className="icon-box icon-pink">
-                                <FileText size={20} />
-                            </div>
-                        </div>
-
-                        <div className="card-bottom">
-                            <span className="last-practiced">Last practiced 2 days ago</span>
-                            <button className="action-btn btn-ghost">
-                                <span>History</span>
-                                <History size={16} />
-                            </button>
-                        </div>
-                    </div>
-
+                        );
+                    })}
                 </div>
             </main>
 

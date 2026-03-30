@@ -71,11 +71,11 @@ def play_stream(audio_generator):
 # Constants for Voices
 VOICE_MAPPING = {
     "zh": {
-        "name": "cmn-CN-Chirp3-HD-Algenib", # or cmn-CN-Neural2-C
+        "name": "cmn-CN-Chirp3-HD-Algenib", 
         "code": "cmn-CN"
     },
     "es": {
-        "name": "es-ES-Chirp3-HD-Puck", # Chirp 3 HD is required for streaming
+        "name": "es-ES-Chirp3-HD-Puck", 
         "code": "es-ES" 
     }
 }
@@ -144,18 +144,73 @@ def send_tts_request(text: str, voice_name: str = None, language_code: str = Non
     except Exception as e:
         print(f"Google TTS Error: {e}")
 
+def get_tts_bytes(text: str, voice_name: str = None, language_code: str = None) -> bytes:
+    """Generates speech and returns the concatenated bytes instead of streaming to ffplay."""
+    credentials = get_credentials()
+    client = texttospeech.TextToSpeechClient(credentials=credentials)
+
+    if not voice_name:
+        voice_name = VOICE_MAPPING["zh"]["name"]
+    if not language_code:
+        language_code = VOICE_MAPPING["zh"]["code"]
+    
+    streaming_config = texttospeech.StreamingSynthesizeConfig(
+        voice=texttospeech.VoiceSelectionParams(
+            name=voice_name,
+            language_code=language_code,
+        ),
+        streaming_audio_config=texttospeech.StreamingAudioConfig(
+            audio_encoding=texttospeech.AudioEncoding.OGG_OPUS
+        )
+    )
+
+    def chunk_text(text, max_chars=100):
+        chunks = []
+        current_chunk = ""
+        sentences = text.replace('。', '。|').replace('！', '！|').replace('？', '？|').replace('.', '.|').replace('!', '!|').replace('?', '?|').split('|')
+        
+        for sentence in sentences:
+            if len(current_chunk) + len(sentence) <= max_chars:
+                current_chunk += sentence
+            else:
+                if current_chunk: chunks.append(current_chunk)
+                current_chunk = sentence
+        if current_chunk: chunks.append(current_chunk)
+        return chunks
+
+    def request_generator(text_input):
+        yield texttospeech.StreamingSynthesizeRequest(streaming_config=streaming_config)
+        for chunk in chunk_text(text_input):
+            if chunk.strip():
+                yield texttospeech.StreamingSynthesizeRequest(
+                    input=texttospeech.StreamingSynthesisInput(text=chunk)
+                )
+
+    audio_buffer = b""
+    try:
+        responses = client.streaming_synthesize(request_generator(text))
+        for response in responses:
+            if response.audio_content:
+                audio_buffer += response.audio_content
+    except Exception as e:
+        print(f"Google TTS Error: {e}")
+    return audio_buffer
+
 def speak_mixed_text(text: str):
     """
     Intelligently switches voices based on text content (Hanzi vs Latin).
     """
     import re
     
+    # Sanitize text to remove Pinyin and Translation brackets
+    clean_text = re.sub(r'\(.*?\)', '', text)
+    clean_text = clean_text.replace('[', '').replace(']', '')
+    
     # Regex to split: Captures Chinese sequences. 
     # Everything else (Latin/Spanish/Numbers) is considered 'other' -> Spanish Voice
     # Pattern explanation: 
     # ([\u4e00-\u9fff，。？！“”]+) captures chunks of Chinese + punctuation.
-    # ([\u4e00-\u9fff，。？！“”]+) captures chunks of Chinese + punctuation.
-    parts = re.split(r'([\u4e00-\u9fff，。？！“”]+)', text)
+    parts = re.split(r'([\u4e00-\u9fff，。？！“”]+)', clean_text)
     
     for part in parts:
         if not part.strip():
@@ -177,6 +232,26 @@ def speak_mixed_text(text: str):
                     voice_name=VOICE_MAPPING["es"]["name"], 
                     language_code=VOICE_MAPPING["es"]["code"]
                 )
+
+def get_mixed_audio_bytes(text: str) -> bytes:
+    import re
+    
+    # Sanitize text to remove Pinyin and Translation brackets
+    clean_text = re.sub(r'\(.*?\)', '', text)
+    clean_text = clean_text.replace('[', '').replace(']', '')
+    
+    full_audio = b""
+    parts = re.split(r'([\u4e00-\u9fff，。？！“”]+)', clean_text)
+    
+    for part in parts:
+        if not part.strip():
+            continue
+        if re.search(r'[\u4e00-\u9fff]', part):
+            full_audio += get_tts_bytes(part, voice_name=VOICE_MAPPING["zh"]["name"], language_code=VOICE_MAPPING["zh"]["code"])
+        else:
+            if re.search(r'[a-zA-Z0-9]', part):
+                full_audio += get_tts_bytes(part, voice_name=VOICE_MAPPING["es"]["name"], language_code=VOICE_MAPPING["es"]["code"])
+    return full_audio
 
 if __name__ == "__main__":
     # Test the module
