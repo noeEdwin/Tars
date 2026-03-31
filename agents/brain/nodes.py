@@ -97,6 +97,9 @@ def actor_node(state: TarsState) -> dict:
         if state.get("scene_context"):
             protocol_text += f"\nSCENE CONTEXT: {state.get('scene_context')}"
 
+    hsk_level = state.get("hsk_level")
+    if hsk_level:
+        protocol_text += f"\n\n### VOCABULARY ADAPTATION\nThe user is currently at HSK Level {hsk_level}. You MUST actively restrict your spoken Chinese vocabulary to HSK {hsk_level} or lower. If you use a word above this level, you must explain it naturally in Spanish."
 
     # RAG INTEGRATION (Conditional to save latency)
     last_user_msg = state["messages"][-1].content

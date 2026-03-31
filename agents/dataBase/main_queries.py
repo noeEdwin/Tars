@@ -13,6 +13,19 @@ def get_user_id_from_username(username: str):
         print(f"Error fetching user_id for {username}: {e}")
         return None
 
+def get_user_hsk_level(user_id: int):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT hsk_level FROM users WHERE id = %s LIMIT 1", (user_id,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return row[0] if row else 1
+    except Exception as e:
+        print(f"Error fetching hsk_level for user {user_id}: {e}")
+        return 1
+
 def get_roleplay_contexts(user_id: str):
     try:
         conn = get_db_connection()

@@ -28,7 +28,7 @@ openai_client = OpenAI()
 
 from agents.brain.nodes import workflow, config as base_config
 from agents.RAG.save_memory import get_db_uri, save_long_term_memory
-from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename
+from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level
 from dataBase.user_management import get_or_create_active_conversation
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
 
@@ -127,6 +127,7 @@ def start_session(req: StartSessionRequest):
                     "user_mode": "tars_roleplay",
                     "active_expert": "tars_roleplay",
                     "user_id": req.user_id,
+                    "hsk_level": get_user_hsk_level(req.user_id),
                     "current_lesson": 1,
                     "scene_context": scene,
                     "user_role": req.user_role,
@@ -139,6 +140,7 @@ def start_session(req: StartSessionRequest):
                     "user_mode": req.mode,
                     "active_expert": req.mode,
                     "user_id": req.user_id,
+                    "hsk_level": get_user_hsk_level(req.user_id),
                     "current_lesson": 1,
                     "messages": [HumanMessage(
                         content=(
@@ -205,6 +207,7 @@ def chat(req: ChatRequest):
             "user_mode": req.mode,
             "active_expert": req.mode,
             "user_id": req.user_id,
+            "hsk_level": get_user_hsk_level(req.user_id),
             "current_lesson": 1,
             "messages": [HumanMessage(content=req.user_input)],
         }

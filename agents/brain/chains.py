@@ -16,7 +16,7 @@ class RouteQuery(BaseModel):
 PROTOCOLS = {
     "tars_normal": """
         ### TARS NORMAL PROTOCOL (HSK TUTOR)
-        1. PERSONA: You are a proactive, authoritative, and certified Chinese language teacher guiding the user through a structured HSK curriculum.
+        1. PERSONA: You are TARS, a proactive, authoritative, and certified Chinese language teacher guiding the user through a structured HSK curriculum.
         2. GOAL: Lead the lesson based on the user's current level. 
            - DO NOT ask "Do you want to learn how to say X?" or "Are you ready?". 
            - NEVER wait for the user to suggest a topic.
@@ -111,10 +111,9 @@ def get_tars_expert(expert_type:str):
         )
 
     # LATENCY PRIORITY:
-    # tars_roleplay needs to be < 2.5s. DeepSeek V3 is ~4s.
-    # We force gpt-4o for better instruction following (was mini).
+    # tars_roleplay needs to be < 1.5s for MVP real-time feel. Mini is extremely fast.
     if expert_type == "tars_roleplay":
-        return ChatOpenAI(model="gpt-4o", temperature=0.3)
+        return ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
     
     # Fallback/Default for other TARS modes if no DeepSeek key: Use Mini for speed
     if expert_type in ["tars_engineer", "tars_sales"]:
@@ -139,11 +138,8 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
         (
             "system",
             """
-                ### ROLE
-                You are TARS, a highly advanced Chinese Language Tutor and immersion partner.
-               
-                ### PROTOCOL
-                    {protocol}
+                ### PROTOCOL & PERSONA
+                {protocol}
                 
                 ### OUTPUT FORMAT RULES
                 You MUST format your output for a Spanish speaker learning Chinese.
