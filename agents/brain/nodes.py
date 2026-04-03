@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
-
+import json
+from thefuzz import fuzz
 # Add the agents directory to sys.path so sibling packages can be found
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # Add the project root to sys.path so ChatMessage can be found
@@ -22,6 +23,16 @@ from langchain_openai import ChatOpenAI
 load_dotenv()
 ACTOR = "tars_actor"
 
+def is_phonetically_similar(target: str, user_input: str) -> bool:
+    ratio = fuzz.partial_ratio(target.lower(), user_input.lower())
+    return ratio > 80
+
+def load_lesson_json(lesson_id: int):
+    try:
+        with open(f"data_normal_mode/data/leccion_{lesson_id}.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"vocabulary": [{"zh": "你好", "py": "nǐ hǎo", "es": "hola"}]}
 
 def actor_node(state: TarsState) -> dict:
     """The dynamic brain: Uses the expert assigned by the user."""
@@ -97,27 +108,70 @@ def actor_node(state: TarsState) -> dict:
         if state.get("scene_context"):
             protocol_text += f"\nSCENE CONTEXT: {state.get('scene_context')}"
 
-    hsk_level = state.get("hsk_level")
-    if hsk_level:
-        protocol_text += f"\n\n### VOCABULARY ADAPTATION\nThe user is currently at HSK Level {hsk_level}. You MUST actively restrict your spoken Chinese vocabulary to HSK {hsk_level} or lower. If you use a word above this level, you must explain it naturally in Spanish."
+    # ── LESSON PROGRESSION (Normal Mode only) ────────────────────────────────
+    lesson_state_updates = {}
+    feedback_type = "NONE"
 
-    # RAG INTEGRATION (Conditional to save latency)
-    last_user_msg = state["messages"][-1].content
-    user_id = state.get("user_id")
-    current_lesson = state.get("current_lesson", 1)
-    
-    # 4. Inject Static JSON Lesson Map ONLY for Normal Mode
     if expert_type == "tars_normal":
-        from RAG.retrieve import get_lesson_plan_context, get_all_knowledge_for_lesson
-        
-        lesson_blueprint = get_lesson_plan_context(current_lesson)
-        if lesson_blueprint:
-            protocol_text += f"\n\n{lesson_blueprint}"
-            
-        lesson_db_knowledge = get_all_knowledge_for_lesson(current_lesson)
-        if lesson_db_knowledge:
-            protocol_text += f"\n{lesson_db_knowledge}"
+        current_lesson  = state.get("current_lesson", 1)
+        lesson_words    = state.get("lesson_words")
+        lesson_progress = state.get("lesson_progress", 0)
+        target_word     = state.get("target_word")
+        last_user_msg   = state["messages"][-1].content
 
+        # First time in this lesson: load words and go straight to INTRODUCE
+        if not lesson_words:
+            lesson_data  = load_lesson_json(current_lesson)
+            lesson_words = [v["zh"] for v in lesson_data["vocabulary"]]
+            lesson_progress = 0
+            target_word     = lesson_words[0]
+            feedback_type   = "INTRODUCE"
+            lesson_state_updates = {
+                "lesson_words":    lesson_words,
+                "lesson_progress": lesson_progress,
+                "target_word":     target_word,
+            }
+        elif target_word:
+            # Subsequent turns: check if user said the target word
+            said_it = (target_word in last_user_msg or
+                       is_phonetically_similar(target_word, last_user_msg))
+
+            if said_it:
+                lesson_progress += 1
+                if lesson_progress < len(lesson_words):
+                    target_word   = lesson_words[lesson_progress]
+                    feedback_type = "CORRECT_NEXT"
+                else:
+                    feedback_type = "LESSON_COMPLETE"
+                lesson_state_updates = {
+                    "lesson_progress": lesson_progress,
+                    "target_word":     target_word,
+                }
+            else:
+                feedback_type = "RETRY"
+
+        lesson_vocab_str = ", ".join(
+            f"{w}" for w in (lesson_words or [])
+        )
+        protocol_text += f"""
+
+### ESTADO DE LA LECCIÓN (SISTEMA DE VALIDACIÓN):
+Palabras de la lección actual: {lesson_vocab_str}
+Palabra objetivo actual: **{target_word or 'Ninguna'}**
+Resultado del análisis del sistema: **{feedback_type}**
+
+Instrucciones según el resultado:
+- INTRODUCE: Saluda al usuario y pídele que diga la palabra objetivo en chino. Muestra el carácter y el pinyin.
+- CORRECT_NEXT: Felicita brevemente y pide al usuario que diga la siguiente palabra objetivo (muestra carácter y pinyin).
+- RETRY: Repite la palabra objetivo con carácter y pinyin, anima al usuario a intentarlo de nuevo.
+- LESSON_COMPLETE: Felicita al usuario por completar la lección.
+"""
+    else:
+        # Non-lesson modes: still need last_user_msg defined for RAG below
+        last_user_msg = state["messages"][-1].content
+
+    # ─────────────────────────────────────────────────────────────────────────
+    user_id = state.get("user_id")
     # LONG-TERM VECTOR MEMORY (Isolated by user)
     memory_context = ""
     if user_id and len(last_user_msg) > 5:
@@ -175,7 +229,7 @@ def actor_node(state: TarsState) -> dict:
     # Audio generation delegating to API.py for frontend playback.
     # We no longer play audio on the server via ffplay.
 
-    return {"messages": [response]}
+    return {"messages": [response], **lesson_state_updates}
 
 
 workflow = StateGraph(TarsState)

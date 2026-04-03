@@ -1,0 +1,26 @@
+{
+    "lesson_id": 1,
+    "title": "Nǐ hǎo!",
+    "vocabulary": [
+        {
+            "zh": "你好",
+            "py": "nǐ hǎo",
+            "es": "hola"
+        },
+        {
+            "zh": "老师",
+            "py": "lǎoshī",
+            "es": "maestra/o"
+        },
+        {
+            "zh": "我",
+            "py": "wǒ",
+            "es": "yo"
+        },
+        {
+            "zh": "是",
+            "py": "shì",
+            "es": "ser"
+        }
+    ]
+}

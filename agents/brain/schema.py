@@ -32,3 +32,6 @@ class TarsState(TypedDict):
     # Educational Context
     current_lesson: Optional[int]
     hsk_level: Optional[int]
+    lesson_progress: Optional[int]
+    target_word: Optional[str]
+    lesson_words: Optional[List[str]]
