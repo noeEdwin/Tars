@@ -1,7 +1,7 @@
 name: Deploy Tars
 on:
   push:
-    branches: [ "MVP" ] # Solo se activa cuando algo llega a main
+    branches: [ "main" ] # Solo se activa cuando algo llega a main
 
 jobs:
   deploy:
