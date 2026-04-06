@@ -3,3 +3,4 @@ agents/.env
 kokoro-v1.0.onnx
 frontend/node_modules/
 data_normal_mode/data/HSK-1-Textbook.pdf
+tars.json

@@ -1,39 +1,34 @@
 import sys
+import json
+import os
 from pathlib import Path
+
+# Configuración de rutas para importaciones
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from RAG.utils import get_embedding
 from dataBase.connection import get_db_connection
 
 def retrieve_knowledge(user_query: str, current_lesson: int = 1) -> list[dict]:
     """
-    Retrieves the most relevant knowledge from the 'public.knowledge_base' table using vector similarity.
-    Filters the results to only include knowledge from the current lesson or earlier.
-    Returns a list of dictionaries containing the content and metadata.
+    Recupera conocimiento técnico (vocabulario/gramática) de 'base_conocimiento'.
+    Usa similitud de coseno con cast explícito a vector.
     """
     try:
-        # 1. Generar el embedding para la consulta del usuario
         user_question_embedding = get_embedding(user_query)
-        
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # 2. Ejecutar búsqueda de similitud con nombres de columnas actualizados (Supabase)
         query = r"""
             WITH ranked_knowledge AS (
                 SELECT 
-                    contenido_zh,
-                    pinyin,
-                    traduccion_es,
-                    nivel_hsk,
-                    pos,
-                    grammar_ref,
-                    1 - (embedding <=> %s::vector) AS cosine_similarity,
+                    contenido_zh, pinyin, traduccion_es, nivel_hsk, pos, grammar_ref,
+                    1 - (embedding::vector <=> %s::vector) AS cosine_similarity,
                     ROW_NUMBER() OVER (
                         PARTITION BY contenido_zh 
-                        ORDER BY 1 - (embedding <=> %s::vector) DESC
+                        ORDER BY 1 - (embedding::vector <=> %s::vector) DESC
                     ) as rn
                 FROM public.base_conocimiento
-                WHERE 1 - (embedding <=> %s::vector) >= %s
+                WHERE 1 - (embedding::vector <=> %s::vector) >= %s
                 AND NULLIF(regexp_replace(lesson_id::text, '\D', '', 'g'), '')::integer <= %s
             )
             SELECT contenido_zh, pinyin, traduccion_es, nivel_hsk, pos, grammar_ref, cosine_similarity
@@ -43,19 +38,9 @@ def retrieve_knowledge(user_query: str, current_lesson: int = 1) -> list[dict]:
             LIMIT 5;
         """
         
-        cur.execute(query, (
-            user_question_embedding,
-            user_question_embedding,
-            user_question_embedding,
-            0.50, # Umbral de similitud ajustable
-            current_lesson
-        ))
-        
+        cur.execute(query, (user_question_embedding, user_question_embedding, user_question_embedding, 0.50, current_lesson))
         results = cur.fetchall()
-        cur.close()
-        conn.close()
-
-        # 3. Formatear resultados para el agente
+        
         knowledge_list = []
         for row in results:
             knowledge_list.append({
@@ -67,20 +52,48 @@ def retrieve_knowledge(user_query: str, current_lesson: int = 1) -> list[dict]:
                 "grammar_ref": row[5],
                 "similarity": row[6]
             })
-            
+        
+        cur.close()
+        conn.close()
         return knowledge_list
-
     except Exception as e:
-        # Este print te avisará si falta alguna columna en la tabla de Supabase
         print(f"⚠️ Error retrieving knowledge: {e}")
         return []
 
-import json
-import os
+def retrieve_style_examples(target_emotion: str, user_query_embedding: list, limit: int = 3) -> list[str]:
+    """
+    Recupera frases de 'translations_mvp' que coincidan con la emoción.
+    Incluye cast ::vector para evitar el error 'operator does not exist: jsonb <=> vector'.
+    """
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # El cast ::vector en el ORDER BY es vital para Supabase
+        query = """
+            SELECT es
+            FROM translations_mvp
+            WHERE emocion = %s
+            ORDER BY embedding::vector <=> %s::vector
+            LIMIT %s;
+        """
+        
+        cur.execute(query, (target_emotion, user_query_embedding, limit))
+        results = [row[0] for row in cur.fetchall()]
+        
+        cur.close()
+        return results
+    except Exception as e:
+        print(f"⚠️ Error en RAG de Estilo (retrieve_style_examples): {e}")
+        return []
+    finally:
+        if conn:
+            conn.close()
 
 def get_lesson_plan_context(lesson_id: int) -> str:
     """
-    Reads the static HSK1 map JSON file and returns the blueprint for the given lesson.
+    Lee el archivo JSON del mapa HSK1 para dar contexto de la lección actual.
     """
     json_path = os.path.join(
         Path(__file__).resolve().parent.parent.parent, 
@@ -100,53 +113,38 @@ def get_lesson_plan_context(lesson_id: int) -> str:
                 
                 blueprint = f"=== CURRENT LESSON BLUEPRINT (Lesson {lesson_id}) ===\n"
                 blueprint += f"Target Topic: {title_zh} ({title_es})\n"
-                if vocab:
-                    blueprint += f"Vocabulary to Teach: {vocab}\n"
-                if grammar:
-                    blueprint += f"Grammar to Enforce: {grammar}\n"
+                if vocab: blueprint += f"Vocabulary to Teach: {vocab}\n"
+                if grammar: blueprint += f"Grammar to Enforce: {grammar}\n"
                 return blueprint + "======================================="
-                
-        return f"=== CURRENT LESSON BLUEPRINT (Lesson {lesson_id}) ===\n(No specific blueprint found)\n======================================="
+        return f"=== CURRENT LESSON BLUEPRINT (Lesson {lesson_id}) ===\n(No lección encontrada)\n======================================="
     except Exception as e:
         print(f"⚠️ Error reading JSON lesson map: {e}")
         return ""
 
 def get_all_knowledge_for_lesson(lesson_id: int) -> str:
     """
-    Retrieves all vocabulary and grammar rows from the 'base_conocimiento' table 
-    that belong strictly to the provided lesson_id.
+    Trae todo el vocabulario y gramática de una lección específica desde la DB.
     """
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        
         query = r"""
             SELECT contenido_zh, pinyin, traduccion_es, pos, grammar_ref
             FROM public.base_conocimiento
             WHERE NULLIF(regexp_replace(lesson_id::text, '\D', '', 'g'), '')::integer = %s;
         """
-        
         cur.execute(query, (lesson_id,))
         results = cur.fetchall()
         cur.close()
         conn.close()
         
-        if not results:
-            return ""
+        if not results: return ""
             
         db_context = f"\n=== DATABASE KNOWLEDGE FOR LESSON {lesson_id} ===\n"
         for row in results:
             zh, pinyin, trad, pos, grammar = row
-            entry = f"- {zh} ({pinyin}) - Significado: {trad}"
-            if pos:
-                 entry += f", POS: {pos}"
-            if grammar:
-                 entry += f", Regla HSK (grammar_ref): {grammar}"
-            db_context += entry + "\n"
-            
-        db_context += "=================================================\n"
-        return db_context
-        
+            db_context += f"- {zh} ({pinyin}) - Significado: {trad}, POS: {pos}, Ref: {grammar}\n"
+        return db_context + "=================================================\n"
     except Exception as e:
-        print(f"⚠️ Error retrieving complete lesson knowledge from DB: {e}")
+        print(f"⚠️ Error retrieving complete lesson knowledge: {e}")
         return ""
