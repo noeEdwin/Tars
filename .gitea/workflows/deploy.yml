@@ -10,12 +10,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4 
 
-      # Paso clave: Crear el .env desde el secreto de Gitea
       - name: Create .env file
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
 
-      # Paso clave: Crear el tars.json desde el secreto de Gitea
       - name: Create tars.json file
         run: |
           echo '${{ secrets.TARS_JSON }}' > tars.json
