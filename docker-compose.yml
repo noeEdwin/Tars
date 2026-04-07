@@ -16,11 +16,7 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/tars.json
 
     volumes:
-      - ./agents:/app/agents
-      - ./api.py:/app/api.py
-      - ./main.py:/app/main.py
       - ./dataBase:/app/dataBase
-      - ./ChatMessage:/app/ChatMessage
 
   frontend:
     build:
