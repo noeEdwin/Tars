@@ -13,17 +13,14 @@ services:
       - DB_NAME=postgres
       - DB_HOST=aws-1-us-east-1.pooler.supabase.com
       - DB_PORT=5432
-      - GOOGLE_APPLICATION_CREDENTIALS=/credentials/tars.json
-    env_file:
-      - .env
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/tars.json
+
     volumes:
       - ./agents:/app/agents
       - ./api.py:/app/api.py
       - ./main.py:/app/main.py
       - ./dataBase:/app/dataBase
       - ./ChatMessage:/app/ChatMessage
-      - ./.env:/app/.env
-      - ./tars.json:/credentials/tars.json:ro
 
   frontend:
     build:
