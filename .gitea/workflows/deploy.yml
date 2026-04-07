@@ -21,4 +21,4 @@ jobs:
           echo '${{ secrets.TARS_JSON }}' > tars.json
 
       - name: Docker Compose Up
-        run: docker compose up -d --build tars_backend tars_frontend
+        run: docker compose up -d --build backend frontend
