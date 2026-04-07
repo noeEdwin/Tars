@@ -18,4 +18,4 @@ if [ ! -f .env ]; then
     echo "✅ Archivo .env configurado para modo local."
 fi
 
-echo "¡Listo! Ahora puedes correr: docker compose up -d --build"
+echo "¡Listo! Ahora puedes correr: docker compose up -d --build" 
