@@ -142,13 +142,11 @@ def start_session(req: StartSessionRequest):
                     "user_id": req.user_id,
                     "hsk_level": get_user_hsk_level(req.user_id),
                     "current_lesson": 1,
+                    "awaiting_answer": False,  # lesson_prompt_node will set True after first word
                     "messages": [HumanMessage(
                         content=(
                             "SYSTEM UPDATE: A new Chinese learning session has started. "
-                            "Introduce yourself briefly as the HSK Teacher. "
-                            "DO NOT ask the user what they want to learn. "
-                            "State what you are going to teach right now and directly ask them "
-                            "a question or start an exercise to make them speak immediately."
+                            "Start the lesson immediately — introduce the first word."
                         )
                     )],
                 }
@@ -157,10 +155,11 @@ def start_session(req: StartSessionRequest):
             if tars_message:
                 save_long_term_memory(conversation_id, "assistant", tars_message)
         else:
-            # Existing session — send a re-entry prompt
+            # Existing session — resume appropriately per mode
             snapshot = app_instance.get_state(cfg)
-            last_msgs = snapshot.values.get("messages", [])
-            # Check if last message was interrupted (has pending tool calls)
+            last_msgs = snapshot.values.get("messages", []) if snapshot.values else []
+
+            # Recover from interrupted tool calls
             if last_msgs:
                 last = last_msgs[-1]
                 if hasattr(last, "tool_calls") and last.tool_calls:
@@ -172,7 +171,31 @@ def start_session(req: StartSessionRequest):
                         for tc in last.tool_calls
                     ]
                     app_instance.update_state(cfg, {"messages": tool_recovery})
-            tars_message = "¡Bienvenido de vuelta! Continuemos donde nos quedamos."
+
+            if req.mode == "tars_normal":
+                # Reset lesson state so we always start the lesson fresh
+                app_instance.update_state(cfg, {
+                    "lesson_words":    None,
+                    "lesson_progress": 0,
+                    "target_word":     None,
+                    "awaiting_answer": False,
+                })
+                result = app_instance.invoke({
+                    "user_mode":       "tars_normal",
+                    "active_expert":   "tars_normal",
+                    "user_id":         req.user_id,
+                    "hsk_level":       get_user_hsk_level(req.user_id),
+                    "current_lesson":  1,
+                    "awaiting_answer": False,
+                    "messages": [HumanMessage(
+                        content="SYSTEM: Nueva sesión de lección iniciada. Presenta la primera palabra."
+                    )],
+                }, config=cfg)
+                tars_message = _extract_tars_message(result)
+                if tars_message:
+                    save_long_term_memory(conversation_id, "assistant", tars_message)
+            else:
+                tars_message = "¡Bienvenido de vuelta! Continuemos donde nos quedamos."
 
     audio_b64 = None
     if tars_message:
@@ -203,12 +226,16 @@ def chat(req: ChatRequest):
         existing = snapshot.values.get("messages", []) if snapshot.values else []
         start_len = len(existing)
 
+        # Read persisted lesson phase from checkpoint so the router sees the correct state
+        awaiting = snapshot.values.get("awaiting_answer", False) if snapshot.values else False
+
         state_update = {
             "user_mode": req.mode,
             "active_expert": req.mode,
             "user_id": req.user_id,
             "hsk_level": get_user_hsk_level(req.user_id),
-            "current_lesson": 1,
+            "current_lesson": snapshot.values.get("current_lesson", 1) if snapshot.values else 1,
+            "awaiting_answer": awaiting,
             "messages": [HumanMessage(content=req.user_input)],
         }
 
@@ -242,11 +269,22 @@ async def stt_endpoint(audio: UploadFile = File(...)):
         file_tuple = (audio.filename or "audio.webm", audio_bytes)
         
         transcription = openai_client.audio.transcriptions.create(
-            model="whisper-1", 
+            model="whisper-1",
             file=file_tuple,
             prompt="这是一段简体中文对话，请使用简体中文输出。"
         )
-        return {"text": transcription.text.strip()}
+        text = transcription.text.strip()
+
+        # Filter known Whisper hallucinations (prompt echo on silent audio)
+        WHISPER_HALLUCINATIONS = {
+            "请使用简体中文输出。",
+            "这是一段简体中文对话，请使用简体中文输出。",
+            "字幕by索兰娅",
+        }
+        if text in WHISPER_HALLUCINATIONS or len(text) < 2:
+            return {"text": ""}
+
+        return {"text": text}
     except Exception as e:
         print(f"Error in backend STT: {e}")
         raise HTTPException(status_code=500, detail=str(e))
