@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # Actualizado a v4 para mejor compatibilidad
+        uses: actions/checkout@v4 
 
       # Paso clave: Crear el .env desde el secreto de Gitea
       - name: Create .env file
@@ -21,4 +21,4 @@ jobs:
           echo '${{ secrets.TARS_JSON }}' > tars.json
 
       - name: Docker Compose Up
-        run: docker compose up -d --build
+        run: docker compose up -d --build tars_backend tars_frontend
