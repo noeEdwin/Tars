@@ -9,7 +9,7 @@ from agents.brain.chains import get_embeddings_model
 
 load_dotenv()
 
-# Configuración
+# Configuración      
 API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 CONCURRENCY_LIMIT = 10 
 
