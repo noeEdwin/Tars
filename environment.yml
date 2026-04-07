@@ -267,4 +267,6 @@ dependencies:
       - websocket-client==1.9.0
       - websockets==15.0.1
       - zipp==3.23.0
+      - thefuzz
+      - python-multipart
 prefix: /home/lancelot/miniconda3/envs/agentes_ia

@@ -1,0 +1,6 @@
+gitea/
+runner_data/
+node_modules/
+frontend/
+.git/
+*.log

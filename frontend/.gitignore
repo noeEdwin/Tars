@@ -23,3 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 *.pdf
+node_modules/
+frontend/node_modules/
+.env
+tars.json
+__pycache__/
+*.pyc

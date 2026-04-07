@@ -1,16 +1,56 @@
 services:
-  db:
-    image: pgvector/pgvector:pg16 # Imagen oficial con soporte para vectores
-    container_name: chinese_ai_db
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tars_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_USER=postgres.pysaqdfijktldrzjlqsm
+      - DB_PASS=DkoQGcMFW3dXX5QI
+      - DB_NAME=postgres
+      - DB_HOST=aws-1-us-east-1.pooler.supabase.com
+      - DB_PORT=5432
+      - GOOGLE_APPLICATION_CREDENTIALS=/credentials/tars.json
+    env_file:
+      - .env
+    volumes:
+      - ./agents:/app/agents
+      - ./api.py:/app/api.py
+      - ./main.py:/app/main.py
+      - ./dataBase:/app/dataBase
+      - ./ChatMessage:/app/ChatMessage
+      - ./.env:/app/.env
+      - ./tars.json:/credentials/tars.json:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tars_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
     restart: always
     environment:
-      POSTGRES_USER: lancelot # Tu usuario habitual
-      POSTGRES_PASSWORD: 9474609
-      POSTGRES_DB: chinese_tutor_db
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=sqlite3
     ports:
-      - "5433:5432"
+      - "3000:3000"
+      - "222:22"
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Persistencia completa
-
-volumes:
-  postgres_data: # Definición del volumen nombrado
+      - ./gitea:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro

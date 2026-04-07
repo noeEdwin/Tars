@@ -35,3 +35,4 @@ class TarsState(TypedDict):
     lesson_progress: Optional[int]
     target_word: Optional[str]
     lesson_words: Optional[List[str]]
+    awaiting_answer: Optional[bool]  # True while waiting for the user to say the target word

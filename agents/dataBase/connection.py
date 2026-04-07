@@ -2,10 +2,12 @@ import psycopg2
 import os
 
 def get_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        database=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        port=os.getenv("DB_PORT")
+    # Desglosamos el enlace que te dio Edwin
+    conn = psycopg2.connect(
+        host="aws-1-us-east-1.pooler.supabase.com",
+        database="postgres",
+        user="postgres.pysaqdfijktldrzjlqsm",
+        password="DkoQGcMFW3dXX5QI",
+        port="5432"
     )
+    return conn
