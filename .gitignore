@@ -1,8 +1,34 @@
-agents/.env
+# --- Credenciales y Secretos ---
 .env
-kokoro-v1.0.onnx
-frontend/node_modules/
-data_normal_mode/data/HSK-1-Textbook.pdf
+agents/.env
 tars.json
+*.key
+*.pem
+
+# --- Modelos de IA y Binarios Pesados ---
+*.onnx
+kokoro-v1.0.onnx
+*.bin
+*.pth
+
+# --- Datos de Servidores y Docker ---
 gitea/
 runner_data/
+
+# --- Dependencias de Frontend ---
+frontend/node_modules/
+node_modules/
+dist/
+.eslintcache
+
+# --- Archivos de Datos y Documentos ---
+data_normal_mode/data/HSK-1-Textbook.pdf
+*.pdf
+*.log
+
+# --- Python Basura ---
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+env/

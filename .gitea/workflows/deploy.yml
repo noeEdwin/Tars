@@ -5,7 +5,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted # El runner vivirá en tu Xiaomi
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

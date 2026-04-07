@@ -54,3 +54,15 @@ services:
       - ./gitea:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+  runner:
+    image: gitea/act_runner:latest
+    container_name: gitea_runner
+    restart: always
+    environment:
+      - GITEA_INSTANCE_URL=http://gitea:3000
+      - GITEA_RUNNER_REGISTRATION_TOKEN=H1J60QnW4MXIjqIXESYMmLdV1Yk78MEP61Wy0edi
+    volumes:
+      - ./runner_data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - gitea
