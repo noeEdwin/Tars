@@ -17,7 +17,15 @@ services:
 
     volumes:
       - ./dataBase:/app/dataBase
-
+      - ./certs:/app/certs:ro
+    command: >
+      conda run --no-capture-output -n agentes_ia 
+      uvicorn api:app 
+      --host 0.0.0.0 
+      --port 8000 
+      --ssl-keyfile=/app/certs/key.pem 
+      --ssl-certfile=/app/certs/cert.pem
+      
   frontend:
     build:
       context: ./frontend

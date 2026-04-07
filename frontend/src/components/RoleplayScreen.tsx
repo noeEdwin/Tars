@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, Info, CloudUpload, Calendar, FileText, Play } from 'lucide-react';
 import './RoleplayScreen.css';
 import type { ViewState, SessionConfig } from '../App';
+import { API_BASE } from '../apiConfig'; // Ajusta la ruta según la carpeta
 
 interface RoleplayScreenProps {
     setCurrentView: (view: ViewState) => void;
@@ -10,9 +11,9 @@ interface RoleplayScreenProps {
 
 export default function RoleplayScreen({ setCurrentView, startConversation }: RoleplayScreenProps) {
     const [files, setFiles] = useState<string[]>([]);
-    
+
     useEffect(() => {
-        fetch(`http://${window.location.hostname}:8000/roleplay/files?user_id=1`)
+        fetch(`${API_BASE}/roleplay/files?user_id=1`)
             .then(res => res.json())
             .then(data => {
                 if (data.files) setFiles(data.files);
@@ -23,10 +24,10 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
     const handleStartSession = (filename: string) => {
         const userRole = window.prompt("What is your character's role?", "Customer");
         if (!userRole) return; // User cancelled
-        
+
         const tarsRole = window.prompt("What is Tars' character role?", "Barista");
         if (!tarsRole) return; // User cancelled
-        
+
         startConversation({
             mode: 'tars_roleplay',
             filename,
@@ -80,7 +81,7 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
                     {files.map((file, idx) => {
                         const colors = ['primary', 'gold', 'pink'];
                         const color = colors[idx % colors.length];
-                        
+
                         return (
                             <div key={file} className={`rp-glass-card group-card border-${color}`}>
                                 {color !== 'pink' && <div className={`glow-circle glow-${color}`}></div>}
@@ -101,7 +102,7 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
                                     <div className="tag-group">
                                         <div className="tag tag-js">SCENARIO</div>
                                     </div>
-                                    <button 
+                                    <button
                                         className={`action-btn btn-${color} neon-glow-${color}`}
                                         onClick={() => handleStartSession(file)}
                                     >

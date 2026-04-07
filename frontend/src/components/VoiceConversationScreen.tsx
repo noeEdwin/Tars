@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Message } from './ConversationContainer';
 import { parseTarsMessage } from '../utils/messageParser';
+import { API_BASE } from '../apiConfig';
 import './VoiceConversationScreen.css';
 
 type UIState = 'idle' | 'listening' | 'speaking';
@@ -16,7 +17,7 @@ interface VoiceScreenProps {
     onSwitchToText: () => void;
 }
 
-export default function VoiceConversationScreen({ 
+export default function VoiceConversationScreen({
     mode = 'tars_normal',
     messages,
     sessionReady,
@@ -34,8 +35,6 @@ export default function VoiceConversationScreen({
     const audioChunksRef = useRef<BlobPart[]>([]);
     const streamRef = useRef<MediaStream | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    
-    const API_BASE = `http://${window.location.hostname}:8000`;
 
     // Derive tarsSubtitle from messages
     const tarsMessages = messages.filter(m => m.role === 'tars');
@@ -66,16 +65,16 @@ export default function VoiceConversationScreen({
         // Mobile Safari workaround: Unlock audio context on first user interaction
         if (audioRef.current && audioRef.current.src === '') {
             audioRef.current.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'; // Silent 1ms wav
-            audioRef.current.play().catch(() => {});
+            audioRef.current.play().catch(() => { });
             audioRef.current.pause();
         }
 
         if (!sessionReady || isProcessing || isTranscribing) return;
-        
+
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
-            
+
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
@@ -100,7 +99,7 @@ export default function VoiceConversationScreen({
         e.preventDefault();
         (e.target as HTMLElement).releasePointerCapture(e.pointerId);
         if (uiState !== 'listening') return;
-        
+
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
             mediaRecorderRef.current.onstop = async () => {
                 // Stop all tracks to release mic
@@ -117,7 +116,7 @@ export default function VoiceConversationScreen({
                 else if (mimeType.includes('wav')) ext = 'wav';
 
                 const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-                
+
                 setIsTranscribing(true);
                 setUiState('idle');
 
@@ -135,13 +134,13 @@ export default function VoiceConversationScreen({
                     }
 
                     const data = await response.json();
-                    
+
                     if (data.detail) {
                         throw new Error(data.detail);
                     }
-                    
+
                     const text = data.text;
-                    
+
                     if (text && text.trim()) {
                         onSendMessage(text);
                     } else {
@@ -156,7 +155,7 @@ export default function VoiceConversationScreen({
                     setIsTranscribing(false);
                 }
             };
-            
+
             mediaRecorderRef.current.stop();
         } else {
             setUiState('idle');
@@ -168,12 +167,12 @@ export default function VoiceConversationScreen({
         <div className="voice-screen-body">
             <audio ref={audioRef} style={{ display: 'none' }} />
             <div className="ambient-glow"></div>
-            
+
             <main className="voice-main">
-                
+
                 {/* Header */}
                 <header className="voice-header">
-                    <button 
+                    <button
                         onClick={onBack}
                         className="voice-back-btn"
                     >
@@ -187,9 +186,9 @@ export default function VoiceConversationScreen({
                 {/* Voice Interface */}
                 <section className="voice-interface">
                     <div className={`voice-mic-wrapper ${uiState === 'listening' ? 'listening' : ''}`}>
-                        
+
                         {/* Outer Glow Ring */}
-                        <div 
+                        <div
                             onPointerDown={handlePointerDown}
                             onPointerUp={handlePointerUp}
                             onPointerCancel={handlePointerUp}
@@ -198,13 +197,13 @@ export default function VoiceConversationScreen({
                         >
                             <div className="inner-circle">
                                 {/* Microphone Icon */}
-                                <svg 
+                                <svg
                                     className={`voice-mic-icon ${uiState === 'listening' ? 'listening' : ''}`}
-                                    fill="none" 
-                                    stroke="currentColor" 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth="1.5" 
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="1.5"
                                     viewBox="0 0 24 24"
                                 >
                                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
@@ -242,7 +241,7 @@ export default function VoiceConversationScreen({
 
                 {/* Controls */}
                 <footer className="voice-footer">
-                    <button 
+                    <button
                         className="voice-history-btn"
                         title="Transcript History"
                         onClick={onSwitchToText}
