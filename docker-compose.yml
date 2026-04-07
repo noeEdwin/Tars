@@ -60,8 +60,10 @@ services:
     restart: always
     network_mode: host
     environment:
-      - GITEA_INSTANCE_URL=http://localhost:3000
+      - CONFIG_FILE=/config.yaml
+      - GITEA_INSTANCE_URL=http://100.69.250.70:3000
       - GITEA_RUNNER_REGISTRATION_TOKEN=H1J60QnW4MXIjqIXESYMmLdV1Yk78MEP61Wy0edi
     volumes:
       - ./runner_data:/data
+      - ./runner_data/config.yaml:/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
