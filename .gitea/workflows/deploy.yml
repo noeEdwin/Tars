@@ -1,13 +1,24 @@
 name: Deploy Tars
 on:
   push:
-    branches: [ "main" ] # Solo se activa cuando algo llega a main
+    branches: [ "main" ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Actualizado a v4 para mejor compatibilidad
+
+      # Paso clave: Crear el .env desde el secreto de Gitea
+      - name: Create .env file
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+
+      # Paso clave: Crear el tars.json desde el secreto de Gitea
+      - name: Create tars.json file
+        run: |
+          echo '${{ secrets.TARS_JSON }}' > tars.json
+
       - name: Docker Compose Up
         run: docker compose up -d --build
