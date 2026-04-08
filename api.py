@@ -274,7 +274,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
                     await websocket.send_json({"type": "token", "text": token})
 
         if full_response_content:
-            audio_bytes = get_mixed_audio_bytes(full_response_content)
+            audio_bytes = await asyncio.to_thread(get_mixed_audio_bytes, full_response_content)
             audio_b64 = base64.b64encode(audio_bytes).decode('utf-8') if audio_bytes else None
                 
             await websocket.send_json({
