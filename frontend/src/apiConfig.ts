@@ -11,4 +11,8 @@ const protocol = window.location.protocol;
 
 export const API_BASE = `${protocol}//${hostname}:8000`;
 
+// URL para el túnel de WebSocket
+const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
+export const WS_BASE = `${wsProtocol}//${hostname}:8000`;
+
 console.log("🚀 Tars API conectada a:", API_BASE);

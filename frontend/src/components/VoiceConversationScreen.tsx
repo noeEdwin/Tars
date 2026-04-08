@@ -15,6 +15,7 @@ interface VoiceScreenProps {
     onSendMessage: (text: string) => void;
     onBack: () => void;
     onSwitchToText: () => void;
+    onInterrupt: () => void;
 }
 
 export default function VoiceConversationScreen({
@@ -25,7 +26,8 @@ export default function VoiceConversationScreen({
     latestAudioB64,
     onSendMessage,
     onBack,
-    onSwitchToText
+    onSwitchToText,
+    onInterrupt
 }: VoiceScreenProps) {
     const [uiState, setUiState] = useState<UIState>('idle');
     const [interimText, setInterimText] = useState('');
@@ -43,13 +45,16 @@ export default function VoiceConversationScreen({
 
     // Handle new audio when latestAudioB64 changes
     useEffect(() => {
+        // Si latestAudioB64 es null (lo cual pasa en interruptTars), no hacemos nada
         if (latestAudioB64 && audioRef.current) {
             audioRef.current.src = `data:audio/ogg;codecs=opus;base64,${latestAudioB64}`;
             setUiState('speaking');
             audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
+        } else if (!latestAudioB64 && uiState === 'speaking') {
+            // Si el audio se vuelve null mientras hablábamos, regresamos a idle
+            setUiState('idle');
         }
     }, [latestAudioB64]);
-
     // Track processing state cleanly
     useEffect(() => {
         if (isProcessing && uiState !== 'listening') {
@@ -61,12 +66,19 @@ export default function VoiceConversationScreen({
     const handlePointerDown = async (e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
-
-        // Mobile Safari workaround: Unlock audio context on first user interaction
-        if (audioRef.current && audioRef.current.src === '') {
-            audioRef.current.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'; // Silent 1ms wav
-            audioRef.current.play().catch(() => { });
+        // 1. Detener audio actual y avisar al backend 
+        if (audioRef.current) {
             audioRef.current.pause();
+            audioRef.current.currentTime = 0; // Reinicia el audio
+        }
+        onInterrupt();
+        setUiState('idle');
+
+        // 2. Desbloqueo de audio para Mobile 
+        // Solo lo hacemos si el src está vacío o es el silencio inicial
+        if (audioRef.current && (audioRef.current.src === '' || audioRef.current.src.includes('base64'))) {
+            audioRef.current.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+            audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => { });
         }
 
         if (!sessionReady || isProcessing || isTranscribing) return;

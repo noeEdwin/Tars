@@ -6,6 +6,7 @@ import os
 import sys
 import uuid
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 # Path setup (mirrors main.py)
 project_root = str(Path(__file__).resolve().parent)
@@ -21,8 +22,9 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
-from langgraph.checkpoint.postgres import PostgresSaver
-
+from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+import asyncio
+from fastapi import WebSocket, WebSocketDisconnect
 from openai import OpenAI
 openai_client = OpenAI()
 
@@ -33,17 +35,32 @@ from dataBase.user_management import get_or_create_active_conversation
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
 
 # ─── App ────────────────────────────────────────────────────────────────────
-app = FastAPI(title="Tars API", version="1.0.0")
+app_state = {}
+DB_URI = get_db_uri()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- Lógica de INICIO ---
+    # Context manager of AsyncPostgresSaver yields the checkpointer instance
+    async with AsyncPostgresSaver.from_conn_string(DB_URI) as checkpointer:
+        await checkpointer.setup()
+        
+        # Lo guardamos para que esté accesible en toda la app
+        app_state["checkpointer"] = checkpointer
+        app_state["app_instance"] = workflow.compile(checkpointer=checkpointer)
+        yield
+
+app = FastAPI(title="Tars API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # open during development; restrict in production
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-DB_URI = get_db_uri()
+active_tasks = {}
 
 # ─── Models ─────────────────────────────────────────────────────────────────
 class StartSessionRequest(BaseModel):
@@ -72,6 +89,7 @@ class ChatResponse(BaseModel):
     audio_b64: str = None
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
+
 def _extract_tars_message(result: dict, start_len: int = 0) -> str:
     """Pull the final Tars text out of a workflow result."""
     messages = result.get("messages", [])
@@ -91,7 +109,7 @@ def get_roleplay_files(user_id: int = 1):
     return {"files": filenames}
 
 @app.post("/start_session", response_model=StartSessionResponse)
-def start_session(req: StartSessionRequest):
+async def start_session(req: StartSessionRequest):
     """
     Initialise a session for a user.
     """
@@ -103,27 +121,23 @@ def start_session(req: StartSessionRequest):
     conversation_id = get_or_create_active_conversation(req.user_id, req.mode)
 
     cfg = {**base_config, "configurable": {"thread_id": thread_id}}
+    app_instance = app_state["app_instance"]
+    snapshot = await app_instance.aget_state(cfg)
+    is_empty = not (snapshot.values and "messages" in snapshot.values)
 
-    with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
-        checkpointer.setup()
-        app_instance = workflow.compile(checkpointer=checkpointer)
+    tars_message = ""
+    if is_empty:
+        if req.mode == "tars_roleplay":
+            scene = req.scene or "A generic roleplay scenario."
+            doc_id = None
+            if req.filename:
+                res = get_scene_from_filename(req.user_id, req.filename)
+                if res:
+                    doc_id, scene = res
 
-        snapshot = app_instance.get_state(cfg)
-        is_empty = not (snapshot.values and "messages" in snapshot.values)
-
-        tars_message = ""
-        if is_empty:
-            if req.mode == "tars_roleplay":
-                scene = req.scene or "A generic roleplay scenario."
-                doc_id = None
-                if req.filename:
-                    res = get_scene_from_filename(req.user_id, req.filename)
-                    if res:
-                        doc_id, scene = res
-
-                sys_msg_text = f"SYSTEM UPDATE: User has initiated a roleplay.\nSCENE: {scene}\nUSER ROLE: {req.user_role}\nTARS ROLE: {req.tars_role}\n\n PLEASE ADOPT THIS PERSONA IMMEDIATELY."
+            sys_msg_text = f"SYSTEM UPDATE: User has initiated a roleplay.\nSCENE: {scene}\nUSER ROLE: {req.user_role}\nTARS ROLE: {req.tars_role}\n\n PLEASE ADOPT THIS PERSONA IMMEDIATELY."
                 
-                init_state = {
+            init_state = {
                     "user_mode": "tars_roleplay",
                     "active_expert": "tars_roleplay",
                     "user_id": req.user_id,
@@ -135,68 +149,60 @@ def start_session(req: StartSessionRequest):
                     "selected_source": str(doc_id) if doc_id else None,
                     "messages": [HumanMessage(content=sys_msg_text)]
                 }
-            else:
-                init_state = {
-                    "user_mode": req.mode,
-                    "active_expert": req.mode,
-                    "user_id": req.user_id,
-                    "hsk_level": get_user_hsk_level(req.user_id),
-                    "current_lesson": 1,
-                    "awaiting_answer": False,  # lesson_prompt_node will set True after first word
-                    "messages": [HumanMessage(
-                        content=(
-                            "SYSTEM UPDATE: A new Chinese learning session has started. "
-                            "Start the lesson immediately — introduce the first word."
-                        )
-                    )],
-                }
-            result = app_instance.invoke(init_state, config=cfg)
-            tars_message = _extract_tars_message(result)
-            if tars_message:
-                save_long_term_memory(conversation_id, "assistant", tars_message)
         else:
-            # Existing session — resume appropriately per mode
-            snapshot = app_instance.get_state(cfg)
-            last_msgs = snapshot.values.get("messages", []) if snapshot.values else []
+           init_state = {
+                "user_mode": req.mode,
+                "active_expert": req.mode,
+                "user_id": req.user_id,
+                "hsk_level": get_user_hsk_level(req.user_id),
+                "current_lesson": 1,
+                "awaiting_answer": False,  # lesson_prompt_node will set True after first word
+                "messages": [HumanMessage(
+                    content=(
+                        "SYSTEM UPDATE: A new Chinese learning session has started. "
+                        "Start the lesson immediately — introduce the first word."
+                    )
+                )],
+            }
+        result = await app_instance.ainvoke(init_state, config=cfg)
+        tars_message = _extract_tars_message(result)
+        
+        if tars_message:
+            await asyncio.to_thread(save_long_term_memory, conversation_id, "assistant", tars_message)
+    else:
+        # Existing session — resume appropriately per mode
+        last_msgs = snapshot.values.get("messages", [])
+        # Recover from interrupted tool calls
+        if last_msgs:
+            last = last_msgs[-1]
+            if hasattr(last, "tool_calls") and last.tool_calls:
+                tool_recovery = [
+                    ToolMessage(content="System: session resumed.", tool_call_id=tc["id"])
+                    for tc in last.tool_calls
+                ]
+                await app_instance.aupdate_state(cfg, {"messages": tool_recovery})
 
-            # Recover from interrupted tool calls
-            if last_msgs:
-                last = last_msgs[-1]
-                if hasattr(last, "tool_calls") and last.tool_calls:
-                    tool_recovery = [
-                        ToolMessage(
-                            content="System: session resumed.",
-                            tool_call_id=tc["id"]
-                        )
-                        for tc in last.tool_calls
-                    ]
-                    app_instance.update_state(cfg, {"messages": tool_recovery})
-
-            if req.mode == "tars_normal":
-                # Reset lesson state so we always start the lesson fresh
-                app_instance.update_state(cfg, {
-                    "lesson_words":    None,
-                    "lesson_progress": 0,
-                    "target_word":     None,
-                    "awaiting_answer": False,
-                })
-                result = app_instance.invoke({
-                    "user_mode":       "tars_normal",
-                    "active_expert":   "tars_normal",
-                    "user_id":         req.user_id,
-                    "hsk_level":       get_user_hsk_level(req.user_id),
-                    "current_lesson":  1,
-                    "awaiting_answer": False,
-                    "messages": [HumanMessage(
-                        content="SYSTEM: Nueva sesión de lección iniciada. Presenta la primera palabra."
-                    )],
-                }, config=cfg)
-                tars_message = _extract_tars_message(result)
-                if tars_message:
-                    save_long_term_memory(conversation_id, "assistant", tars_message)
-            else:
-                tars_message = "¡Bienvenido de vuelta! Continuemos donde nos quedamos."
-
+        if req.mode == "tars_normal":
+            # Reseteo de estado para lección fresca
+            await app_instance.aupdate_state(cfg, {
+                "lesson_words":    None,
+                "lesson_progress": 0,
+                "target_word":     None,
+                "awaiting_answer": False,
+            })
+            
+            # Ejecutamos el inicio de la lección
+            result = await app_instance.ainvoke({
+                "user_mode": "tars_normal",
+                "messages": [HumanMessage(content="SYSTEM: Nueva sesión de lección. Presenta la primera palabra.")]
+            }, config=cfg)
+            tars_message = _extract_tars_message(result)
+        else:
+            tars_message = "¡Bienvenido de vuelta! Continuemos donde nos quedamos."
+    
+    if tars_message:
+        await asyncio.to_thread(save_long_term_memory, conversation_id, "assistant", tars_message)
+    
     audio_b64 = None
     if tars_message:
         audio_bytes = get_mixed_audio_bytes(tars_message)
@@ -210,50 +216,79 @@ def start_session(req: StartSessionRequest):
         audio_b64=audio_b64
     )
 
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_json()
+            if data.get("type") == "interrupt":
+                if user_id in active_tasks:
+                    active_tasks[user_id].cancel()
+                continue
 
-@app.post("/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    """Send a user message and get Tars' response."""
-    cfg = {**base_config, "configurable": {"thread_id": req.thread_id}}
+            if data.get("type") == "chat":
+                user_input = data.get("text")
+                thread_id = data.get("thread_id")
+                conv_id = data.get("conversation_id")
 
-    save_long_term_memory(req.conversation_id, "user", req.user_input)
+                if user_id in active_tasks and not active_tasks[user_id].done():
+                    active_tasks[user_id].cancel()
 
-    with PostgresSaver.from_conn_string(DB_URI) as checkpointer:
-        checkpointer.setup()
-        app_instance = workflow.compile(checkpointer=checkpointer)
+                task = asyncio.create_task(
+                    handle_tars_response(websocket, user_id, user_input, thread_id, conv_id)
+                )
+                active_tasks[user_id] = task
+    except WebSocketDisconnect:
+        if user_id in active_tasks:
+            active_tasks[user_id].cancel()    
 
-        snapshot = app_instance.get_state(cfg)
-        existing = snapshot.values.get("messages", []) if snapshot.values else []
-        start_len = len(existing)
-
-        # Read persisted lesson phase from checkpoint so the router sees the correct state
+async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_id, mode="tars_normal"):
+    """
+    Procesa la respuesta de Tars, genera audio y envía por el socket.
+    Esta función es cancelable si el usuario interrumpe.
+    """
+    cfg = {**base_config, "configurable": {"thread_id": thread_id}}
+    full_response_content = ""
+    app_instance = app_state["app_instance"]
+    try:
+        # Guardamos lo que dijo el usuario (E/S en hilo aparte para no bloquear el socket)
+        await asyncio.to_thread(save_long_term_memory, conv_id, "user", user_input)
+        snapshot = await app_instance.aget_state(cfg)
         awaiting = snapshot.values.get("awaiting_answer", False) if snapshot.values else False
-
+ 
         state_update = {
-            "user_mode": req.mode,
-            "active_expert": req.mode,
-            "user_id": req.user_id,
-            "hsk_level": get_user_hsk_level(req.user_id),
+            "user_mode": mode,
+            "active_expert": mode,
+            "user_id": user_id,
+            "hsk_level": get_user_hsk_level(user_id),
             "current_lesson": snapshot.values.get("current_lesson", 1) if snapshot.values else 1,
             "awaiting_answer": awaiting,
-            "messages": [HumanMessage(content=req.user_input)],
+            "messages": [HumanMessage(content=user_input)],
         }
+        async for event in app_instance.astream_events(state_update, cfg, version="v2"):
+            if event["event"] == "on_chat_model_stream":
+                token = event["data"]["chunk"].content
+                if token:
+                    full_response_content += token
+                    await websocket.send_json({"type": "token", "text": token})
 
-        result = app_instance.invoke(state_update, config=cfg)
-        tars_message = _extract_tars_message(result, start_len)
-
-    if not tars_message:
-        raise HTTPException(status_code=500, detail="No response from Tars")
-
-    save_long_term_memory(req.conversation_id, "assistant", tars_message)
-    
-    audio_b64 = None
-    audio_bytes = get_mixed_audio_bytes(tars_message)
-    if audio_bytes:
-        audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
-
-    return ChatResponse(tars_message=tars_message, audio_b64=audio_b64)
-
+        if full_response_content:
+            audio_bytes = get_mixed_audio_bytes(full_response_content)
+            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8') if audio_bytes else None
+                
+            await websocket.send_json({
+                    "type": "tars_answer",
+                    "text": full_response_content,
+                    "audio_b64": audio_b64
+            })
+            await asyncio.to_thread(save_long_term_memory, conv_id, "assistant", full_response_content)
+    except asyncio.CancelledError:
+        # Aquí es donde ocurre la magia: si task.cancel() se llama, el código salta aquí.
+        await websocket.send_json({"type": "status", "message": "Interrumpido por el usuario."})
+    except Exception as e:
+        print(f"Error en Tars Response: {e}")
+        await websocket.send_json({"type": "error", "message": "Ocurrió un error interno."})
 
 @app.get("/health")
 def health():
