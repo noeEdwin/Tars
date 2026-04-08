@@ -54,6 +54,11 @@ INSTRUCCIÓN DEL SISTEMA (obligatoria):
 
     last_user_msg = (state["messages"][-1].content if state.get("messages") else "")
     print(f"[TIMER NODE] 2. Pre-RAG listo: {time.time() - t_n:.2f}s")
+    
+    import asyncio
+    mem_ctx = await asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, "")
+    protocol_text += mem_ctx
+    
     protocol_text = append_style_examples(last_user_msg, "INTRODUCE", protocol_text)
     print(f"[TIMER NODE] 3. RAG finalizado: {time.time() - t_n:.2f}s")
 
@@ -150,11 +155,13 @@ INSTRUCCIÓN: ¡El usuario completó todas las palabras de la lección! Felicít
 """
 
     import asyncio
-    rag_ctx = await asyncio.to_thread(_build_rag_context, last_user_msg, current_lesson)
+    rag_task = asyncio.to_thread(_build_rag_context, last_user_msg, current_lesson)
+    mem_task = asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, "")
+    rag_ctx, mem_ctx = await asyncio.gather(rag_task, mem_task)
+    
     if rag_ctx:
         protocol_text += f"\n\n### CONTEXTO ADICIONAL\n{rag_ctx}"
-
-    protocol_text = await asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, protocol_text)
+    protocol_text += mem_ctx
     protocol_text = append_style_examples(last_user_msg, feedback_type, protocol_text)
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert

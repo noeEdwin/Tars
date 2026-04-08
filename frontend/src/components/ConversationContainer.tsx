@@ -29,7 +29,8 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
     const [isProcessing, setIsProcessing] = useState(false);
     const socketRef = useRef<WebSocket | null>(null);
     // Voice-specific state from backend
-    const [latestAudioB64, setLatestAudioB64] = useState<string | null>(null);
+    const [audioQueue, setAudioQueue] = useState<string[]>([]);
+    const [currentAudioIndex, setCurrentAudioIndex] = useState(0);
 
     useEffect(() => {
         const startSession = async () => {
@@ -87,9 +88,12 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
                 });
             }
 
-            // Once the entire text finishes hitting the node, the backend sends the audio
-            if (data.type === 'tars_answer') {
-                if (data.audio_b64) setLatestAudioB64(data.audio_b64);
+            if (data.type === 'tars_answer' || data.type === 'audio_chunk') {
+                if (data.audio_b64) {
+                    setAudioQueue(prev => [...prev, data.audio_b64]);
+                }
+            }
+            if (data.type === 'tars_answer_end') {
                 setIsProcessing(false);
             }
 
@@ -109,7 +113,8 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
     const interruptTars = useCallback(() => {
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({ type: 'interrupt' }));
-            setLatestAudioB64(null);
+            setAudioQueue([]);
+            setCurrentAudioIndex(0);
             setIsProcessing(false);
         }
     }, []);
@@ -120,7 +125,8 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
         setIsProcessing(true);
         const userMsg: Message = { id: Date.now().toString(), role: 'user', text };
         setMessages(prev => [...prev, userMsg]);
-        setLatestAudioB64(null);
+        setAudioQueue([]);
+        setCurrentAudioIndex(0);
 
         if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({
@@ -140,7 +146,9 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
                 messages={messages}
                 sessionReady={sessionReady}
                 isProcessing={isProcessing}
-                latestAudioB64={latestAudioB64}
+                audioQueue={audioQueue}
+                currentAudioIndex={currentAudioIndex}
+                setCurrentAudioIndex={setCurrentAudioIndex}
                 onSendMessage={sendMessage}
                 onInterrupt={interruptTars}
                 onBack={() => setCurrentView('home')}

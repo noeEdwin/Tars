@@ -11,7 +11,9 @@ interface VoiceScreenProps {
     messages: Message[];
     sessionReady: boolean;
     isProcessing: boolean;
-    latestAudioB64: string | null;
+    audioQueue: string[];
+    currentAudioIndex: number;
+    setCurrentAudioIndex: React.Dispatch<React.SetStateAction<number>>;
     onSendMessage: (text: string) => void;
     onBack: () => void;
     onSwitchToText: () => void;
@@ -23,7 +25,9 @@ export default function VoiceConversationScreen({
     messages,
     sessionReady,
     isProcessing,
-    latestAudioB64,
+    audioQueue,
+    currentAudioIndex,
+    setCurrentAudioIndex,
     onSendMessage,
     onBack,
     onSwitchToText,
@@ -43,18 +47,23 @@ export default function VoiceConversationScreen({
     const rawSubtitle = tarsMessages.length > 0 ? tarsMessages[tarsMessages.length - 1].text : '';
     const tarsSubtitle = rawSubtitle ? parseTarsMessage(rawSubtitle).chinese : '';
 
-    // Handle new audio when latestAudioB64 changes
+    // Handle Audio Queue
     useEffect(() => {
-        // Si latestAudioB64 es null (lo cual pasa en interruptTars), no hacemos nada
-        if (latestAudioB64 && audioRef.current) {
-            audioRef.current.src = `data:audio/ogg;codecs=opus;base64,${latestAudioB64}`;
-            setUiState('speaking');
-            audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
-        } else if (!latestAudioB64 && uiState === 'speaking') {
-            // Si el audio se vuelve null mientras hablábamos, regresamos a idle
-            setUiState('idle');
+        // Si la cola se vació (interrupt), detenemos todo
+        if (audioQueue.length === 0) {
+            if (uiState === 'speaking') setUiState('idle');
+            return;
         }
-    }, [latestAudioB64]);
+
+        if (audioQueue.length > currentAudioIndex && audioRef.current) {
+            // Si el audio tag está inactivo, comenzamos el chunk
+            if (uiState !== 'speaking' || audioRef.current.paused || audioRef.current.ended) {
+                 audioRef.current.src = `data:audio/ogg;codecs=opus;base64,${audioQueue[currentAudioIndex]}`;
+                 setUiState('speaking');
+                 audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
+            }
+        }
+    }, [audioQueue, currentAudioIndex, uiState]);
     // Track processing state cleanly
     useEffect(() => {
         if (isProcessing && uiState !== 'listening') {
@@ -177,7 +186,19 @@ export default function VoiceConversationScreen({
 
     return (
         <div className="voice-screen-body">
-            <audio ref={audioRef} style={{ display: 'none' }} />
+            <audio 
+                ref={audioRef} 
+                style={{ display: 'none' }} 
+                onEnded={() => {
+                    const nextIndex = currentAudioIndex + 1;
+                    if (nextIndex < audioQueue.length) {
+                        setCurrentAudioIndex(nextIndex);
+                    } else {
+                        setCurrentAudioIndex(nextIndex);
+                        setUiState('idle'); // Finalizó de hablar todos los chunks
+                    }
+                }}
+            />
             <div className="ambient-glow"></div>
 
             <main className="voice-main">
