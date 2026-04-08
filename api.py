@@ -66,16 +66,16 @@ active_tasks = {}
 class StartSessionRequest(BaseModel):
     user_id: int = 1
     mode: str = "tars_normal"   # or "tars_roleplay"
-    filename: str = None
-    tars_role: str = None
-    user_role: str = None
-    scene: str = None
+    filename: str | None = None
+    tars_role: str | None = None
+    user_role: str | None = None
+    scene: str | None = None
 
 class StartSessionResponse(BaseModel):
     thread_id: str
     conversation_id: int
     tars_message: str
-    audio_b64: str = None
+    audio_b64: str | None = None
 
 class ChatRequest(BaseModel):
     user_id: int
@@ -86,7 +86,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     tars_message: str
-    audio_b64: str = None
+    audio_b64: str | None = None
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -164,11 +164,9 @@ async def start_session(req: StartSessionRequest):
                     )
                 )],
             }
-        result = await app_instance.ainvoke(init_state, config=cfg)
-        tars_message = _extract_tars_message(result)
-        
-        if tars_message:
-            await asyncio.to_thread(save_long_term_memory, conversation_id, "assistant", tars_message)
+        await app_instance.aupdate_state(cfg, init_state)
+        tars_message = ""
+    
     else:
         # Existing session — resume appropriately per mode
         last_msgs = snapshot.values.get("messages", [])
@@ -190,13 +188,11 @@ async def start_session(req: StartSessionRequest):
                 "target_word":     None,
                 "awaiting_answer": False,
             })
-            
-            # Ejecutamos el inicio de la lección
-            result = await app_instance.ainvoke({
+            await app_instance.aupdate_state(cfg, {
                 "user_mode": "tars_normal",
                 "messages": [HumanMessage(content="SYSTEM: Nueva sesión de lección. Presenta la primera palabra.")]
-            }, config=cfg)
-            tars_message = _extract_tars_message(result)
+            })
+            tars_message = ""
         else:
             tars_message = "¡Bienvenido de vuelta! Continuemos donde nos quedamos."
     
@@ -227,7 +223,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int):
                     active_tasks[user_id].cancel()
                 continue
 
-            if data.get("type") == "chat":
+            if data.get("type") in ["chat", "init_session"]:
                 user_input = data.get("text")
                 thread_id = data.get("thread_id")
                 conv_id = data.get("conversation_id")
@@ -252,21 +248,24 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
     full_response_content = ""
     app_instance = app_state["app_instance"]
     try:
+        if user_input:
         # Guardamos lo que dijo el usuario (E/S en hilo aparte para no bloquear el socket)
-        await asyncio.to_thread(save_long_term_memory, conv_id, "user", user_input)
-        snapshot = await app_instance.aget_state(cfg)
-        awaiting = snapshot.values.get("awaiting_answer", False) if snapshot.values else False
- 
-        state_update = {
-            "user_mode": mode,
-            "active_expert": mode,
-            "user_id": user_id,
-            "hsk_level": get_user_hsk_level(user_id),
-            "current_lesson": snapshot.values.get("current_lesson", 1) if snapshot.values else 1,
-            "awaiting_answer": awaiting,
-            "messages": [HumanMessage(content=user_input)],
-        }
-        async for event in app_instance.astream_events(state_update, cfg, version="v2"):
+            await asyncio.to_thread(save_long_term_memory, conv_id, "user", user_input)
+            snapshot = await app_instance.aget_state(cfg)
+            awaiting = snapshot.values.get("awaiting_answer", False) if snapshot.values else False
+    
+            input_data = {
+                "user_mode": mode,
+                "active_expert": mode,
+                "user_id": user_id,
+                "hsk_level": get_user_hsk_level(user_id),
+                "current_lesson": snapshot.values.get("current_lesson", 1) if snapshot.values else 1,
+                "awaiting_answer": awaiting,
+                "messages": [HumanMessage(content=user_input)],
+            }
+        else:
+            input_data = None
+        async for event in app_instance.astream_events(input_data, cfg, version="v2"):
             if event["event"] == "on_chat_model_stream":
                 token = event["data"]["chunk"].content
                 if token:

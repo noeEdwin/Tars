@@ -41,11 +41,6 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
             const data = await res.json();
             setThreadId(data.thread_id);
             setConversationId(data.conversation_id);
-
-            // Añadir el primer mensaje de Tars
-            setMessages([{ id: Date.now().toString(), role: 'tars', text: data.tars_message }]);
-            if (data.audio_b64) setLatestAudioB64(data.audio_b64);
-
             setSessionReady(true);
         };
         startSession();
@@ -59,15 +54,41 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
         const socket = new WebSocket(`${WS_BASE}/ws/${USER_ID}`);
         socketRef.current = socket;
 
+        socket.onopen = () => {
+            socket.send(JSON.stringify({
+                type: 'init_session',
+                thread_id: threadId,
+                conversation_id: conversationId,
+                mode: mode
+            }));
+            setIsProcessing(true); // Muestra a Tars "Pensando..."
+        };
+
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
+            if (data.type === 'token') {
+                setMessages(prev => {
+                    const lastMsg = prev[prev.length - 1];
+                    // If the last bubble is from Tars, append the text to it
+                    if (lastMsg && lastMsg.role === 'tars') {
+                        return [
+                            ...prev.slice(0, -1),
+                            { ...lastMsg, text: lastMsg.text + data.text }
+                        ];
+                    } else {
+                        // Otherwise (First token of the response), create a new bubble
+                        return [...prev, {
+                            id: Date.now().toString() + 't',
+                            role: 'tars',
+                            text: data.text
+                        }];
+                    }
+                });
+            }
+
+            // Once the entire text finishes hitting the node, the backend sends the audio
             if (data.type === 'tars_answer') {
-                setMessages(prev => [...prev, {
-                    id: Date.now().toString() + 't',
-                    role: 'tars',
-                    text: data.text
-                }]);
                 if (data.audio_b64) setLatestAudioB64(data.audio_b64);
                 setIsProcessing(false);
             }
@@ -77,6 +98,7 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
                 setIsProcessing(false);
             }
         };
+
 
         return () => {
             socket.close();
