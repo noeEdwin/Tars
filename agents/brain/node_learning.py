@@ -3,8 +3,12 @@ from brain.chains import PROTOCOLS, get_tars_expert, actor_prompt_template
 from brain.utils import load_lesson_json, is_phonetically_similar
 from brain.context_builders import _build_rag_context, _append_memory_context
 from brain.personality_rag import append_style_examples
+from langchain_core.runnables import RunnableConfig
 
-def lesson_prompt_node(state: TarsState) -> dict:
+async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:
+    import time
+    t_n = time.time()
+    print(f"[TIMER NODE] 1. lesson_prompt_node started")
     llm_expert      = get_tars_expert(expert_type="tars_normal")
     current_lesson  = state.get("current_lesson", 1)
     lesson_words    = state.get("lesson_words")
@@ -49,11 +53,15 @@ INSTRUCCIÓN DEL SISTEMA (obligatoria):
 """
 
     last_user_msg = (state["messages"][-1].content if state.get("messages") else "")
-    protocol_text = _append_memory_context(state.get("user_id"), last_user_msg, protocol_text)
+    print(f"[TIMER NODE] 2. Pre-RAG listo: {time.time() - t_n:.2f}s")
     protocol_text = append_style_examples(last_user_msg, "INTRODUCE", protocol_text)
+    print(f"[TIMER NODE] 3. RAG finalizado: {time.time() - t_n:.2f}s")
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
-    response = dynamic_chain.invoke(state)
+    print(f"[TIMER NODE] 4. Llamando a OpenAI ainvoke...")
+    t_llm = time.time()
+    response = await dynamic_chain.ainvoke(state, config=config)
+    print(f"[TIMER NODE] 5. Fin LLM ainvoke: {time.time() - t_llm:.2f}s")
 
     return {
         "messages":        [response],
@@ -61,7 +69,7 @@ INSTRUCCIÓN DEL SISTEMA (obligatoria):
         **state_updates,
     }
 
-def lesson_check_node(state: TarsState) -> dict:
+async def lesson_check_node(state: TarsState, config: RunnableConfig) -> dict:
     llm_expert      = get_tars_expert(expert_type="tars_normal")
     current_lesson  = state.get("current_lesson", 1)
     lesson_words    = state.get("lesson_words", [])
@@ -141,14 +149,15 @@ Pídele que lo intente de nuevo. NO avances.
 INSTRUCCIÓN: ¡El usuario completó todas las palabras de la lección! Felicítalo con entusiasmo.
 """
 
-    rag_ctx = _build_rag_context(last_user_msg, current_lesson)
+    import asyncio
+    rag_ctx = await asyncio.to_thread(_build_rag_context, last_user_msg, current_lesson)
     if rag_ctx:
         protocol_text += f"\n\n### CONTEXTO ADICIONAL\n{rag_ctx}"
 
-    protocol_text = _append_memory_context(state.get("user_id"), last_user_msg, protocol_text)
+    protocol_text = await asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, protocol_text)
     protocol_text = append_style_examples(last_user_msg, feedback_type, protocol_text)
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
-    response = dynamic_chain.invoke(state)
+    response = await dynamic_chain.ainvoke(state, config=config)
 
     return {"messages": [response], **state_updates}

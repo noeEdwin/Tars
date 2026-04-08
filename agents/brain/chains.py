@@ -77,7 +77,8 @@ def get_tars_expert(expert_type:str):
     if expert_type == "tars_normal":
         return ChatOpenAI(
             model="gpt-4o", 
-            temperature=0.85
+            temperature=0.85,
+            streaming=True
         )
 
     if os.getenv("DEEPSEEK_API_KEY") and expert_type in ["tars_engineer", "tars_sales"]:
@@ -85,13 +86,14 @@ def get_tars_expert(expert_type:str):
             model="deepseek-chat",
             temperature=0.7,
             base_url="[https://api.deepseek.com](https://api.deepseek.com)",
-            api_key=os.getenv("DEEPSEEK_API_KEY")
+            api_key=os.getenv("DEEPSEEK_API_KEY"),
+            streaming=True
         )
 
     if expert_type == "tars_roleplay":
-        return ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
+        return ChatOpenAI(model="gpt-4o-mini", temperature=0.5, streaming=True)
     
-    return ChatOpenAI(model="gpt-4o", temperature=0.7)
+    return ChatOpenAI(model="gpt-4o", temperature=0.7, streaming=True)
 
 def get_embeddings_model():
     return OpenAIEmbeddings(model="text-embedding-3-small")

@@ -70,7 +70,7 @@ async def get_mixed_audio_bytes(text: str) -> bytes:
     Divide el texto y dispara todas las peticiones a Google SIMULTÁNEAMENTE.
     """
     # 1. Limpieza de texto (quitamos Pinyin entre paréntesis para el audio)
-    clean_text = re.sub(r'\(.*?\)', '', text).replace('[', '').replace(']', '')
+    clean_text = re.sub(r'\(.*?\)', '', text).replace('[', '').replace(']', '').replace('*', '')
     
     # 2. Split inteligente (Chino vs Resto)
     parts = re.split(r'([\u4e00-\u9fff，。？！“”]+)', clean_text)

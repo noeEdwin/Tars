@@ -4,8 +4,9 @@ from dataBase.persona_db import fetch_persona_from_db
 from brain.identity_agent import generate_persona
 from RAG.retrieve import retrieve_knowledge
 from brain.context_builders import _build_rag_context, _append_memory_context
+from langchain_core.runnables import RunnableConfig
 
-def actor_node(state: TarsState) -> dict:
+async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
     expert_type   = state.get("user_mode", "tars_roleplay")
     llm_expert    = get_tars_expert(expert_type=expert_type)
     protocol_text = PROTOCOLS.get(expert_type, "Standard operating procedures.")
@@ -80,6 +81,6 @@ def actor_node(state: TarsState) -> dict:
     protocol_text = _append_memory_context(state.get("user_id"), last_user_msg, protocol_text)
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
-    response = dynamic_chain.invoke(state)
+    response = await dynamic_chain.ainvoke(state, config=config)
 
     return {"messages": [response]}

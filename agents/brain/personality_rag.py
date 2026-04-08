@@ -1,13 +1,15 @@
 # agents/brain/personality_rag.py
 from RAG.retrieve import retrieve_style_examples
 from RAG.utils import get_embedding
+import random
 
-# Mapeo enriquecido usando las emociones de tu DB
+
+
 EMOTION_MAP = {
-    "RETRY": "directo",               # Cuando se equivocan, Tars es directo
-    "CORRECT_NEXT": "motivacional",   # Cuando aciertan, los anima
-    "LESSON_COMPLETE": "exclamativo", # Al terminar, cierra con energía
-    "INTRODUCE": "neutro",            # Al presentar la lección se mantiene claro
+    "RETRY": "directo",
+    "CORRECT_NEXT": "motivacional",
+    "LESSON_COMPLETE": "exclamativo",
+    "INTRODUCE": "neutro",
     "DEFAULT": "neutro"
 }
 
@@ -16,28 +18,26 @@ def append_style_examples(last_user_msg: str, feedback_type: str, protocol_text:
     Inyecta instrucciones de personalidad (RAG) al prompt basado en el tipo de feedback,
     consultando la tabla translations_mvp.
     """
-    target_emotion = EMOTION_MAP.get(feedback_type, EMOTION_MAP["DEFAULT"])
-
-    # Evitar generar embeddings para mensajes muy cortos/vacíos
-    if not last_user_msg.strip():
-        last_user_msg = "hola" 
-
-    try:
-        user_vec = get_embedding(last_user_msg)
-        ejemplos = retrieve_style_examples(target_emotion, user_vec, limit=3)
+    from api import app_state
+    library = app_state.get("style_library", {})
+    
+    # Mapeo simple: si es RETRY, dame algo sarcástico. Si es CORRECT, algo neutro/alentador.
+    target_vibe = "sarcástico" if feedback_type == "RETRY" else "neutro"
+    
+    # Obtenemos ejemplos de la RAM 
+    ejemplos = library.get(target_vibe, [])
+    
+    if ejemplos:
+        # Elegimos 2 o 3 al azar para que Tars no sea repetitivo
+        seleccion = random.sample(ejemplos, min(len(ejemplos), 3))
         
-        # ⚠️ DEBUG: Lo dejamos para tu validación de QA. Luego lo borramos.
-        print(f"DEBUG | Estilo: {target_emotion} | Ejemplos: {len(ejemplos)} recuperados")
+        style_instruction = "\n\n### GUÍA DE NATURALIDAD (CINE CHINO) ###\n"
+        style_instruction += f"No hables como un libro. Usa el tono: {target_vibe.upper()}.\n"
+        style_instruction += "Fíjate en cómo se estructuran estas frases reales:\n"
+        for ex in seleccion:
+            style_instruction += f"- Chino: {ex['zh']} (Significa: {ex['es']})\n"
+        style_instruction += "\n### FIN DE GUÍA ###\n"
         
-        if ejemplos:
-            style_instruction = "\n\n### INSTRUCCIÓN DE PERSONALIDAD (MANDATORIA) ###\n"
-            style_instruction += f"Tu tono actual DEBE ser {target_emotion.upper()}. "
-            style_instruction += "Imita la estructura y actitud de estos diálogos reales:\n"
-            style_instruction += "\n".join([f"- {ex}" for ex in ejemplos])
-            style_instruction += "\n### FIN DE PERSONALIDAD ###\n"
-            protocol_text += style_instruction
-            
-    except Exception as e:
-        print(f"⚠️ Error en RAG de Estilo: {e}")
-        
+        return protocol_text + style_instruction
+    
     return protocol_text

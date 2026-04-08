@@ -244,36 +244,47 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
     Procesa la respuesta de Tars, genera audio y envía por el socket.
     Esta función es cancelable si el usuario interrumpe.
     """
+    import time
+    t_start = time.time()
+    print(f"[TIMER WS] 1. Llegó mensaje / inicio handler: 0.00s")
     cfg = {**base_config, "configurable": {"thread_id": thread_id}}
     full_response_content = ""
     app_instance = app_state["app_instance"]
     try:
         if user_input:
-        # Guardamos lo que dijo el usuario (E/S en hilo aparte para no bloquear el socket)
-            await asyncio.to_thread(save_long_term_memory, conv_id, "user", user_input)
-            snapshot = await app_instance.aget_state(cfg)
-            awaiting = snapshot.values.get("awaiting_answer", False) if snapshot.values else False
-    
+            # 1. Fire-and-forget: we do NOT await this. It saves in the background!
+            asyncio.create_task(asyncio.to_thread(save_long_term_memory, conv_id, "user", user_input))
+            
             input_data = {
                 "user_mode": mode,
                 "active_expert": mode,
                 "user_id": user_id,
                 "hsk_level": get_user_hsk_level(user_id),
-                "current_lesson": snapshot.values.get("current_lesson", 1) if snapshot.values else 1,
-                "awaiting_answer": awaiting,
                 "messages": [HumanMessage(content=user_input)],
             }
         else:
             input_data = None
+            
+        print(f"[TIMER WS] 3. Listo para astream_events: {time.time() - t_start:.2f}s")
+        first_token = True
+        
         async for event in app_instance.astream_events(input_data, cfg, version="v2"):
             if event["event"] == "on_chat_model_stream":
+                if first_token:
+                    print(f"[TIMER WS] 4. PRIMER TOKEN DE OPENAI RECIBIDO!: {time.time() - t_start:.2f}s")
+                    first_token = False
                 token = event["data"]["chunk"].content
                 if token:
                     full_response_content += token
                     await websocket.send_json({"type": "token", "text": token})
 
+        print(f"[TIMER WS] 5. Todos los tokens procesados (fin LangGraph): {time.time() - t_start:.2f}s")
         if full_response_content:
+            t_audio = time.time()
             audio_bytes = await get_mixed_audio_bytes(full_response_content)
+            print(f"[TIMER WS] 6. Audio TTS de Google generado: {time.time() - t_audio:.2f}s")
+            
+            t_b64 = time.time()
             audio_b64 = base64.b64encode(audio_bytes).decode('utf-8') if audio_bytes else None
                 
             await websocket.send_json({
@@ -281,7 +292,13 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
                     "text": full_response_content,
                     "audio_b64": audio_b64
             })
-            await asyncio.to_thread(save_long_term_memory, conv_id, "assistant", full_response_content)
+            print(f"[TIMER WS] 7. Respuesta y audio enviada al frontend. TIEMPO TOTAL: {time.time() - t_start:.2f}s")
+            
+        else:
+             await websocket.send_json({"type": "tars_answer", "text": full_response_content, "audio_b64": None})
+             
+        # Guardar historial sin bloquear!
+        asyncio.create_task(asyncio.to_thread(save_long_term_memory, conv_id, "assistant", full_response_content))
     except asyncio.CancelledError:
         # Aquí es donde ocurre la magia: si task.cancel() se llama, el código salta aquí.
         await websocket.send_json({"type": "status", "message": "Interrumpido por el usuario."})
