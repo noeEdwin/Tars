@@ -47,23 +47,22 @@ export default function VoiceConversationScreen({
     const rawSubtitle = tarsMessages.length > 0 ? tarsMessages[tarsMessages.length - 1].text : '';
     const tarsSubtitle = rawSubtitle ? parseTarsMessage(rawSubtitle).chinese : '';
 
-    // Handle Audio Queue
     useEffect(() => {
-        // Si la cola se vació (interrupt), detenemos todo
         if (audioQueue.length === 0) {
             if (uiState === 'speaking') setUiState('idle');
             return;
         }
 
+        // Si hay un chunk disponible para el índice actual
         if (audioQueue.length > currentAudioIndex && audioRef.current) {
-            // Si el audio tag está inactivo, comenzamos el chunk
-            if (uiState !== 'speaking' || audioRef.current.paused || audioRef.current.ended) {
-                 audioRef.current.src = `data:audio/ogg;codecs=opus;base64,${audioQueue[currentAudioIndex]}`;
-                 setUiState('speaking');
-                 audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
+            // Solo cargamos el nuevo src si el audio está realmente detenido o es el inicio
+            if (audioRef.current.paused || audioRef.current.ended || uiState !== 'speaking') {
+                audioRef.current.src = `data:audio/ogg;codecs=opus;base64,${audioQueue[currentAudioIndex]}`;
+                setUiState('speaking');
+                audioRef.current.play().catch(e => console.error("Error al reproducir chunk:", e));
             }
         }
-    }, [audioQueue, currentAudioIndex, uiState]);
+    }, [audioQueue, currentAudioIndex]); // Eliminamos uiState de las dependencias para evitar bucles
     // Track processing state cleanly
     useEffect(() => {
         if (isProcessing && uiState !== 'listening') {
@@ -186,9 +185,9 @@ export default function VoiceConversationScreen({
 
     return (
         <div className="voice-screen-body">
-            <audio 
-                ref={audioRef} 
-                style={{ display: 'none' }} 
+            <audio
+                ref={audioRef}
+                style={{ display: 'none' }}
                 onEnded={() => {
                     const nextIndex = currentAudioIndex + 1;
                     if (nextIndex < audioQueue.length) {

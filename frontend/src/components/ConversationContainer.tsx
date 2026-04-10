@@ -88,7 +88,7 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
                 });
             }
 
-            if (data.type === 'tars_answer' || data.type === 'audio_chunk') {
+            if (data.type === 'audio_chunk') {
                 if (data.audio_b64) {
                     setAudioQueue(prev => [...prev, data.audio_b64]);
                 }
