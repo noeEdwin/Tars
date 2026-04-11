@@ -30,7 +30,7 @@ openai_client = OpenAI()
 
 from agents.brain.nodes import workflow, config as base_config
 from agents.RAG.save_memory import get_db_uri, save_long_term_memory
-from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level
+from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile
 from dataBase.user_management import get_or_create_active_conversation
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
 
@@ -335,6 +335,166 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/greeting")
+async def get_greeting(user_id: int = 1):
+    """
+    Returns a short, personalised greeting from TARS based on the
+    user's name, HSK level, and interest area stored in the DB.
+    Uses GPT-4o-mini for speed (< 1 s round-trip).
+    """
+    profile = await asyncio.to_thread(get_user_profile, user_id)
+
+    username    = profile["username"]
+    hsk_level   = profile["hsk_level"]
+    interest    = profile["interest_area"]
+
+    prompt = (
+        f"You are TARS, a witty, warm AI tutor for Chinese. "
+        f"Generate ONE short greeting (1-2 sentences, ≤ 20 words) for a returning user. "
+        f"Use their personal details to make it feel special and unique. "
+        f"Details: name='{username}', HSK level={hsk_level}, interest/fandom='{interest}'. "
+        f"Be creative and playful — reference their interest with a fun nickname or title. "
+        f"Examples: 'Welcome back, my Cosmere traveller! Ready to conquer more characters?', "
+        f"'Greetings, young Padawan {username} — the Force of Mandarin awaits you today!'. "
+        f"Output ONLY the greeting sentence, nothing else."
+    )
+
+    response = await asyncio.to_thread(
+        lambda: openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=60,
+            temperature=0.9,
+        )
+    )
+    greeting = response.choices[0].message.content.strip()
+    return {"greeting": greeting, "username": username}
+
+
+# ── Emotion style map (mirrors node_learning.py) ────────────────────────────
+EMOTION_MAP = {
+    "RETRY":           "directo",
+    "CORRECT_NEXT":    "motivacional",
+    "LESSON_COMPLETE": "exclamativo",
+    "INTRODUCE":       "neutro",
+    "DEFAULT":         "neutro",
+}
+
+@app.get("/preload_message")
+async def get_preload_message(user_id: int = 1):
+    """
+    Generates a personalised TARS opening message for Normal Mode before the
+    user clicks anything. Runs in parallel with /start_session.
+
+    Pulls together:
+    - User profile (name, HSK level, interest_area)
+    - Semantic past memories (what user has said / learned)
+    - Uploaded roleplay files the user owns
+    - Style examples from translations_mvp for emotion='neutro' (INTRODUCE)
+    - Returns: { text, audio_b64 }
+    """
+    from RAG.save_memory import retrieve_user_memory
+    from RAG.retrieve import retrieve_style_examples, get_lesson_plan_context, get_all_knowledge_for_lesson
+    from RAG.utils import get_embedding
+
+    # ── 1. User profile ──────────────────────────────────────────────────────
+    profile = await asyncio.to_thread(get_user_profile, user_id)
+    username    = profile["username"]
+    hsk_level   = profile["hsk_level"]
+    interest    = profile["interest_area"]
+    native_lang = profile["native_language"]
+
+    # ── 2. Semantic memories (what this user has done/said before) ───────────
+    query_for_memory = f"Lección de chino HSK {hsk_level} enseñar vocabulario"
+    memories = await asyncio.to_thread(
+        retrieve_user_memory, user_id, query_for_memory, 4
+    )
+    memory_block = ""
+    if memories:
+        memory_block = "\n=== MEMORIAS DEL USUARIO ===\n" + "\n".join(memories[:4]) + "\n==========================="
+
+    # ── 3. Vocabulary / lesson knowledge ─────────────────────────────────────
+    lesson_blueprint = await asyncio.to_thread(get_lesson_plan_context, hsk_level)
+    lesson_db        = await asyncio.to_thread(get_all_knowledge_for_lesson, hsk_level)
+
+    # ── 4. Style examples (emotion = neutro → INTRODUCE) ─────────────────────
+    emotion_key = "INTRODUCE"
+    target_emotion = EMOTION_MAP.get(emotion_key, "neutro")
+    query_emb = await asyncio.to_thread(get_embedding, query_for_memory)
+    style_examples = await asyncio.to_thread(
+        retrieve_style_examples, target_emotion, query_emb, 3
+    )
+    style_block = ""
+    if style_examples:
+        style_block = (
+            "\n=== ESTILO DE PERSONALIDAD ===\n"
+            + "\n".join(f"• {ex}" for ex in style_examples)
+            + "\n=============================="
+        )
+
+    # ── 5. Uploaded roleplay files (shows TARS their world) ──────────────────
+    uploaded_files = await asyncio.to_thread(get_roleplay_contexts, user_id)
+    files_block = ""
+    if uploaded_files:
+        files_block = (
+            "\n=== ARCHIVOS DEL USUARIO ===\n"
+            + "\n".join(f"• {f}" for f in uploaded_files[:5])
+            + "\n==========================="
+        )
+
+    # ── 6. Build the prompt ───────────────────────────────────────────────────
+    prompt = f"""
+Eres TARS, un maestro de chino brillante e inconvencional.
+Tu tarea: generar el PRIMER mensaje de bienvenida cuando el usuario entra al modo de lección normal.
+
+PERFIL DEL USUARIO:
+- Nombre: {username}
+- Nivel HSK: {hsk_level}
+- Interés/Fandom: {interest}
+- Idioma nativo: {native_lang}
+{memory_block}
+{lesson_blueprint}
+{lesson_db}
+{style_block}
+{files_block}
+
+INSTRUCCIONES:
+1. Saluda al usuario de forma PERSONALIZADA usando su nombre y su fandom/interés ({interest}) con un título o apodo creativo.
+2. USA el formato estricto:
+   [Línea en chino Hanzi]
+   (Pinyin)
+   [Traducción en español]
+3. Introduce la primera palabra de vocabulario HSK{hsk_level} de forma natural.
+4. Termina con UNA pregunta breve en español para motivar al usuario a responder.
+5. Mantén el tono: {target_emotion} (neutro-cálido, bienvenida).
+6. Máximo 4 oraciones totales.
+
+Genera SOLO el mensaje, sin etiquetas ni explicaciones extra.
+""".strip()
+
+    response = await asyncio.to_thread(
+        lambda: openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=200,
+            temperature=0.85,
+        )
+    )
+    text = response.choices[0].message.content.strip()
+
+    # ── 7. Generate audio for the message ────────────────────────────────────
+    audio_b64 = None
+    try:
+        audio_bytes = await get_mixed_audio_bytes(text)
+        if audio_bytes:
+            audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+    except Exception as e:
+        print(f"[preload_message] TTS error: {e}")
+
+    return {"text": text, "audio_b64": audio_b64}
+
 
 @app.post("/stt")
 async def stt_endpoint(audio: UploadFile = File(...)):

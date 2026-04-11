@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import VoiceConversationScreen from './VoiceConversationScreen';
 import ConversationScreen from './ConversationScreen';
 import type { ViewState, SessionConfig } from '../App';
+import type { PreWarmedSession } from '../utils/usePreWarmSession';
 import { API_BASE, WS_BASE } from '../apiConfig';
 
 const USER_ID = 1;
@@ -15,9 +16,18 @@ export interface Message {
 interface ConversationContainerProps {
     setCurrentView: (view: ViewState) => void;
     sessionConfig: SessionConfig;
+    /** If provided, skip cold-start and reuse this pre-warmed session */
+    preWarmedSession?: PreWarmedSession | null;
+    /** Called after the pre-warmed session is "consumed" so parent can reset */
+    onSessionConsumed?: () => void;
 }
 
-export default function ConversationContainer({ setCurrentView, sessionConfig }: ConversationContainerProps) {
+export default function ConversationContainer({
+    setCurrentView,
+    sessionConfig,
+    preWarmedSession,
+    onSessionConsumed,
+}: ConversationContainerProps) {
     const { mode, filename, user_role, tars_role } = sessionConfig;
     const [subView, setSubView] = useState<'voice' | 'text'>('voice');
 
@@ -28,11 +38,68 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
     const [sessionReady, setSessionReady] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const socketRef = useRef<WebSocket | null>(null);
-    // Voice-specific state from backend
     const [audioQueue, setAudioQueue] = useState<string[]>([]);
     const [currentAudioIndex, setCurrentAudioIndex] = useState(0);
 
+    // ── FAST PATH: consume the pre-warmed session ──────────────────────────
     useEffect(() => {
+        if (!preWarmedSession) return;
+
+        socketRef.current = preWarmedSession.socket;
+        setThreadId(preWarmedSession.threadId);
+        setConversationId(preWarmedSession.conversationId);
+        setCurrentAudioIndex(preWarmedSession.currentAudioIndex);
+
+        // Inject the preload message as the first TARS bubble (if any)
+        const pm = preWarmedSession.preloadMessage;
+        const initialMessages: Message[] = pm?.text
+            ? [{ id: 'preload-0', role: 'tars', text: pm.text }, ...preWarmedSession.messages]
+            : [...preWarmedSession.messages];
+
+        setMessages(initialMessages);
+
+        // Pre-load audio queue: put preload audio first, then buffered websocket audio
+        const initialAudio: string[] = [
+            ...(pm?.audio_b64 ? [pm.audio_b64] : []),
+            ...preWarmedSession.audioQueue,
+        ];
+        setAudioQueue(initialAudio);
+        setIsProcessing(preWarmedSession.isProcessing && initialAudio.length === 0);
+        setSessionReady(true);
+
+        // Re-attach onmessage so we keep receiving future events
+        preWarmedSession.socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'token') {
+                setMessages(prev => {
+                    const lastMsg = prev[prev.length - 1];
+                    if (lastMsg && lastMsg.role === 'tars') {
+                        return [...prev.slice(0, -1), { ...lastMsg, text: lastMsg.text + data.text }];
+                    }
+                    return [...prev, { id: Date.now().toString() + 't', role: 'tars', text: data.text }];
+                });
+            }
+
+            if (data.type === 'tars_answer' || data.type === 'audio_chunk') {
+                if (data.audio_b64) setAudioQueue(prev => [...prev, data.audio_b64]);
+            }
+
+            if (data.type === 'tars_answer_end') setIsProcessing(false);
+            if (data.type === 'error') {
+                console.error('Tars error:', data.message);
+                setIsProcessing(false);
+            }
+        };
+
+        onSessionConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run once on mount — preWarmedSession is the initial value
+
+    // ── COLD PATH: no pre-warm → start from scratch ────────────────────────
+    useEffect(() => {
+        if (preWarmedSession) return; // already handled above
+
         const startSession = async () => {
             const res = await fetch(`${API_BASE}/start_session`, {
                 method: 'POST',
@@ -45,13 +112,14 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
             setSessionReady(true);
         };
         startSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mode]);
 
-    // Start session once
+    // Start WebSocket once session is ready (cold path only)
     useEffect(() => {
+        if (preWarmedSession) return;
         if (!sessionReady || !threadId) return;
 
-        // Creamos la conexión
         const socket = new WebSocket(`${WS_BASE}/ws/${USER_ID}`);
         socketRef.current = socket;
 
@@ -60,9 +128,9 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
                 type: 'init_session',
                 thread_id: threadId,
                 conversation_id: conversationId,
-                mode: mode
+                mode,
             }));
-            setIsProcessing(true); // Muestra a Tars "Pensando..."
+            setIsProcessing(true);
         };
 
         socket.onmessage = (event) => {
@@ -71,47 +139,30 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
             if (data.type === 'token') {
                 setMessages(prev => {
                     const lastMsg = prev[prev.length - 1];
-                    // If the last bubble is from Tars, append the text to it
                     if (lastMsg && lastMsg.role === 'tars') {
-                        return [
-                            ...prev.slice(0, -1),
-                            { ...lastMsg, text: lastMsg.text + data.text }
-                        ];
-                    } else {
-                        // Otherwise (First token of the response), create a new bubble
-                        return [...prev, {
-                            id: Date.now().toString() + 't',
-                            role: 'tars',
-                            text: data.text
-                        }];
+                        return [...prev.slice(0, -1), { ...lastMsg, text: lastMsg.text + data.text }];
                     }
+                    return [...prev, { id: Date.now().toString() + 't', role: 'tars', text: data.text }];
                 });
             }
 
             if (data.type === 'tars_answer' || data.type === 'audio_chunk') {
-                if (data.audio_b64) {
-                    setAudioQueue(prev => [...prev, data.audio_b64]);
-                }
-            }
-            if (data.type === 'tars_answer_end') {
-                setIsProcessing(false);
+                if (data.audio_b64) setAudioQueue(prev => [...prev, data.audio_b64]);
             }
 
+            if (data.type === 'tars_answer_end') setIsProcessing(false);
             if (data.type === 'error') {
-                console.error("Error de Tars:", data.message);
+                console.error('Tars error:', data.message);
                 setIsProcessing(false);
             }
         };
 
-
-        return () => {
-            socket.close();
-        };
+        return () => { socket.close(); };
     }, [sessionReady, threadId]);
 
-    // --- Función para Interrumpir---
+    // ── Interrupt ──────────────────────────────────────────────────────────
     const interruptTars = useCallback(() => {
-        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({ type: 'interrupt' }));
             setAudioQueue([]);
             setCurrentAudioIndex(0);
@@ -119,6 +170,7 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
         }
     }, []);
 
+    // ── Send Message ───────────────────────────────────────────────────────
     const sendMessage = useCallback(async (text: string) => {
         if (!text.trim() || !sessionReady || isProcessing) return;
 
@@ -128,16 +180,23 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
         setAudioQueue([]);
         setCurrentAudioIndex(0);
 
-        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        if (socketRef.current?.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({
                 type: 'chat',
-                text: text,
+                text,
                 thread_id: threadId,
                 conversation_id: conversationId,
-                mode: mode
+                mode,
             }));
         }
     }, [sessionReady, isProcessing, threadId, conversationId, mode]);
+
+    // ── Cleanup ────────────────────────────────────────────────────────────
+    useEffect(() => {
+        return () => {
+            if (!preWarmedSession) socketRef.current?.close();
+        };
+    }, []);
 
     if (subView === 'voice') {
         return (
@@ -164,8 +223,7 @@ export default function ConversationContainer({ setCurrentView, sessionConfig }:
             sessionReady={sessionReady}
             isProcessing={isProcessing}
             onSendMessage={sendMessage}
-            onInterrupt={interruptTars}
-            onBack={() => setSubView('voice')} // Back goes to voice
+            onBack={() => setSubView('voice')}
         />
     );
 }

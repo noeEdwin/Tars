@@ -26,6 +26,30 @@ def get_user_hsk_level(user_id: int):
         print(f"Error fetching hsk_level for user {user_id}: {e}")
         return 1
 
+def get_user_profile(user_id: int) -> dict:
+    """Returns username, hsk_level, interest_area, native_language for greeting generation."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT username, hsk_level, interest_area, native_language FROM users WHERE id = %s LIMIT 1",
+            (user_id,)
+        )
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        if row:
+            return {
+                "username":        row[0],
+                "hsk_level":       row[1] or 1,
+                "interest_area":   row[2] or "general",
+                "native_language": row[3] or "en",
+            }
+        return {"username": "learner", "hsk_level": 1, "interest_area": "general", "native_language": "en"}
+    except Exception as e:
+        print(f"Error fetching profile for user {user_id}: {e}")
+        return {"username": "learner", "hsk_level": 1, "interest_area": "general", "native_language": "en"}
+
 def get_roleplay_contexts(user_id: str):
     try:
         conn = get_db_connection()

@@ -401,3 +401,144 @@
     background-color: rgba(228, 0, 124, 0.1);
     filter: blur(120px);
 }
+
+/* ─── Role Entry Modal ──────────────────────────────────────────────────── */
+.rp-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    animation: overlayIn 0.2s ease;
+}
+
+@keyframes overlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.rp-modal {
+    background: #12100f;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px 24px 0 0;
+    padding: 28px 24px 40px 24px;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: slideUp 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+.rp-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.rp-modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
+.rp-modal-close {
+    background: rgba(255, 255, 255, 0.07);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5);
+    transition: background 0.2s;
+}
+
+.rp-modal-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+}
+
+.rp-modal-file {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0 0 4px 0;
+    letter-spacing: 0.03em;
+}
+
+.rp-modal-file strong {
+    color: var(--gold-accent);
+}
+
+.rp-modal-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    margin-top: 4px;
+}
+
+.rp-modal-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 15px;
+    color: #ffffff;
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.rp-modal-input:focus {
+    border-color: rgba(241, 0, 52, 0.5);
+    box-shadow: 0 0 0 3px rgba(241, 0, 52, 0.12);
+}
+
+.rp-modal-confirm {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s, opacity 0.2s;
+    letter-spacing: 0.03em;
+    box-shadow: 0 0 20px rgba(237, 41, 57, 0.35);
+}
+
+.rp-modal-confirm:hover:not(:disabled) {
+    background: #d12030;
+    box-shadow: 0 0 30px rgba(237, 41, 57, 0.5);
+}
+
+.rp-modal-confirm:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+}
