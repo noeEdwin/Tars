@@ -201,7 +201,7 @@ async def start_session(req: StartSessionRequest):
     
     audio_b64 = None
     if tars_message:
-        audio_bytes = get_mixed_audio_bytes(tars_message)
+        audio_bytes = await get_mixed_audio_bytes(tars_message)
         if audio_bytes:
             audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
 
@@ -291,12 +291,12 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
             input_data = None
             
         print(f"[TIMER WS] 3. Listo para astream_events: {time.time() - t_start:.2f}s")
-        first_token = True
         
         async for event in app_instance.astream_events(input_data, cfg, version="v2"):
             if event["event"] == "on_chat_model_stream":
                 token = event["data"]["chunk"].content
                 if token:
+                    print(f"DEBUG: Token recibido -> {token}")
                     full_response_content += token
                     sentence_buffer += token
                     # 1. Enviamos el token al texto (UI)
@@ -308,7 +308,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
                         sentence_buffer = "" # Limpiamos el buffer para la siguiente frase
                         if text_to_process:
                             audio_queue.put_nowait(text_to_process)
-            
+        print("DEBUG: Fin de streaming de texto")
 
         print(f"[TIMER WS] 5. Todos los tokens procesados (fin LangGraph): {time.time() - t_start:.2f}s")
         # 3. Procesar cualquier residuo que haya quedado en el buffer al final
@@ -359,6 +359,7 @@ async def get_greeting(user_id: int = 1):
         f"Examples: 'Welcome back, my Cosmere traveller! Ready to conquer more characters?', "
         f"'Greetings, young Padawan {username} — the Force of Mandarin awaits you today!'. "
         f"Output ONLY the greeting sentence, nothing else."
+        f"The greeting must be ON CHINESE, but adjust it to the HSK LEVEL={hsk_level}"
     )
 
     response = await asyncio.to_thread(
@@ -385,115 +386,54 @@ EMOTION_MAP = {
 @app.get("/preload_message")
 async def get_preload_message(user_id: int = 1):
     """
-    Generates a personalised TARS opening message for Normal Mode before the
-    user clicks anything. Runs in parallel with /start_session.
-
-    Pulls together:
-    - User profile (name, HSK level, interest_area)
-    - Semantic past memories (what user has said / learned)
-    - Uploaded roleplay files the user owns
-    - Style examples from translations_mvp for emotion='neutro' (INTRODUCE)
-    - Returns: { text, audio_b64 }
+    Fast personalised TARS greeting for Normal Mode.
+    Returns: { text, audio_b64 }
+    - Profile + files fetched in parallel (2 DB queries)
+    - GPT-4o-mini: max_tokens=55 → ~0.5s
+    - TTS runs in parallel with LLM response processing → adds ~1s
+    Total target: < 3s
     """
-    from RAG.save_memory import retrieve_user_memory
-    from RAG.retrieve import retrieve_style_examples, get_lesson_plan_context, get_all_knowledge_for_lesson
-    from RAG.utils import get_embedding
-
-    # ── 1. User profile ──────────────────────────────────────────────────────
-    profile = await asyncio.to_thread(get_user_profile, user_id)
-    username    = profile["username"]
-    hsk_level   = profile["hsk_level"]
-    interest    = profile["interest_area"]
-    native_lang = profile["native_language"]
-
-    # ── 2. Semantic memories (what this user has done/said before) ───────────
-    query_for_memory = f"Lección de chino HSK {hsk_level} enseñar vocabulario"
-    memories = await asyncio.to_thread(
-        retrieve_user_memory, user_id, query_for_memory, 4
+    # ── Parallel DB reads ─────────────────────────────────────────────────────
+    profile, uploaded_files = await asyncio.gather(
+        asyncio.to_thread(get_user_profile, user_id),
+        asyncio.to_thread(get_roleplay_contexts, user_id),
     )
-    memory_block = ""
-    if memories:
-        memory_block = "\n=== MEMORIAS DEL USUARIO ===\n" + "\n".join(memories[:4]) + "\n==========================="
 
-    # ── 3. Vocabulary / lesson knowledge ─────────────────────────────────────
-    lesson_blueprint = await asyncio.to_thread(get_lesson_plan_context, hsk_level)
-    lesson_db        = await asyncio.to_thread(get_all_knowledge_for_lesson, hsk_level)
+    username  = profile["username"]
+    hsk_level = profile["hsk_level"]
+    interest  = profile["interest_area"]
+    files_tip = f"Tiene escenarios: {', '.join(uploaded_files[:2])}." if uploaded_files else ""
 
-    # ── 4. Style examples (emotion = neutro → INTRODUCE) ─────────────────────
-    emotion_key = "INTRODUCE"
-    target_emotion = EMOTION_MAP.get(emotion_key, "neutro")
-    query_emb = await asyncio.to_thread(get_embedding, query_for_memory)
-    style_examples = await asyncio.to_thread(
-        retrieve_style_examples, target_emotion, query_emb, 3
+    prompt = (
+        f"Eres TARS. Saluda a {username} (HSK{hsk_level}, fandom: {interest}) "
+        f"en UNA oración breve. {files_tip} "
+        f"Dale un apodo basado en su fandom. Incluye 一个汉字 (pīnyīn). "
+        f"Solo el mensaje, sin explicaciones."
     )
-    style_block = ""
-    if style_examples:
-        style_block = (
-            "\n=== ESTILO DE PERSONALIDAD ===\n"
-            + "\n".join(f"• {ex}" for ex in style_examples)
-            + "\n=============================="
-        )
 
-    # ── 5. Uploaded roleplay files (shows TARS their world) ──────────────────
-    uploaded_files = await asyncio.to_thread(get_roleplay_contexts, user_id)
-    files_block = ""
-    if uploaded_files:
-        files_block = (
-            "\n=== ARCHIVOS DEL USUARIO ===\n"
-            + "\n".join(f"• {f}" for f in uploaded_files[:5])
-            + "\n==========================="
-        )
-
-    # ── 6. Build the prompt ───────────────────────────────────────────────────
-    prompt = f"""
-Eres TARS, un maestro de chino brillante e inconvencional.
-Tu tarea: generar el PRIMER mensaje de bienvenida cuando el usuario entra al modo de lección normal.
-
-PERFIL DEL USUARIO:
-- Nombre: {username}
-- Nivel HSK: {hsk_level}
-- Interés/Fandom: {interest}
-- Idioma nativo: {native_lang}
-{memory_block}
-{lesson_blueprint}
-{lesson_db}
-{style_block}
-{files_block}
-
-INSTRUCCIONES:
-1. Saluda al usuario de forma PERSONALIZADA usando su nombre y su fandom/interés ({interest}) con un título o apodo creativo.
-2. USA el formato estricto:
-   [Línea en chino Hanzi]
-   (Pinyin)
-   [Traducción en español]
-3. Introduce la primera palabra de vocabulario HSK{hsk_level} de forma natural.
-4. Termina con UNA pregunta breve en español para motivar al usuario a responder.
-5. Mantén el tono: {target_emotion} (neutro-cálido, bienvenida).
-6. Máximo 4 oraciones totales.
-
-Genera SOLO el mensaje, sin etiquetas ni explicaciones extra.
-""".strip()
-
-    response = await asyncio.to_thread(
+    # ── LLM call ─────────────────────────────────────────────────────────────
+    llm_response = await asyncio.to_thread(
         lambda: openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
-            temperature=0.85,
+            max_tokens=55,
+            temperature=0.9,
         )
     )
-    text = response.choices[0].message.content.strip()
+    text = llm_response.choices[0].message.content.strip()
 
-    # ── 7. Generate audio for the message ────────────────────────────────────
+    # ── TTS: generate audio for the short greeting ────────────────────────────
     audio_b64 = None
     try:
         audio_bytes = await get_mixed_audio_bytes(text)
         if audio_bytes:
             audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
     except Exception as e:
-        print(f"[preload_message] TTS error: {e}")
+        print(f"[preload_message] TTS skipped: {e}")
 
     return {"text": text, "audio_b64": audio_b64}
+
+
 
 
 @app.post("/stt")

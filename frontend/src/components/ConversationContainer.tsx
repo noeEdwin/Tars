@@ -58,13 +58,17 @@ export default function ConversationContainer({
 
         setMessages(initialMessages);
 
-        // Pre-load audio queue: put preload audio first, then buffered websocket audio
-        const initialAudio: string[] = [
+        // Preload audio goes FIRST so TARS speaks the greeting immediately
+        const initialAudio = [
             ...(pm?.audio_b64 ? [pm.audio_b64] : []),
             ...preWarmedSession.audioQueue,
         ];
         setAudioQueue(initialAudio);
-        setIsProcessing(preWarmedSession.isProcessing && initialAudio.length === 0);
+
+        // The greeting comes from /preload_message — NOT from LangGraph streaming.
+        // tars_answer_end was never sent (socket may have closed before that).
+        // Force isProcessing=false so the mic unlocks once audio finishes.
+        setIsProcessing(pm ? false : preWarmedSession.isProcessing);
         setSessionReady(true);
 
         // Re-attach onmessage so we keep receiving future events
@@ -92,7 +96,10 @@ export default function ConversationContainer({
             }
         };
 
-        onSessionConsumed?.();
+        // Defer until after this synchronous effect finishes.
+        // This guarantees the re-attached onmessage above is active before
+        // App.tsx calls resetPreWarm() (which used to close the socket).
+        setTimeout(() => onSessionConsumed?.(), 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Run once on mount — preWarmedSession is the initial value
 
@@ -180,22 +187,71 @@ export default function ConversationContainer({
         setAudioQueue([]);
         setCurrentAudioIndex(0);
 
-        if (socketRef.current?.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({
+        const doSend = (socket: WebSocket) => {
+            socket.send(JSON.stringify({
                 type: 'chat',
                 text,
                 thread_id: threadId,
                 conversation_id: conversationId,
                 mode,
             }));
+        };
+
+        const currentSocket = socketRef.current;
+
+        if (currentSocket && currentSocket.readyState === WebSocket.OPEN) {
+            // Happy path — socket is alive
+            doSend(currentSocket);
+        } else {
+            // Pre-warm socket died (race). Re-open and send after init.
+            console.warn('[ConversationContainer] Socket not open, reconnecting...');
+            const newSocket = new WebSocket(`${WS_BASE}/ws/${USER_ID}`);
+            socketRef.current = newSocket;
+
+            // Reattach all message handlers to the new socket
+            newSocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'token') {
+                    setMessages(prev => {
+                        const last = prev[prev.length - 1];
+                        if (last && last.role === 'tars') {
+                            return [...prev.slice(0, -1), { ...last, text: last.text + data.text }];
+                        }
+                        return [...prev, { id: Date.now().toString() + 't', role: 'tars', text: data.text }];
+                    });
+                }
+                if ((data.type === 'tars_answer' || data.type === 'audio_chunk') && data.audio_b64) {
+                    setAudioQueue(prev => [...prev, data.audio_b64]);
+                }
+                if (data.type === 'tars_answer_end') setIsProcessing(false);
+                if (data.type === 'error') { console.error('Tars error:', data.message); setIsProcessing(false); }
+            };
+
+            newSocket.onopen = () => {
+                // Re-init session state, then immediately send the user message
+                newSocket.send(JSON.stringify({
+                    type: 'init_session',
+                    thread_id: threadId,
+                    conversation_id: conversationId,
+                    mode,
+                }));
+                doSend(newSocket);
+            };
+
+            newSocket.onerror = () => {
+                console.error('[ConversationContainer] Reconnect failed');
+                setIsProcessing(false);
+            };
         }
     }, [sessionReady, isProcessing, threadId, conversationId, mode]);
 
     // ── Cleanup ────────────────────────────────────────────────────────────
+    // ConversationContainer is always the final socket owner:
+    //  - fast path: socket was handed off from usePreWarmSession
+    //  - cold path: socket was created here
+    // Either way, close it when this component unmounts.
     useEffect(() => {
-        return () => {
-            if (!preWarmedSession) socketRef.current?.close();
-        };
+        return () => { socketRef.current?.close(); };
     }, []);
 
     if (subView === 'voice') {

@@ -47,23 +47,52 @@ export default function VoiceConversationScreen({
     const rawSubtitle = tarsMessages.length > 0 ? tarsMessages[tarsMessages.length - 1].text : '';
     const tarsSubtitle = rawSubtitle ? parseTarsMessage(rawSubtitle).chinese : '';
 
+    const pendingPlayRef = useRef(false);
+    // Mirror queue and index in refs so tryPlayCurrent always reads fresh values
+    // even when called from a stale closure (e.g. setAudioRef callback on mount)
+    const audioQueueRef = useRef<string[]>(audioQueue);
+    const currentAudioIndexRef = useRef<number>(currentAudioIndex);
+    useEffect(() => { audioQueueRef.current = audioQueue; }, [audioQueue]);
+    useEffect(() => { currentAudioIndexRef.current = currentAudioIndex; }, [currentAudioIndex]);
+
+    // Plays the current chunk if the audio element is ready
+    const tryPlayCurrent = () => {
+        const el = audioRef.current;
+        const queue = audioQueueRef.current;
+        const idx   = currentAudioIndexRef.current;
+        if (!el || queue.length === 0 || queue.length <= idx) return;
+        if (uiState === 'speaking' && !el.paused && !el.ended) return; // already playing
+
+        el.src = `data:audio/ogg;codecs=opus;base64,${queue[idx]}`;
+        setUiState('speaking');
+        el.play().catch(e => console.error('Audio playback failed:', e));
+        pendingPlayRef.current = false;
+    };
+
+    // Callback ref — fires the instant <audio> is mounted in the DOM
+    const setAudioRef = (el: HTMLAudioElement | null) => {
+        audioRef.current = el;
+        if (el && pendingPlayRef.current) {
+            tryPlayCurrent();
+        }
+    };
+
     // Handle Audio Queue
     useEffect(() => {
-        // Si la cola se vació (interrupt), detenemos todo
+        // Queue emptied (e.g. interrupt) → stop
         if (audioQueue.length === 0) {
             if (uiState === 'speaking') setUiState('idle');
             return;
         }
 
-        if (audioQueue.length > currentAudioIndex && audioRef.current) {
-            // Si el audio tag está inactivo, comenzamos el chunk
-            if (uiState !== 'speaking' || audioRef.current.paused || audioRef.current.ended) {
-                 audioRef.current.src = `data:audio/ogg;codecs=opus;base64,${audioQueue[currentAudioIndex]}`;
-                 setUiState('speaking');
-                 audioRef.current.play().catch(e => console.error("Audio playback failed:", e));
-            }
+        if (audioRef.current) {
+            tryPlayCurrent();
+        } else {
+            // audioRef not mounted yet — flag it so the callback ref triggers play
+            pendingPlayRef.current = true;
         }
-    }, [audioQueue, currentAudioIndex, uiState]);
+    }, [audioQueue, currentAudioIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // Track processing state cleanly
     useEffect(() => {
         if (isProcessing && uiState !== 'listening') {
@@ -187,7 +216,7 @@ export default function VoiceConversationScreen({
     return (
         <div className="voice-screen-body">
             <audio 
-                ref={audioRef} 
+                ref={setAudioRef} 
                 style={{ display: 'none' }} 
                 onEnded={() => {
                     const nextIndex = currentAudioIndex + 1;

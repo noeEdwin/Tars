@@ -15,6 +15,10 @@ VOICE_MAPPING = {
     "zh": {"name": "cmn-CN-Chirp3-HD-Algenib", "code": "cmn-CN"},
     "es": {"name": "es-ES-Chirp3-HD-Puck", "code": "es-ES"}
 }
+_tts_client = None
+
+
+
 def get_credentials():
     """
     Load the credentials from a json content string in env var GOOGLE_JSON_CREDENTIALS.
@@ -39,13 +43,18 @@ def is_installed(lib_name: str) -> bool:
     lib = shutil.which(lib_name)
     return lib is not None
 
+def get_tts_client():
+    global _tts_client
+    if _tts_client is None:
+        credentials = get_credentials()
+        _tts_client = texttospeech.TextToSpeechAsyncClient(credentials=credentials)
+    return _tts_client
 
 async def get_tts_bytes_async(text: str, lang_type: str) -> bytes:
     """
     Petición individual asíncrona a Google Cloud TTS.
     """
-    credentials = get_credentials()
-    client = texttospeech.TextToSpeechAsyncClient(credentials=credentials)
+    client = get_tts_client()
 
     voice_conf = VOICE_MAPPING[lang_type]
     

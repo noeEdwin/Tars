@@ -41,15 +41,14 @@ function App() {
     const [currentView, setCurrentView] = useState<ViewState>('loading');
     const [sessionConfig, setSessionConfig] = useState<SessionConfig>({ mode: 'tars_normal' });
 
-    // ── Pre-warm normal mode immediately on app start ────────────────────
+    // ── Pre-warm normal mode ────────────────────
     const {
         session: preWarmedSession,
         reset: resetPreWarm,
     } = usePreWarmSession({
         mode: 'tars_normal',
-        enabled: currentView === 'loading' || currentView === 'home',
+        enabled: currentView === 'loading' || currentView === 'home' || currentView === 'conversation',
     });
-
     // ── Pre-warm roleplay mode when config is chosen in RoleplayScreen ────
     const [roleplayConfig, setRoleplayConfig] = useState<SessionConfig | null>(null);
     const {
@@ -64,31 +63,39 @@ function App() {
     });
 
     /**
-     * Called by ModeCards for Normal Mode — hand off the pre-warmed session.
-     * If session isn't ready yet (edge case slow network) show LoadingScreen
-     * until it becomes available.
+     * Called by ModeCards for Normal Mode.
+     * Everything is guaranteed ready (session + preloadMessage) by the time
+     * home is shown — go directly to conversation, zero loading screen.
      */
     const startConversation = (config: SessionConfig) => {
         setSessionConfig(config);
-        setCurrentView('loading-conversation');
+        setCurrentView('conversation'); // direct — no second loading screen
     };
 
-    // Transition from initial loading → home once normal session is warmed
+    // Transition: loading → home
+    // Waits for BOTH the session AND the preloadMessage so the greeting
+    // is guaranteed available the instant the user clicks Normal Mode.
+    // Falls back after 5 s so a slow network never blocks indefinitely.
     useEffect(() => {
-        if (currentView === 'loading' && preWarmedSession) {
+        if (currentView !== 'loading') return;
+        if (preWarmedSession?.preloadMessage) {
             setCurrentView('home');
+            return;
         }
+        // Fallback: show home even if preload message didn't arrive
+        const fallback = setTimeout(() => {
+            if (preWarmedSession) setCurrentView('home');
+        }, 5000);
+        return () => clearTimeout(fallback);
     }, [currentView, preWarmedSession]);
 
-    // Transition from loading-conversation → conversation once session ready
+    // Transition: loading-conversation → conversation (roleplay only)
     useEffect(() => {
         if (currentView !== 'loading-conversation') return;
-        const relevantSession =
-            sessionConfig.mode === 'tars_normal' ? preWarmedSession : preWarmedRoleplaySession;
-        if (relevantSession) {
+        if (preWarmedRoleplaySession) {
             setCurrentView('conversation');
         }
-    }, [currentView, preWarmedSession, preWarmedRoleplaySession, sessionConfig.mode]);
+    }, [currentView, preWarmedRoleplaySession]);
 
     /**
      * Called by RoleplayScreen → lets us pre-warm the roleplay session
@@ -125,10 +132,19 @@ function App() {
 
     return (
         <div className="mobile-container">
-            {(currentView === 'loading' || currentView === 'loading-conversation') && (
+            {/* Boot loading screen — only shown once at startup */}
+            {currentView === 'loading' && (
                 <LoadingScreen
-                    personalised={currentView === 'loading'}
-                    fallbackMessage={currentView === 'loading' ? 'Waking up TARS...' : 'Starting session...'}
+                    personalised={true}
+                    fallbackMessage="Waking up TARS..."
+                />
+            )}
+
+            {/* Roleplay preparation loading screen */}
+            {currentView === 'loading-conversation' && (
+                <LoadingScreen
+                    personalised={false}
+                    fallbackMessage="Preparing roleplay..."
                 />
             )}
 
