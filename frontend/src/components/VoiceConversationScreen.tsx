@@ -48,8 +48,6 @@ export default function VoiceConversationScreen({
     const tarsSubtitle = rawSubtitle ? parseTarsMessage(rawSubtitle).chinese : '';
 
     const pendingPlayRef = useRef(false);
-    // Mirror queue and index in refs so tryPlayCurrent always reads fresh values
-    // even when called from a stale closure (e.g. setAudioRef callback on mount)
     const audioQueueRef = useRef<string[]>(audioQueue);
     const currentAudioIndexRef = useRef<number>(currentAudioIndex);
     useEffect(() => { audioQueueRef.current = audioQueue; }, [audioQueue]);
@@ -59,7 +57,7 @@ export default function VoiceConversationScreen({
     const tryPlayCurrent = () => {
         const el = audioRef.current;
         const queue = audioQueueRef.current;
-        const idx   = currentAudioIndexRef.current;
+        const idx = currentAudioIndexRef.current;
         if (!el || queue.length === 0 || queue.length <= idx) return;
         if (uiState === 'speaking' && !el.paused && !el.ended) return; // already playing
 
@@ -215,9 +213,9 @@ export default function VoiceConversationScreen({
 
     return (
         <div className="voice-screen-body">
-            <audio 
-                ref={setAudioRef} 
-                style={{ display: 'none' }} 
+            <audio
+                ref={setAudioRef}
+                style={{ display: 'none' }}
                 onEnded={() => {
                     const nextIndex = currentAudioIndex + 1;
                     if (nextIndex < audioQueue.length) {
