@@ -51,6 +51,7 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
     useEffect(() => {
         if (!enabled) return;
         let cancelled = false;
+        const controller = new AbortController();
 
         const bufferedMessages: Message[] = [];
         const bufferedAudio: string[] = [];
@@ -59,12 +60,23 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
         const run = async () => {
             try {
                 // ── Phase 1: session (blocks home-page transition) ────────────
-                const sessionRes = await fetch(`${API_BASE}/start_session`, {
+                const startUrl = `${API_BASE}/start_session`;
+                const sessionRes = await fetch(startUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: USER_ID, mode, filename, user_role, tars_role }),
+                    signal: controller.signal,
                 });
-                const data = await sessionRes.json();
+                if (!sessionRes.ok) {
+                    const body = await sessionRes.text().catch(() => '');
+                    throw new Error(
+                        `[PreWarm] start_session failed (${sessionRes.status} ${sessionRes.statusText}) url=${startUrl} body=${body.slice(0, 500)}`,
+                    );
+                }
+                const data = await sessionRes.json().catch(async () => {
+                    const body = await sessionRes.text().catch(() => '');
+                    throw new Error(`[PreWarm] start_session invalid JSON url=${startUrl} body=${body.slice(0, 500)}`);
+                });
                 if (cancelled) return;
 
                 const socket = new WebSocket(`${WS_BASE}/ws/${USER_ID}`);
@@ -115,7 +127,8 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 // always lands even if `enabled` flips false mid-flight.
                 if (mode === 'tars_normal') {
                     let patchSent = false;
-                    fetch(`${API_BASE}/preload_message?user_id=${USER_ID}`)
+                    const preloadUrl = `${API_BASE}/preload_message?user_id=${USER_ID}`;
+                    fetch(preloadUrl, { signal: controller.signal })
                         .then(r => r.json())
                         .then(({ text, audio_b64 }: { text?: string; audio_b64?: string }) => {
                             if (patchSent || !text) return;
@@ -146,12 +159,19 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 setSession(snap);
 
             } catch (err) {
-                console.error('[PreWarm] Failed:', err);
+                // Fetch can throw TypeError("NetworkError...") for CORS/TLS/mixed-content/offline.
+                // Log the bases to make the root cause obvious.
+                if (!cancelled) {
+                    console.error('[PreWarm] Failed:', err, { API_BASE, WS_BASE, mode });
+                }
             }
         };
 
         run();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+            controller.abort();
+        };
     }, [enabled, mode, filename, user_role, tars_role]);
 
     return { session, reset };

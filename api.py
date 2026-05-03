@@ -54,7 +54,12 @@ app = FastAPI(title="Tars API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=[
+        "https://localhost:5173",
+        "https://127.0.0.1:5173",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -448,14 +453,16 @@ async def stt_endpoint(audio: UploadFile = File(...)):
         transcription = openai_client.audio.transcriptions.create(
             model="whisper-1",
             file=file_tuple,
-            prompt="这是一段简体中文对话，请使用简体中文输出。"
+            prompt="这是一段简体中文和西班牙语的双语对话。请使用简体中文和西班牙语输出。"
         )
         text = transcription.text.strip()
+        print(f"STT Output: {text}, size: {len(audio_bytes)}")
 
         # Filter known Whisper hallucinations (prompt echo on silent audio)
         WHISPER_HALLUCINATIONS = {
             "请使用简体中文输出。",
             "这是一段简体中文对话，请使用简体中文输出。",
+            "这是一段简体中文和西班牙语的双语对话。请使用简体中文和西班牙语输出。",
             "字幕by索兰娅",
         }
         if text in WHISPER_HALLUCINATIONS or len(text) < 2:
