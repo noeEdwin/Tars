@@ -47,22 +47,50 @@ export default function VoiceConversationScreen({
     const rawSubtitle = tarsMessages.length > 0 ? tarsMessages[tarsMessages.length - 1].text : '';
     const tarsSubtitle = rawSubtitle ? parseTarsMessage(rawSubtitle).chinese : '';
 
+    const pendingPlayRef = useRef(false);
+    const audioQueueRef = useRef<string[]>(audioQueue);
+    const currentAudioIndexRef = useRef<number>(currentAudioIndex);
+    useEffect(() => { audioQueueRef.current = audioQueue; }, [audioQueue]);
+    useEffect(() => { currentAudioIndexRef.current = currentAudioIndex; }, [currentAudioIndex]);
+
+    // Plays the current chunk if the audio element is ready
+    const tryPlayCurrent = () => {
+        const el = audioRef.current;
+        const queue = audioQueueRef.current;
+        const idx = currentAudioIndexRef.current;
+        if (!el || queue.length === 0 || queue.length <= idx) return;
+        if (uiState === 'speaking' && !el.paused && !el.ended) return; // already playing
+
+        el.src = `data:audio/ogg;codecs=opus;base64,${queue[idx]}`;
+        setUiState('speaking');
+        el.play().catch(e => console.error('Audio playback failed:', e));
+        pendingPlayRef.current = false;
+    };
+
+    // Callback ref — fires the instant <audio> is mounted in the DOM
+    const setAudioRef = (el: HTMLAudioElement | null) => {
+        audioRef.current = el;
+        if (el && pendingPlayRef.current) {
+            tryPlayCurrent();
+        }
+    };
+
+    // Handle Audio Queue
     useEffect(() => {
+        // Queue emptied (e.g. interrupt) → stop
         if (audioQueue.length === 0) {
             if (uiState === 'speaking') setUiState('idle');
             return;
         }
 
-        // Si hay un chunk disponible para el índice actual
-        if (audioQueue.length > currentAudioIndex && audioRef.current) {
-            // Solo cargamos el nuevo src si el audio está realmente detenido o es el inicio
-            if (audioRef.current.paused || audioRef.current.ended || uiState !== 'speaking') {
-                audioRef.current.src = `data:audio/ogg;codecs=opus;base64,${audioQueue[currentAudioIndex]}`;
-                setUiState('speaking');
-                audioRef.current.play().catch(e => console.error("Error al reproducir chunk:", e));
-            }
+        if (audioRef.current) {
+            tryPlayCurrent();
+        } else {
+            // audioRef not mounted yet — flag it so the callback ref triggers play
+            pendingPlayRef.current = true;
         }
-    }, [audioQueue, currentAudioIndex]); // Eliminamos uiState de las dependencias para evitar bucles
+    }, [audioQueue, currentAudioIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+
     // Track processing state cleanly
     useEffect(() => {
         if (isProcessing && uiState !== 'listening') {
@@ -186,7 +214,7 @@ export default function VoiceConversationScreen({
     return (
         <div className="voice-screen-body">
             <audio
-                ref={audioRef}
+                ref={setAudioRef}
                 style={{ display: 'none' }}
                 onEnded={() => {
                     const nextIndex = currentAudioIndex + 1;

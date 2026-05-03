@@ -30,7 +30,7 @@ openai_client = OpenAI()
 
 from agents.brain.nodes import workflow, config as base_config
 from agents.RAG.save_memory import get_db_uri, save_long_term_memory
-from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level
+from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile
 from dataBase.user_management import get_or_create_active_conversation
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
 
@@ -54,7 +54,12 @@ app = FastAPI(title="Tars API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=[
+        "https://localhost:5173",
+        "https://127.0.0.1:5173",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -201,7 +206,7 @@ async def start_session(req: StartSessionRequest):
     
     audio_b64 = None
     if tars_message:
-        audio_bytes = get_mixed_audio_bytes(tars_message)
+        audio_bytes = await get_mixed_audio_bytes(tars_message)
         if audio_bytes:
             audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
 
@@ -291,12 +296,12 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
             input_data = None
             
         print(f"[TIMER WS] 3. Listo para astream_events: {time.time() - t_start:.2f}s")
-        first_token = True
         
         async for event in app_instance.astream_events(input_data, cfg, version="v2"):
             if event["event"] == "on_chat_model_stream":
                 token = event["data"]["chunk"].content
                 if token:
+                    print(f"DEBUG: Token recibido -> {token}")
                     full_response_content += token
                     sentence_buffer += token
                     # 1. Enviamos el token al texto (UI)
@@ -308,7 +313,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
                         sentence_buffer = "" # Limpiamos el buffer para la siguiente frase
                         if text_to_process:
                             audio_queue.put_nowait(text_to_process)
-            
+        print("DEBUG: Fin de streaming de texto")
 
         print(f"[TIMER WS] 5. Todos los tokens procesados (fin LangGraph): {time.time() - t_start:.2f}s")
         # 3. Procesar cualquier residuo que haya quedado en el buffer al final
@@ -336,6 +341,106 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
 def health():
     return {"status": "ok"}
 
+
+@app.get("/greeting")
+async def get_greeting(user_id: int = 1):
+    """
+    Returns a short, personalised greeting from TARS based on the
+    user's name, HSK level, and interest area stored in the DB.
+    Uses GPT-4o-mini for speed (< 1 s round-trip).
+    """
+    profile = await asyncio.to_thread(get_user_profile, user_id)
+
+    username    = profile["username"]
+    hsk_level   = profile["hsk_level"]
+    interest    = profile["interest_area"]
+
+    prompt = (
+        f"You are TARS, a witty, warm AI tutor for Chinese. "
+        f"Generate ONE short greeting (1-2 sentences, ≤ 20 words) for a returning user. "
+        f"Use their personal details to make it feel special and unique. "
+        f"Details: name='{username}', HSK level={hsk_level}, interest/fandom='{interest}'. "
+        f"Be creative and playful — reference their interest with a fun nickname or title. "
+        f"Examples: 'Welcome back, my Cosmere traveller! Ready to conquer more characters?', "
+        f"'Greetings, young Padawan {username} — the Force of Mandarin awaits you today!'. "
+        f"Output ONLY the greeting sentence, nothing else."
+        f"The greeting must be ON CHINESE, but adjust it to the HSK LEVEL={hsk_level}"
+    )
+
+    response = await asyncio.to_thread(
+        lambda: openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=60,
+            temperature=0.9,
+        )
+    )
+    greeting = response.choices[0].message.content.strip()
+    return {"greeting": greeting, "username": username}
+
+
+# ── Emotion style map (mirrors node_learning.py) ────────────────────────────
+EMOTION_MAP = {
+    "RETRY":           "directo",
+    "CORRECT_NEXT":    "motivacional",
+    "LESSON_COMPLETE": "exclamativo",
+    "INTRODUCE":       "neutro",
+    "DEFAULT":         "neutro",
+}
+
+@app.get("/preload_message")
+async def get_preload_message(user_id: int = 1):
+    """
+    Fast personalised TARS greeting for Normal Mode.
+    Returns: { text, audio_b64 }
+    - Profile + files fetched in parallel (2 DB queries)
+    - GPT-4o-mini: max_tokens=55 → ~0.5s
+    - TTS runs in parallel with LLM response processing → adds ~1s
+    Total target: < 3s
+    """
+    # ── Parallel DB reads ─────────────────────────────────────────────────────
+    profile, uploaded_files = await asyncio.gather(
+        asyncio.to_thread(get_user_profile, user_id),
+        asyncio.to_thread(get_roleplay_contexts, user_id),
+    )
+
+    username  = profile["username"]
+    hsk_level = profile["hsk_level"]
+    interest  = profile["interest_area"]
+    files_tip = f"Tiene escenarios: {', '.join(uploaded_files[:2])}." if uploaded_files else ""
+
+    prompt = (
+        f"Eres TARS. Saluda a {username} (HSK{hsk_level}, fandom: {interest}) "
+        f"en UNA oración breve. {files_tip} "
+        f"Dale un apodo basado en su fandom. Incluye 一个汉字 (pīnyīn). "
+        f"Solo el mensaje, sin explicaciones."
+    )
+
+    # ── LLM call ─────────────────────────────────────────────────────────────
+    llm_response = await asyncio.to_thread(
+        lambda: openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=55,
+            temperature=0.9,
+        )
+    )
+    text = llm_response.choices[0].message.content.strip()
+
+    # ── TTS: generate audio for the short greeting ────────────────────────────
+    audio_b64 = None
+    try:
+        audio_bytes = await get_mixed_audio_bytes(text)
+        if audio_bytes:
+            audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+    except Exception as e:
+        print(f"[preload_message] TTS skipped: {e}")
+
+    return {"text": text, "audio_b64": audio_b64}
+
+
+
+
 @app.post("/stt")
 async def stt_endpoint(audio: UploadFile = File(...)):
     """Accepts an audio file and transcribes it using OpenAI Whisper to auto-detect the language."""
@@ -348,14 +453,16 @@ async def stt_endpoint(audio: UploadFile = File(...)):
         transcription = openai_client.audio.transcriptions.create(
             model="whisper-1",
             file=file_tuple,
-            prompt="这是一段简体中文对话，请使用简体中文输出。"
+            prompt="这是一段简体中文和西班牙语的双语对话。请使用简体中文和西班牙语输出。"
         )
         text = transcription.text.strip()
+        print(f"STT Output: {text}, size: {len(audio_bytes)}")
 
         # Filter known Whisper hallucinations (prompt echo on silent audio)
         WHISPER_HALLUCINATIONS = {
             "请使用简体中文输出。",
             "这是一段简体中文对话，请使用简体中文输出。",
+            "这是一段简体中文和西班牙语的双语对话。请使用简体中文和西班牙语输出。",
             "字幕by索兰娅",
         }
         if text in WHISPER_HALLUCINATIONS or len(text) < 2:

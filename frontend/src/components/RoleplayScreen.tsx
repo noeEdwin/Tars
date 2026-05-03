@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, Info, CloudUpload, Calendar, FileText, Play } from 'lucide-react';
+import { ChevronLeft, Info, CloudUpload, Calendar, FileText, Play, X } from 'lucide-react';
 import './RoleplayScreen.css';
 import type { ViewState, SessionConfig } from '../App';
-import { API_BASE } from '../apiConfig'; // Ajusta la ruta según la carpeta
+import { API_BASE } from '../apiConfig';
 
 interface RoleplayScreenProps {
     setCurrentView: (view: ViewState) => void;
@@ -12,28 +12,35 @@ interface RoleplayScreenProps {
 export default function RoleplayScreen({ setCurrentView, startConversation }: RoleplayScreenProps) {
     const [files, setFiles] = useState<string[]>([]);
 
+    // Modal state
+    const [modalFile, setModalFile] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState('Customer');
+    const [tarsRole, setTarsRole] = useState('Barista');
+
     useEffect(() => {
         fetch(`${API_BASE}/roleplay/files?user_id=1`)
             .then(res => res.json())
             .then(data => {
                 if (data.files) setFiles(data.files);
             })
-            .catch(err => console.error("Error fetching roleplay files:", err));
+            .catch(err => console.error('Error fetching roleplay files:', err));
     }, []);
 
-    const handleStartSession = (filename: string) => {
-        const userRole = window.prompt("What is your character's role?", "Customer");
-        if (!userRole) return; // User cancelled
+    const openModal = (filename: string) => {
+        setModalFile(filename);
+        setUserRole('Customer');
+        setTarsRole('Barista');
+    };
 
-        const tarsRole = window.prompt("What is Tars' character role?", "Barista");
-        if (!tarsRole) return; // User cancelled
-
+    const handleConfirm = () => {
+        if (!modalFile || !userRole.trim() || !tarsRole.trim()) return;
         startConversation({
             mode: 'tars_roleplay',
-            filename,
-            user_role: userRole,
-            tars_role: tarsRole
+            filename: modalFile,
+            user_role: userRole.trim(),
+            tars_role: tarsRole.trim(),
         });
+        setModalFile(null);
     };
 
     return (
@@ -104,7 +111,7 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
                                     </div>
                                     <button
                                         className={`action-btn btn-${color} neon-glow-${color}`}
-                                        onClick={() => handleStartSession(file)}
+                                        onClick={() => openModal(file)}
                                     >
                                         <span>Start Session</span>
                                         <Play size={16} fill="currentColor" />
@@ -119,6 +126,48 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
             {/* Decorative gradients */}
             <div className="bg-decor top-right"></div>
             <div className="bg-decor bottom-left"></div>
+
+            {/* Role entry modal */}
+            {modalFile && (
+                <div className="rp-modal-overlay" onClick={() => setModalFile(null)}>
+                    <div className="rp-modal" onClick={e => e.stopPropagation()}>
+                        <div className="rp-modal-header">
+                            <h3 className="rp-modal-title">Set up roles</h3>
+                            <button className="rp-modal-close" onClick={() => setModalFile(null)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <p className="rp-modal-file">Scenario: <strong>{modalFile}</strong></p>
+
+                        <label className="rp-modal-label">Your character role</label>
+                        <input
+                            className="rp-modal-input"
+                            value={userRole}
+                            onChange={e => setUserRole(e.target.value)}
+                            placeholder="e.g. Customer"
+                            autoFocus
+                        />
+
+                        <label className="rp-modal-label">TARS character role</label>
+                        <input
+                            className="rp-modal-input"
+                            value={tarsRole}
+                            onChange={e => setTarsRole(e.target.value)}
+                            placeholder="e.g. Barista"
+                            onKeyDown={e => e.key === 'Enter' && handleConfirm()}
+                        />
+
+                        <button
+                            className="rp-modal-confirm"
+                            onClick={handleConfirm}
+                            disabled={!userRole.trim() || !tarsRole.trim()}
+                        >
+                            <Play size={16} fill="currentColor" />
+                            Start Session
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

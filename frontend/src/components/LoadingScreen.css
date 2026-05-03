@@ -1,0 +1,221 @@
+.loading-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-dark);
+    z-index: 999;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Radial ambient glow behind the panda */
+.loading-bg-glow {
+    position: absolute;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(241, 0, 52, 0.08) 0%,
+        rgba(176, 38, 255, 0.05) 50%,
+        transparent 75%
+    );
+    pointer-events: none;
+    animation: glowPulse 3s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+    0%, 100% { transform: scale(1);   opacity: 0.8; }
+    50%       { transform: scale(1.15); opacity: 1;   }
+}
+
+/* Centres content column */
+.loading-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+}
+
+/* Pill card that holds the Lottie */
+.loading-lottie-wrapper {
+    width: 220px;
+    height: 220px;
+    border-radius: 36px;
+    overflow: hidden;
+    background: #ffffff;          /* Panda anim has white BG */
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,0.08),
+        0 8px 40px rgba(0, 0, 0, 0.6),
+        0 0 60px rgba(241, 0, 52, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: cardFloat 4s ease-in-out infinite;
+}
+
+@keyframes cardFloat {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-8px); }
+}
+
+.loading-lottie {
+    width: 100%;
+    height: 100%;
+}
+
+/* Text below the card */
+.loading-text-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.loading-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.25);
+    margin: 0;
+}
+
+.loading-message {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 0;
+    letter-spacing: 0.02em;
+    animation: textPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes textPulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}
+
+/* ─── Toast pop-up notification ──────────────────────────────────────── */
+.loading-toast {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-120%);
+    width: calc(100% - 40px);
+    max-width: 360px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(18, 14, 13, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(241, 0, 52, 0.25);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow:
+        0 4px 30px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 0 20px rgba(241, 0, 52, 0.08);
+    z-index: 1000;
+    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.35s ease;
+    opacity: 0;
+}
+
+.loading-toast.toast-visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.loading-toast.toast-hiding {
+    transform: translateX(-50%) translateY(-120%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.toast-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--neon-red), var(--neon-purple));
+    color: white;
+    font-weight: 800;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 12px rgba(241, 0, 52, 0.4);
+}
+
+.toast-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.toast-name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--neon-red);
+}
+
+.toast-text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 4px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+    line-height: 1;
+    margin-top: 2px;
+}
+
+.toast-close:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+
+/* Animated dots */
+.loading-dots {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.loading-dots span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--neon-red);
+    opacity: 0.3;
+    animation: dotBounce 1.4s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotBounce {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.3; }
+    40%            { transform: scale(1.2); opacity: 1;   }
+}
