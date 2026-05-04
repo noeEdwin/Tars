@@ -22,6 +22,12 @@ PROTOCOLS = {
         2. GOAL: Lead the lesson based on the blueprint. Tell the user what they are learning today.
         3. STRICT LESSON TRACKING: Follow the `=== CURRENT LESSON BLUEPRINT ===` and use `=== DATABASE KNOWLEDGE ===` for exact Pinyin/Translations.
         4. FEEDBACK: If the user fails (RETRY), use your current emotional style to pressure or challenge them. If they succeed, be genuinely motivational.
+        5. 3-WORD STRUCTURE RULE: To ensure accurate microphone detection, NEVER ask for isolated words. Always generate a 3-word challenge phrase:
+           - If PRONOUN/SUBJECT: Use "Sujeto + 是 + [Role]" (e.g., 我是老师)
+           - If NOUN/OBJECT: Use "这是 + [Object]" (e.g., 这是老师)
+           - If NUMBER: Use "[Subject] + 有 + [Number] + 个" (e.g., 我有三个)
+           - If VERB: Use "Sujeto + Verb + Object" (e.g., 我喝茶)
+           - PRESENT the full 3-word phrase and ask user to repeat it. Verify they said the TARGET WORD correctly.
     """,
     "tars_engineer": """
         ### TARS ENGINEER PROTOCOL (高级工程师)
@@ -77,7 +83,7 @@ def get_tars_expert(expert_type:str):
     if expert_type == "tars_normal":
         return ChatOpenAI(
             model="gpt-4o", 
-            temperature=0.85,
+            temperature=0.3,
             streaming=True
         )
 
@@ -113,9 +119,12 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
                 If they are SARCÁSTICO, you must be witty and sharp.
                 
                 ### OUTPUT FORMAT RULES (STRICT)
-                [Hanzi]
+                When introducing a 3-word phrase, use this format:
+                [Hanzi Phrase]
                 (Pinyin)
                 [Spanish Translation]
+                
+                When giving feedback, follow the INSTRUCCIÓN provided in the protocol.
             """
         ),
         MessagesPlaceholder(variable_name="messages"),

@@ -41,16 +41,23 @@ async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:
     protocol_text = protocol_text.replace("{context}", "No relevant context for this turn.")
     protocol_text += f"""
 
+### 🔴 REGLA OBLIGATORIA: ESTRUCTURA DE 3 PALABRAS
+NO pidas la palabra aislada "{target_word}". DEBES crear una frase de 3 palabras usando:
+- Si es PRONOMBRE: Sujeto + 是 + [Rol] → Ej: 我是老师
+- Si es SUSTANTIVO: 这是 + [Objeto] → Ej: 这是书
+- Si es NÚMERO: [Sujeto] + 有 + [Número] + 个 → Ej: 我有三个
+- Si es VERBO: Sujeto + Verbo + Objeto → Ej: 我喝茶
+
 ### LECCIÓN EN CURSO — ACCIÓN: INTRODUCIR PALABRA
 Lección {current_lesson} | Vocabulario completo: {lesson_vocab_str}
 Progreso: {lesson_progress}/{len(lesson_words)} palabras completadas
-Palabra objetivo actual: **{target_word}** ({target_pinyin}) — "{target_meaning}"
+Palabra objetivo: **{target_word}** ({target_pinyin}) — "{target_meaning}"
 
-INSTRUCCIÓN DEL SISTEMA (obligatoria):
+INSTRUCCIÓN OBLIGATORIA:
 1. Primero pregunta brevemente "¿Estás listo?" o "¿Comenzamos?".
-2. Luego presenta únicamente la palabra **{target_word}** ({target_pinyin}) que significa "{target_meaning}".
-3. Pide al usuario que repita esa palabra en voz alta o que la escriba.
-4. NO avances a la siguiente palabra. Espera su respuesta.
+2. Crea una frase de 3 palabras con **{target_word}** siguiendo la REGLA OBLIGATORIA arriba.
+3. Presenta la frase completa y pide al usuario que la repita.
+4. NO avances hasta que el usuario diga la frase completa.
 """
 
     last_user_msg = (state["messages"][-1].content if state.get("messages") else "")
@@ -93,6 +100,7 @@ async def lesson_check_node(state: TarsState, config: RunnableConfig) -> dict:
 
     said_it = bool(last_user_msg) and (
         target_word in last_user_msg
+        or target_pinyin in last_user_msg
         or is_phonetically_similar(target_word, last_user_msg)
     )
 
@@ -141,14 +149,14 @@ Resultado del sistema: **{feedback_type}**
     if feedback_type == "CORRECT_NEXT":
         protocol_text += f"""
 INSTRUCCIÓN: Felicita brevemente al usuario por haber dicho correctamente **{target_word}**.
-Luego presenta la siguiente palabra: **{next_word}** ({next_pinyin}) — "{next_meaning}".
-Pídele que la repita. NO avances hasta que lo diga.
+Luego crea una frase de 3 palabras con la siguiente palabra: **{next_word}** ({next_pinyin}) — "{next_meaning}".
+Usa la regla de 3 palabras del PROTOCOL. Pídele que repita la frase completa. NO avances hasta que lo diga.
 """
     elif feedback_type == "RETRY":
         protocol_text += f"""
-INSTRUCCIÓN: El usuario no dijo la palabra correcta. Anímalo con amabilidad.
-Repite la palabra objetivo: **{target_word}** ({target_pinyin}) — "{target_meaning}".
-Pídele que lo intente de nuevo. NO avances.
+INSTRUCCIÓN: El usuario no dijo la palabra correctamente. Anímalo con amabilidad.
+Crea nuevamente una frase de 3 palabras con: **{target_word}** ({target_pinyin}) — "{target_meaning}".
+Pídele que repita la frase completa. NO avances.
 """
     elif feedback_type == "LESSON_COMPLETE":
         protocol_text += """
