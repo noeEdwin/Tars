@@ -11,9 +11,6 @@ async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:
     print(f"[TIMER NODE] 1. lesson_prompt_node started")
     llm_expert      = get_tars_expert(expert_type="tars_normal")
     current_lesson  = state.get("current_lesson", 1)
-    lesson_words    = state.get("lesson_words")
-    lesson_progress = state.get("lesson_progress", 0)
-    target_word     = state.get("target_word")
 
     lesson_data = load_lesson_json(current_lesson)
     vocab_list  = lesson_data["vocabulary"]
@@ -21,15 +18,19 @@ async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:
 
     state_updates: dict = {}
 
-    if not lesson_words:
-        lesson_words    = [v["zh"] for v in vocab_list]
+    
+    lesson_words    = [v["zh"] for v in vocab_list]
+    lesson_progress = state.get("lesson_progress", 0)
+    if lesson_progress >= len(lesson_words):
         lesson_progress = 0
-        target_word     = lesson_words[0]
-        state_updates.update({
+    target_word = state.get("target_word")
+    if not target_word or target_word not in lesson_words:
+        target_word = lesson_words[lesson_progress]
+    state_updates.update({
             "lesson_words":    lesson_words,
             "lesson_progress": lesson_progress,
             "target_word":     target_word,
-        })
+    })
 
     lesson_vocab_str = ", ".join(lesson_words)
     target_info      = vocab_by_zh.get(target_word, {})
@@ -77,13 +78,13 @@ INSTRUCCIÓN DEL SISTEMA (obligatoria):
 async def lesson_check_node(state: TarsState, config: RunnableConfig) -> dict:
     llm_expert      = get_tars_expert(expert_type="tars_normal")
     current_lesson  = state.get("current_lesson", 1)
-    lesson_words    = state.get("lesson_words", [])
     lesson_progress = state.get("lesson_progress", 0)
     target_word     = state.get("target_word", "")
     last_user_msg   = (state["messages"][-1].content or "").strip()
 
     lesson_data = load_lesson_json(current_lesson)
     vocab_list  = lesson_data["vocabulary"]
+    lesson_words = [v["zh"] for v in vocab_list]  
     vocab_by_zh = {v["zh"]: v for v in vocab_list}
 
     target_info    = vocab_by_zh.get(target_word, {})

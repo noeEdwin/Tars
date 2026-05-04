@@ -1,0 +1,1192 @@
+{
+  "metadata": {
+    "nivel": "HSK 1",
+    "enfoque": "Construcción de vocabulario y conversación",
+    "total_palabras_objetivo": 150
+  },
+  "modulos_de_aprendizaje": [
+    {
+      "modulo": "Vocabulario Principal Oficial",
+      "vocabulario": [
+        
+  {
+    "palabra": "我",
+    "pinyin": "wǒ",
+    "significado": "Yo",
+    "ejemplo_uso": "我很好。(wǒ hěn hǎo - Yo estoy muy bien.)",
+    "analogia": "Suena como un perro ladrando suavemente 'woof', pero dices 'wo'. Es la base para hablar de ti mismo.",
+    "tarea_para_tars": "Pregúntale al usuario cómo se dice 'Yo' en chino."
+  },
+  {
+    "palabra": "你",
+    "pinyin": "nǐ",
+    "significado": "Tú",
+    "ejemplo_uso": "你好。(nǐ hǎo - Hola / Tú bien.)",
+    "analogia": "Suena como la palabra 'ni' en 'nido'. Apunta a la otra persona y dile 'ni'.",
+    "tarea_para_tars": "Pídele al usuario que traduzca 'tú' al chino."
+  },
+  {
+    "palabra": "他",
+    "pinyin": "tā",
+    "significado": "Él",
+    "ejemplo_uso": "他是医生。(tā shì yī shēng - Él es médico.)",
+    "analogia": "Suena como 'ta' de 'taza'. Piensa en apuntar a un amigo lejano con una taza en la mano.",
+    "tarea_para_tars": "Pregúntale al usuario qué pronombre usaría para hablar de un amigo (Él)."
+  },
+  {
+    "palabra": "她",
+    "pinyin": "tā",
+    "significado": "Ella",
+    "ejemplo_uso": "她是老师。(tā shì lǎo shī - Ella es maestra.)",
+    "analogia": "Se pronuncia EXACTAMENTE igual que 'Él' (tā). La única diferencia es al escribirlo, que tiene el símbolo de 'mujer' al principio.",
+    "tarea_para_tars": "Explícale al usuario que 'Él' y 'Ella' suenan igual y pídele que los pronuncie."
+  },
+  {
+    "palabra": "我们",
+    "pinyin": "wǒ men",
+    "significado": "Nosotros",
+    "ejemplo_uso": "我们去北京。(wǒ men qù běi jīng - Nosotros vamos a Pekín.)",
+    "analogia": "Agregas 'men' (que suena a 'hombres' en inglés) a 'wǒ' (yo). Yo + varias personas = Nosotros.",
+    "tarea_para_tars": "Pídele al usuario que forme la palabra 'nosotros' uniendo 'yo' y la terminación plural."
+  },
+  {
+    "palabra": "这",
+    "pinyin": "zhè",
+    "significado": "Este / Esta",
+    "ejemplo_uso": "这是什么？(zhè shì shén me? - ¿Qué es esto?)",
+    "analogia": "Suena como 'ye' pero con 'z' (yee). Úsalo apuntando a algo que tienes en la mano.",
+    "tarea_para_tars": "Pídele al usuario que apunte a su computadora y diga 'zhè'."
+  },
+  {
+    "palabra": "那",
+    "pinyin": "nà",
+    "significado": "Ese / Aquel",
+    "ejemplo_uso": "那是谁？(nà shì shéi? - ¿Quién es ese?)",
+    "analogia": "Suena como 'na' de 'nada'. Úsalo para apuntar a algo lejos que 'na'da' tiene que ver contigo.",
+    "tarea_para_tars": "Pídele al usuario que apunte por la ventana y diga 'nà'."
+  },
+  {
+    "palabra": "哪",
+    "pinyin": "nǎ",
+    "significado": "Cuál",
+    "ejemplo_uso": "去哪儿？(qù nǎr? - ¿A dónde vas?)",
+    "analogia": "Suena igual que 'nà' (ese) pero con otro tono. Es la palabra clave para hacer preguntas de elección.",
+    "tarea_para_tars": "Explícale la diferencia entre 'nà' (ese) y 'nǎ' (cuál) por el tono."
+  },
+  {
+    "palabra": "哪儿",
+    "pinyin": "nǎr",
+    "significado": "Dónde",
+    "ejemplo_uso": "你在哪儿？(nǐ zài nǎr? - ¿Dónde estás?)",
+    "analogia": "Es 'nǎ' (cuál) + 'er' (terminación pirata 'arr'). ¿Cuál lugar... arrr?",
+    "tarea_para_tars": "Pídele al usuario que te pregunte '¿Dónde?' usando la pronunciación de pirata."
+  },
+  {
+    "palabra": "谁",
+    "pinyin": "shéi",
+    "significado": "Quién",
+    "ejemplo_uso": "他是谁？(tā shì shéi? - ¿Quién es él?)",
+    "analogia": "Suena parecido a 'shey'. Preguntando la identidad de alguien misterioso.",
+    "tarea_para_tars": "Juega a las adivinanzas y pídele que pregunte '¿Quién?' (shéi)."
+  },
+  {
+    "palabra": "什么",
+    "pinyin": "shén me",
+    "significado": "Qué",
+    "ejemplo_uso": "什么名字？(shén me míng zi? - ¿Qué nombre?)",
+    "analogia": "Suena a 'shen ma'. La palabra más importante para un turista confundido.",
+    "tarea_para_tars": "Haz que el usuario finja no entender nada y pregunte '¿Qué?'.",
+    "es_pregunta": true
+  },
+  {
+    "palabra": "多少",
+    "pinyin": "duō shǎo",
+    "significado": "Cuánto (cantidades grandes)",
+    "ejemplo_uso": "多少钱？(duō shǎo qián? - ¿Cuánto cuesta?)",
+    "analogia": "Significa 'Mucho (duō)' + 'Poco (shǎo)'. ¿Qué tan mucho o poco es? = ¿Cuánto?",
+    "tarea_para_tars": "Pídele al usuario que pregunte el precio de algo combinando 'mucho' y 'poco'."
+  },
+  {
+    "palabra": "几",
+    "pinyin": "jǐ",
+    "significado": "Cuántos (menos de 10)",
+    "ejemplo_uso": "几岁？(jǐ suì? - ¿Cuántos años?)",
+    "analogia": "Suena a 'yi' pero con 'j'. Úsalo para contar con los dedos de las manos.",
+    "tarea_para_tars": "Dile al usuario que tiene 3 manzanas y pregúntale cómo diría 'cuántas' en chino."
+  },
+  {
+    "palabra": "怎么",
+    "pinyin": "zěn me",
+    "significado": "Cómo",
+    "ejemplo_uso": "怎么去？(zěn me qù? - ¿Cómo ir?)",
+    "analogia": "Suena a 'zen' (como meditar) + 'ma'. ¿Cómo llegas al zen?",
+    "tarea_para_tars": "Pídele que pregunte '¿Cómo?' para saber la forma de hacer algo."
+  },
+  {
+    "palabra": "怎么样",
+    "pinyin": "zěn me yàng",
+    "significado": "Qué tal / Cómo es",
+    "ejemplo_uso": "天气怎么样？(tiān qì zěn me yàng? - ¿Qué tal el clima?)",
+    "analogia": "Es 'cómo' (zěn me) + 'apariencia' (yàng). Usado para pedir opiniones.",
+    "tarea_para_tars": "Pídele al usuario que te pregunte '¿Qué tal estás?'."
+  },
+  {
+    "palabra": "一",
+    "pinyin": "yī",
+    "significado": "Uno",
+    "ejemplo_uso": "一个(yí gè - uno).",
+    "analogia": "Una sola línea horizontal. Súper fácil. Suena a 'i'.",
+    "tarea_para_tars": "Pídele que levante un dedo y diga 'yī'."
+  },
+  {
+    "palabra": "二",
+    "pinyin": "èr",
+    "significado": "Dos",
+    "ejemplo_uso": "二月(èr yuè - Febrero).",
+    "analogia": "Dos líneas horizontales. Suena a 'ar' de aire.",
+    "tarea_para_tars": "Que cuente 'uno, dos' en chino."
+  },
+  {
+    "palabra": "三",
+    "pinyin": "sān",
+    "significado": "Tres",
+    "ejemplo_uso": "三点(sān diǎn - tres en punto).",
+    "analogia": "Tres líneas horizontales. Suena como 'San' Francisco.",
+    "tarea_para_tars": "Pídele que cuente hasta 3."
+  },
+  {
+    "palabra": "四",
+    "pinyin": "sì",
+    "significado": "Cuatro",
+    "ejemplo_uso": "四个(sì gè - cuatro).",
+    "analogia": "Un cuadrado con dos cortinas. Suena a un siseo de serpiente 'sss'.",
+    "tarea_para_tars": "Explícale que el 4 da mala suerte en China por sonar parecido a la palabra muerte, y pídele que lo diga."
+  },
+  {
+    "palabra": "五",
+    "pinyin": "wǔ",
+    "significado": "Cinco",
+    "ejemplo_uso": "五十(wǔ shí - cincuenta).",
+    "analogia": "Suena al grito de emoción de un mariachi '¡Wu!'.",
+    "tarea_para_tars": "Que el usuario grite '¡Wu!' para decir cinco."
+  },
+  {
+    "palabra": "六",
+    "pinyin": "liù",
+    "significado": "Seis",
+    "ejemplo_uso": "六十(liù shí - sesenta).",
+    "analogia": "Suena a 'Leo' con 'u'. Como el nombre Leo.",
+    "tarea_para_tars": "Pídele que pronuncie el número 6."
+  },
+  {
+    "palabra": "七",
+    "pinyin": "qī",
+    "significado": "Siete",
+    "ejemplo_uso": "七天(qī tiān - siete días).",
+    "analogia": "Suena a 'chi', la energía vital china. El 7 tiene mucha energía.",
+    "tarea_para_tars": "Pídele que diga siete pensando en energía."
+  },
+  {
+    "palabra": "八",
+    "pinyin": "bā",
+    "significado": "Ocho",
+    "ejemplo_uso": "八月(bā yuè - Agosto).",
+    "analogia": "Suena al balido de una oveja 'baa'. Es el número de la suerte en China.",
+    "tarea_para_tars": "Explica la suerte del 8 y pídele que lo pronuncie."
+  },
+  {
+    "palabra": "九",
+    "pinyin": "jiǔ",
+    "significado": "Nueve",
+    "ejemplo_uso": "九个(jiǔ gè - nueve).",
+    "analogia": "Suena como 'Joe', el nombre en inglés.",
+    "tarea_para_tars": "Que el usuario diga el número nueve."
+  },
+  {
+    "palabra": "十",
+    "pinyin": "shí",
+    "significado": "Diez",
+    "ejemplo_uso": "十月(shí yuè - Octubre).",
+    "analogia": "Es una cruz exacta (+). Suena como mandar a callar 'shh' con fuerza.",
+    "tarea_para_tars": "Pídele que cuente del 8 al 10."
+  },
+  {
+    "palabra": "零",
+    "pinyin": "líng",
+    "significado": "Cero",
+    "ejemplo_uso": "零度(líng dù - cero grados).",
+    "analogia": "Suena al timbre de una bicicleta 'ling ling'.",
+    "tarea_para_tars": "Que el usuario diga cero haciendo el sonido del timbre."
+  },
+  {
+    "palabra": "个",
+    "pinyin": "gè",
+    "significado": "Clasificador (para cosas en general)",
+    "ejemplo_uso": "一个人(yí gè rén - una persona).",
+    "analogia": "En chino no puedes decir 'un perro', debes decir 'un [unidad] de perro'. 'gè' es la unidad genérica. Suena a 'gue'.",
+    "tarea_para_tars": "Explica qué es un clasificador y pídele que diga 'uno + clasificador'."
+  },
+  {
+    "palabra": "岁",
+    "pinyin": "suì",
+    "significado": "Años (de edad)",
+    "ejemplo_uso": "十岁(shí suì - diez años).",
+    "analogia": "Suena a 'suey' de chop suey. Solo se usa para edad, no para años del calendario.",
+    "tarea_para_tars": "Pregúntale al usuario su edad y ayúdale a decir el número + 'suì'."
+  },
+  {
+    "palabra": "本",
+    "pinyin": "běn",
+    "significado": "Clasificador (para libros)",
+    "ejemplo_uso": "一本书(yì běn shū - un libro).",
+    "analogia": "Suena a 'Ben', el nombre. Úsalo para contar objetos con páginas.",
+    "tarea_para_tars": "Pídele que cuente 'un libro' usando este clasificador específico."
+  },
+  {
+    "palabra": "些",
+    "pinyin": "xiē",
+    "significado": "Algunos / Unos",
+    "ejemplo_uso": "这些(zhè xiē - estos).",
+    "analogia": "Suena a 'she'. Transforma singulares en plurales indefinidos.",
+    "tarea_para_tars": "Pídele que forme la palabra 'estos' (zhè xiē)."
+  },
+  {
+    "palabra": "块",
+    "pinyin": "kuài",
+    "significado": "Trozo / Clasificador de dinero",
+    "ejemplo_uso": "十块(shí kuài - diez dólares/pesos).",
+    "analogia": "Suena como un golpe de karate '¡Kwai!'. Es la forma coloquial de decir 'pesos/dólares/yuanes'.",
+    "tarea_para_tars": "Que el usuario simule pagar algo diciendo una cantidad + 'kuài'."
+  },
+  {
+    "palabra": "今天",
+    "pinyin": "jīn tiān",
+    "significado": "Hoy",
+    "ejemplo_uso": "今天很好。(jīn tiān hěn hǎo - Hoy está muy bien.)",
+    "analogia": "Día actual. 'Jin' (ahora) + 'tian' (cielo). El cielo de ahora.",
+    "tarea_para_tars": "Pregúntale qué día es hoy (jīn tiān)."
+  },
+  {
+    "palabra": "明天",
+    "pinyin": "míng tiān",
+    "significado": "Mañana",
+    "ejemplo_uso": "明天见。(míng tiān jiàn - Hasta mañana.)",
+    "analogia": "'Ming' significa brillante. El día (cielo) brillante que viene.",
+    "tarea_para_tars": "Pídele que diga 'Hasta mañana' combinándolo con 'jian' (ver)."
+  },
+  {
+    "palabra": "昨天",
+    "pinyin": "zuó tiān",
+    "significado": "Ayer",
+    "ejemplo_uso": "昨天下雨。(zuó tiān xià yǔ - Ayer llovió.)",
+    "analogia": "El día (tian) que ya pasó (zuo).",
+    "tarea_para_tars": "Que traduzca la palabra 'ayer'."
+  },
+  {
+    "palabra": "现在",
+    "pinyin": "xiàn zài",
+    "significado": "Ahora",
+    "ejemplo_uso": "现在几点？(xiàn zài jǐ diǎn? - ¿Qué hora es ahora?)",
+    "analogia": "El momento exacto en el que estás existiendo. Suena a 'shian zai'.",
+    "tarea_para_tars": "Pídele que exija algo ahora mismo usando 'xiàn zài'."
+  },
+  {
+    "palabra": "点",
+    "pinyin": "diǎn",
+    "significado": "Hora / Punto",
+    "ejemplo_uso": "一点(yì diǎn - la una en punto).",
+    "analogia": "Literalmente significa 'punto' o 'gota'. Se usa para marcar las horas del reloj.",
+    "tarea_para_tars": "Enséñale a decir 'las 3 en punto' uniendo el número 3 y 'diǎn'."
+  },
+  {
+    "palabra": "分钟",
+    "pinyin": "fēn zhōng",
+    "significado": "Minuto",
+    "ejemplo_uso": "十分钟(shí fēn zhōng - diez minutos).",
+    "analogia": "'Fen' es dividir. Los minutos dividen la hora.",
+    "tarea_para_tars": "Pídele que diga '5 minutos'."
+  },
+  {
+    "palabra": "年",
+    "pinyin": "nián",
+    "significado": "Año",
+    "ejemplo_uso": "一年(yì nián - un año).",
+    "analogia": "Año del calendario solar. Nian era también un monstruo mitológico chino de año nuevo.",
+    "tarea_para_tars": "Cuéntale la historia del monstruo Nian y pídele que diga la palabra."
+  },
+  {
+    "palabra": "月",
+    "pinyin": "yuè",
+    "significado": "Mes / Luna",
+    "ejemplo_uso": "八月(bā yuè - Agosto).",
+    "analogia": "Es el dibujo de una luna menguante. Los meses chinos se basaban en la luna. Para decir los meses, solo dices el número + luna (ej. 1 luna = Enero).",
+    "tarea_para_tars": "Haz que deduzca cómo se dice 'Enero' en chino."
+  },
+  {
+    "palabra": "日",
+    "pinyin": "rì",
+    "significado": "Día (Formal) / Sol",
+    "ejemplo_uso": "一日(yí rì - día uno).",
+    "analogia": "Es el dibujo cuadrado de un sol. Significa día en fechas formales.",
+    "tarea_para_tars": "Pídele que pronuncie el 'sol/día' (rì)."
+  },
+  {
+    "palabra": "星期",
+    "pinyin": "xīng qī",
+    "significado": "Semana",
+    "ejemplo_uso": "星期一(xīng qī yī - Lunes).",
+    "analogia": "Significa literalmente 'periodo de estrellas'. Para decir los días, solo sumas la semana + el número (Semana 1 = Lunes).",
+    "tarea_para_tars": "Pregúntale cómo se diría 'Martes' usando la lógica numérica china."
+  },
+  {
+    "palabra": "上午",
+    "pinyin": "shàng wǔ",
+    "significado": "Mañana (AM)",
+    "ejemplo_uso": "上午八点(shàng wǔ bā diǎn - 8 am).",
+    "analogia": "'Shang' (arriba). Cuando el sol sube hacia el mediodía.",
+    "tarea_para_tars": "Pídele que diga que es 'la mañana'."
+  },
+  {
+    "palabra": "中午",
+    "pinyin": "zhōng wǔ",
+    "significado": "Mediodía",
+    "ejemplo_uso": "中午吃饭(zhōng wǔ chī fàn - comer al mediodía).",
+    "analogia": "'Zhong' (medio). El centro exacto del día.",
+    "tarea_para_tars": "Pídele que forme la palabra 'mediodía'."
+  },
+  {
+    "palabra": "下午",
+    "pinyin": "xià wǔ",
+    "significado": "Tarde (PM)",
+    "ejemplo_uso": "下午好(xià wǔ hǎo - Buenas tardes).",
+    "analogia": "'Xia' (abajo). Cuando el sol empieza a bajar.",
+    "tarea_para_tars": "Pídele que te salude con un 'Buenas tardes'."
+  },
+  {
+    "palabra": "时候",
+    "pinyin": "shí hou",
+    "significado": "Momento / Tiempo",
+    "ejemplo_uso": "什么时候？(shén me shí hou? - ¿Cuándo?)",
+    "analogia": "Se usa para hablar de la duración o preguntar 'cuándo' (qué momento).",
+    "tarea_para_tars": "Enséñale a preguntar '¿Cuándo?' (Qué momento)."
+  },
+  {
+    "palabra": "人",
+    "pinyin": "rén",
+    "significado": "Persona",
+    "ejemplo_uso": "一个人(yí gè rén - una persona).",
+    "analogia": "El carácter (人) es literalmente un dibujo de palo de una persona caminando con dos piernas.",
+    "tarea_para_tars": "Pídele que diga la palabra y mencione a qué se parece el símbolo."
+  },
+  {
+    "palabra": "妈妈",
+    "pinyin": "mā ma",
+    "significado": "Mamá",
+    "ejemplo_uso": "我妈妈(wǒ mā ma - mi mamá).",
+    "analogia": "Suena igual que en español pero repitiendo la sílaba dos veces.",
+    "tarea_para_tars": "Pídele que llame a su mamá en chino."
+  },
+  {
+    "palabra": "爸爸",
+    "pinyin": "bà ba",
+    "significado": "Papá",
+    "ejemplo_uso": "我爸爸(wǒ bà ba - mi papá).",
+    "analogia": "Suena igual que 'papá' pero con la letra B en lugar de P.",
+    "tarea_para_tars": "Pídele que llame a su papá en chino."
+  },
+  {
+    "palabra": "儿子",
+    "pinyin": "ér zi",
+    "significado": "Hijo",
+    "ejemplo_uso": "他是我儿子。(tā shì wǒ ér zi - Él es mi hijo.)",
+    "analogia": "Suena un poco a 'Ernie'. El hijo de la familia.",
+    "tarea_para_tars": "Pídele que pronuncie 'hijo'."
+  },
+  {
+    "palabra": "女儿",
+    "pinyin": "nǚ ér",
+    "significado": "Hija",
+    "ejemplo_uso": "我的女儿(wǒ de nǚ ér - mi hija).",
+    "analogia": "Empieza con el sonido 'nǚ' (mujer). La niña de la casa.",
+    "tarea_para_tars": "Pídele que diga 'hija'."
+  },
+  {
+    "palabra": "老师",
+    "pinyin": "lǎo shī",
+    "significado": "Maestro / Profesor",
+    "ejemplo_uso": "老师好。(lǎo shī hǎo - Hola, maestro.)",
+    "analogia": "Significa 'Viejo (lǎo) Maestro (shī)'. En China ser viejo es signo de sabiduría, ¡así que es un cumplido!",
+    "tarea_para_tars": "Saluda a Tars llamándolo 'Profesor' en chino."
+  },
+  {
+    "palabra": "学生",
+    "pinyin": "xué sheng",
+    "significado": "Estudiante",
+    "ejemplo_uso": "他是学生。(tā shì xué sheng - Él es estudiante.)",
+    "analogia": "Significa 'Aprender (xué) Nacido (sheng)'. Alguien que nació para aprender.",
+    "tarea_para_tars": "Dile a Tars: 'Yo soy estudiante' (Wo shi xue sheng)."
+  },
+  {
+    "palabra": "同学",
+    "pinyin": "tóng xué",
+    "significado": "Compañero de clase",
+    "ejemplo_uso": "他是我的同学。(tā shì wǒ de tóng xué - Él es mi compañero.)",
+    "analogia": "'Tóng' significa mismo. Alguien que estudia lo mismo que tú.",
+    "tarea_para_tars": "Pídele al usuario que piense en Edwin y diga que es su compañero de clase."
+  },
+  {
+    "palabra": "朋友",
+    "pinyin": "péng you",
+    "significado": "Amigo",
+    "ejemplo_uso": "好朋友(hǎo péng you - buen amigo).",
+    "analogia": "El primer carácter (朋) son dos lunas juntas. Dos lunas que caminan juntas en la noche son amigos.",
+    "tarea_para_tars": "Dile al usuario que ahora tú y él son 'peng you'."
+  },
+  {
+    "palabra": "医生",
+    "pinyin": "yī shēng",
+    "significado": "Médico",
+    "ejemplo_uso": "他是医生。(tā shì yī shēng - Él es médico.)",
+    "analogia": "Suena a 'i' + 'shen'. Piensa en alguien que te cura cuando dices '¡ay!'.",
+    "tarea_para_tars": "Pregúntale al usuario si su papá es médico."
+  },
+  {
+    "palabra": "先生",
+    "pinyin": "xiān sheng",
+    "significado": "Señor / Esposo",
+    "ejemplo_uso": "王先生(Wáng xiān sheng - Sr. Wang).",
+    "analogia": "Se usa para dirigirse a un hombre con respeto. Suena a 'shian sheng'.",
+    "tarea_para_tars": "Pídele al usuario que salude a un 'Sr. Li' (Li xian sheng)."
+  },
+  {
+    "palabra": "小姐",
+    "pinyin": "xiǎo jiě",
+    "significado": "Señorita",
+    "ejemplo_uso": "李小姐(Lǐ xiǎo jiě - Srta. Li).",
+    "analogia": "Literalmente 'Pequeña (xiǎo) hermana mayor (jiě)'.",
+    "tarea_para_tars": "Pídele al usuario que pronuncie 'señorita'."
+  },
+  {
+    "palabra": "名字",
+    "pinyin": "míng zi",
+    "significado": "Nombre",
+    "ejemplo_uso": "你叫什么名字？(nǐ jiào shén me míng zi? - ¿Cómo te llamas?)",
+    "analogia": "Suena a 'ming' (brillante) + 'zi' (carácter). Tu nombre es tu carácter brillante.",
+    "tarea_para_tars": "Enséñale al usuario a preguntar '¿Qué nombre?'."
+  },
+  {
+    "palabra": "中国",
+    "pinyin": "zhōng guó",
+    "significado": "China",
+    "ejemplo_uso": "我去中国。(wǒ qù zhōng guó - Voy a China.)",
+    "analogia": "Significa 'País (guó) del Centro (zhōng)'. El símbolo (中) es un rectángulo atravesado por el centro.",
+    "tarea_para_tars": "Dibuja un rectángulo con una línea en medio y pídele que diga el nombre del país."
+  },
+  {
+    "palabra": "北京",
+    "pinyin": "běi jīng",
+    "significado": "Pekín",
+    "ejemplo_uso": "他在北京。(tā zài běi jīng - Él está en Pekín.)",
+    "analogia": "Significa 'Capital (jīng) del Norte (běi)'.",
+    "tarea_para_tars": "Pídele que ubique la capital de China en su mente y diga su nombre."
+  },
+  {
+    "palabra": "学校",
+    "pinyin": "xué xiào",
+    "significado": "Escuela",
+    "ejemplo_uso": "我去学校。(wǒ qù xué xiào - Voy a la escuela.)",
+    "analogia": "Lugar donde se aprende (xué). Suena a 'shue shiao'.",
+    "tarea_para_tars": "Pregúntale al usuario si está en la escuela justo ahora."
+  },
+  {
+    "palabra": "饭店",
+    "pinyin": "fàn diàn",
+    "significado": "Restaurante / Hotel",
+    "ejemplo_uso": "饭店在前面。(fàn diàn zài qián miàn - El restaurante está enfrente.)",
+    "analogia": "Tienda (diàn) de comida (fàn).",
+    "tarea_para_tars": "Dile que tiene hambre y pregúntale a dónde debería ir."
+  },
+  {
+    "palabra": "商店",
+    "pinyin": "shāng diàn",
+    "significado": "Tienda",
+    "ejemplo_uso": "商店在那儿。(shāng diàn zài nàr - La tienda está allá.)",
+    "analogia": "Lugar para hacer comercio (shāng).",
+    "tarea_para_tars": "Pídele que diga que va a la tienda."
+  },
+  {
+    "palabra": "医院",
+    "pinyin": "yī yuàn",
+    "significado": "Hospital",
+    "ejemplo_uso": "他在医院。(tā zài yī yuàn - Él está en el hospital.)",
+    "analogia": "Lugar (yuàn) de medicina (yī).",
+    "tarea_para_tars": "Pídele que pronuncie hospital."
+  },
+  {
+    "palabra": "火车站",
+    "pinyin": "huǒ chē zhàn",
+    "significado": "Estación de tren",
+    "ejemplo_uso": "火车站远吗？(huǒ chē zhàn yuǎn ma? - ¿Está lejos la estación?)",
+    "analogia": "Tren se dice 'Carro (chē) de Fuego (huǒ)'. Es la estación del carro de fuego.",
+    "tarea_para_tars": "Cuéntale por qué los trenes se llaman carros de fuego y que repita la palabra."
+  },
+  {
+    "palabra": "家",
+    "pinyin": "jiā",
+    "significado": "Casa / Familia",
+    "ejemplo_uso": "我回家。(wǒ huí jiā - Vuelvo a casa.)",
+    "analogia": "El dibujo representa un cerdo bajo un techo (antiguamente tener un cerdo bajo techo era tener un hogar). Suena a 'yia'.",
+    "tarea_para_tars": "Pregúntale si ya quiere irse a su 'jiā'."
+  },
+  {
+    "palabra": "上",
+    "pinyin": "shàng",
+    "significado": "Arriba / Encima",
+    "ejemplo_uso": "桌子上(zhuō zi shàng - sobre la mesa).",
+    "analogia": "Una línea que apunta hacia arriba. Suena a 'shang'.",
+    "tarea_para_tars": "Pídele que ponga su mano arriba y diga 'shàng'."
+  },
+  {
+    "palabra": "下",
+    "pinyin": "xià",
+    "significado": "Abajo / Debajo",
+    "ejemplo_uso": "椅子下(yǐ zi xià - bajo la silla).",
+    "analogia": "Una línea que apunta hacia abajo. Suena a 'shia'.",
+    "tarea_para_tars": "Pídele que apunte al piso y diga 'xià'."
+  },
+  {
+    "palabra": "前面",
+    "pinyin": "qián miàn",
+    "significado": "Enfrente / Delante",
+    "ejemplo_uso": "他在前面。(tā zài qián miàn - Él está adelante.)",
+    "analogia": "Suena a 'chian mian'. Lo que tienes ante tus ojos.",
+    "tarea_para_tars": "Dile que mire hacia adelante y diga la palabra."
+  },
+  {
+    "palabra": "后面",
+    "pinyin": "hòu miàn",
+    "significado": "Detrás / Atrás",
+    "ejemplo_uso": "商店在后面。(shāng diàn zài hòu miàn - La tienda está atrás.)",
+    "analogia": "Suena a 'jou mian'. Como si alguien te hablara por la espalda.",
+    "tarea_para_tars": "Dile que alguien lo busca atrás y que diga 'hòu miàn'."
+  },
+  {
+    "palabra": "里",
+    "pinyin": "lǐ",
+    "significado": "Dentro / Interior",
+    "ejemplo_uso": "家里(jiā lǐ - dentro de casa).",
+    "analogia": "Suena como la nota musical 'La' pero con 'i' (li).",
+    "tarea_para_tars": "Pregúntale qué hay 'dentro' (lǐ) de su mochila."
+  },
+  {
+    "palabra": "水",
+    "pinyin": "shuǐ",
+    "significado": "Agua",
+    "ejemplo_uso": "喝水(hē shuǐ - beber agua).",
+    "analogia": "El carácter parece un río fluyendo. Suena a 'shuei'.",
+    "tarea_para_tars": "Pídele que imagine que tiene mucha sed y pida 'shuǐ'."
+  },
+  {
+    "palabra": "茶",
+    "pinyin": "chá",
+    "significado": "Té",
+    "ejemplo_uso": "喝茶(hē chá - beber té).",
+    "analogia": "De aquí viene la palabra 'chai'. El símbolo tiene hierbas arriba y un árbol abajo.",
+    "tarea_para_tars": "Pregúntale si prefiere agua o té (chá)."
+  },
+  {
+    "palabra": "菜",
+    "pinyin": "cài",
+    "significado": "Plato / Verdura / Comida",
+    "ejemplo_uso": "中国菜(zhōng guó cài - comida china).",
+    "analogia": "Suena a 'tsai'. Se usa para cualquier platillo cocinado.",
+    "tarea_para_tars": "Pídele que diga 'comida china' uniendo el nombre del país y esta palabra."
+  },
+  {
+    "palabra": "米饭",
+    "pinyin": "mǐ fàn",
+    "significado": "Arroz cocido",
+    "ejemplo_uso": "吃米饭(chī mǐ fàn - comer arroz).",
+    "analogia": "'Mǐ' es el grano y 'fàn' es la comida. Arroz hecho comida.",
+    "tarea_para_tars": "Que el usuario diga que come arroz."
+  },
+  {
+    "palabra": "水果",
+    "pinyin": "shuǐ guǒ",
+    "significado": "Fruta",
+    "ejemplo_uso": "买水果(mǎi shuǐ guǒ - comprar fruta).",
+    "analogia": "Literalmente 'Fruto (guǒ) de Agua (shuǐ)'.",
+    "tarea_para_tars": "Pídele que nombre la fruta en chino."
+  },
+  {
+    "palabra": "苹果",
+    "pinyin": "píng guǒ",
+    "significado": "Manzana",
+    "ejemplo_uso": "一个苹果(yí gè píng guǒ - una manzana).",
+    "analogia": "Suena a 'ping' como el sonido de una campana. La fruta que hace 'ping'.",
+    "tarea_para_tars": "Dile que imagine una manzana roja y diga su nombre."
+  },
+  {
+    "palabra": "钱",
+    "pinyin": "qián",
+    "significado": "Dinero",
+    "ejemplo_uso": "多少钱？(duō shǎo qián? - ¿Cuánto cuesta?)",
+    "analogia": "Suena a 'chian'. Piensa en el sonido de las monedas chocando: 'chian chian'.",
+    "tarea_para_tars": "Pregúntale si tiene dinero."
+  },
+  {
+    "palabra": "东西",
+    "pinyin": "dōng xi",
+    "significado": "Cosa / Objeto",
+    "ejemplo_uso": "买东西(mǎi dōng xi - comprar cosas).",
+    "analogia": "Significa 'Este (dōng)' + 'Oeste (xi)'. Todo lo que hay entre el este y el oeste son 'cosas'.",
+    "tarea_para_tars": "Explícale esta curiosidad de la brújula y pídele que diga 'cosas'."
+  },
+  {
+    "palabra": "衣服",
+    "pinyin": "yī fu",
+    "significado": "Ropa",
+    "ejemplo_uso": "买衣服(mǎi yī fu - comprar ropa).",
+    "analogia": "Suena a 'i fu'. Lo que te pones para no tener frío.",
+    "tarea_para_tars": "Pídele que toque su camisa y diga la palabra."
+  },
+  {
+    "palabra": "书",
+    "pinyin": "shū",
+    "significado": "Libro",
+    "ejemplo_uso": "看书(kàn shū - leer un libro).",
+    "analogia": "Suena a 'shu'. Piensa en pedir silencio 'shhh' para leer un libro.",
+    "tarea_para_tars": "Haz que el usuario mande callar y luego diga 'libro'."
+  },
+  {
+    "palabra": "桌子",
+    "pinyin": "zhuō zi",
+    "significado": "Mesa",
+    "ejemplo_uso": "在桌子上(zài zhuō zi shàng - sobre la mesa).",
+    "analogia": "Suena a 'yuo zi'. El lugar donde pones tus cosas.",
+    "tarea_para_tars": "Pídele que diga mesa."
+  },
+  {
+    "palabra": "椅子",
+    "pinyin": "yǐ zi",
+    "significado": "Silla",
+    "ejemplo_uso": "在椅子下(zài yǐ zi xià - bajo la silla).",
+    "analogia": "Suena a 'i zi'. Donde te sientas cuando estás cansado.",
+    "tarea_para_tars": "Que el usuario diga silla."
+  },
+  {
+    "palabra": "杯子",
+    "pinyin": "bēi zi",
+    "significado": "Vaso / Taza",
+    "ejemplo_uso": "我的杯子(wǒ de bēi zi - mi taza).",
+    "analogia": "Suena a 'bei zi'. Piensa en un 'bebe' que toma de su taza.",
+    "tarea_para_tars": "Pídele que diga vaso."
+  },
+  {
+    "palabra": "电视",
+    "pinyin": "diàn shì",
+    "significado": "Televisión",
+    "ejemplo_uso": "看电视(kàn diàn shì - ver la tele).",
+    "analogia": "Significa 'Visión (shì) Eléctrica (diàn)'.",
+    "tarea_para_tars": "Explícale lo de la visión eléctrica y que pronuncie la palabra."
+  },
+  {
+    "palabra": "电脑",
+    "pinyin": "diàn nǎo",
+    "significado": "Computadora",
+    "ejemplo_uso": "我的电脑(wǒ de diàn nǎo - mi compu).",
+    "analogia": "Significa 'Cerebro (nǎo) Eléctrico (diàn)'. ¡Tu PC es un cerebro eléctrico!",
+    "tarea_para_tars": "Pregúntale si su 'cerebro eléctrico' es rápido."
+  },
+  {
+    "palabra": "电影",
+    "pinyin": "diàn yǐng",
+    "significado": "Película",
+    "ejemplo_uso": "看电影(kàn diàn yǐng - ver una peli).",
+    "analogia": "Significa 'Sombra (yǐng) Eléctrica (diàn)'. Una película son sombras con luz.",
+    "tarea_para_tars": "Que diga 'sombra eléctrica' para referirse a una película."
+  },
+  {
+    "palabra": "飞机",
+    "pinyin": "fēi jī",
+    "significado": "Avión",
+    "ejemplo_uso": "坐飞机(zuò fēi jī - viajar en avión).",
+    "analogia": "Significa 'Máquina (jī) Voladora (fēi)'.",
+    "tarea_para_tars": "Que el usuario extienda los brazos y diga 'máquina voladora'."
+  },
+  {
+    "palabra": "出租车",
+    "pinyin": "chū zū chē",
+    "significado": "Taxi",
+    "ejemplo_uso": "坐出租车(zuò chū zū chē - tomar un taxi).",
+    "analogia": "Literalmente 'Carro (chē) que se Alquila (chū zū)'.",
+    "tarea_para_tars": "Pídele que pida un taxi en chino."
+  },
+  {
+    "palabra": "猫",
+    "pinyin": "māo",
+    "significado": "Gato",
+    "ejemplo_uso": "我的小猫(wǒ de xiǎo māo - mi gatito).",
+    "analogia": "Suena EXACTAMENTE como el maullido de un gato: 'miau' -> 'māo'.",
+    "tarea_para_tars": "Pídele que maulle para decir gato."
+  },
+  {
+    "palabra": "狗",
+    "pinyin": "gǒu",
+    "significado": "Perro",
+    "ejemplo_uso": "那只狗(nà zhī gǒu - ese perro).",
+    "analogia": "Suena a 'gou'. Piensa en un perro que quiere irse: '¡Go!'",
+    "tarea_para_tars": "Dile que su perro se escapa y diga 'gǒu'."
+  },
+  {
+    "palabra": "天气",
+    "pinyin": "tiān qì",
+    "significado": "Clima / Tiempo atmosférico",
+    "ejemplo_uso": "天气怎么样？(tiān qì zěn me yàng? - ¿Cómo está el clima?)",
+    "analogia": "'Aire (qì) del Cielo (tiān)'. El estado del aire arriba.",
+    "tarea_para_tars": "Pídele que mire el cielo y diga clima."
+  },
+  {
+    "palabra": "字",
+    "pinyin": "zì",
+    "significado": "Carácter / Letra",
+    "ejemplo_uso": "汉字(hàn zì - carácter chino).",
+    "analogia": "Suena a 'dsi'. Es la unidad básica de la escritura china.",
+    "tarea_para_tars": "Señala un carácter y pídele que diga la palabra."
+  },
+  {
+    "palabra": "汉语",
+    "pinyin": "hàn yǔ",
+    "significado": "Idioma chino / Mandarín",
+    "ejemplo_uso": "学习汉语(xué xí hàn yǔ - estudiar chino).",
+    "analogia": "Idioma (yǔ) de la etnia Han (hàn). Es el nombre oficial del idioma.",
+    "tarea_para_tars": "Pídele que nombre el idioma que está aprendiendo."
+  },
+  {
+    "palabra": "是",
+    "pinyin": "shì",
+    "significado": "Ser / Sí",
+    "ejemplo_uso": "我是学生。(wǒ shì xué shēng - Yo soy estudiante.)",
+    "analogia": "No cambia nunca, no se conjuga. Suena a 'shh' con una 'i'.",
+    "tarea_para_tars": "Que el usuario confirme algo diciendo 'shì'."
+  },
+  {
+    "palabra": "有",
+    "pinyin": "yǒu",
+    "significado": "Tener / Haber",
+    "ejemplo_uso": "我有钱。(wǒ yǒu qián - Tengo dinero.)",
+    "analogia": "Suena a 'io'. Piensa en un 'yo' que tiene cosas.",
+    "tarea_para_tars": "Pídele que diga que tiene algo."
+  },
+  {
+    "palabra": "会",
+    "pinyin": "huì",
+    "significado": "Saber (una habilidad aprendida)",
+    "ejemplo_uso": "我会说汉语。(wǒ huì shuō hàn yǔ - Sé hablar chino.)",
+    "analogia": "Suena a 'juei'. Se usa para cosas que aprendiste (nadar, hablar, programar).",
+    "tarea_para_tars": "Pregúntale qué habilidad sabe hacer."
+  },
+  {
+    "palabra": "能",
+    "pinyin": "néng",
+    "significado": "Poder / Ser capaz",
+    "ejemplo_uso": "我能去。(wǒ néng qù - Puedo ir.)",
+    "analogia": "Suena a 'neng'. Capacidad física de hacer algo.",
+    "tarea_para_tars": "Pregúntale si 'puede' hacer una tarea."
+  },
+  {
+    "palabra": "想",
+    "pinyin": "xiǎng",
+    "significado": "Querer / Pensar / Extrañar",
+    "ejemplo_uso": "我想喝茶。(wǒ xiǎng hē chá - Quiero beber té.)",
+    "analogia": "Suena a 'shian'. El deseo que nace del pensamiento.",
+    "tarea_para_tars": "Pídele que exprese un deseo con esta palabra."
+  },
+  {
+    "palabra": "爱",
+    "pinyin": "ài",
+    "significado": "Amar",
+    "ejemplo_uso": "我爱你。(wǒ ài nǐ - Te amo.)",
+    "analogia": "Suena como un suspiro de amor: '¡Ay!'.",
+    "tarea_para_tars": "Que el usuario diga 'te amo' en chino."
+  },
+  {
+    "palabra": "喜欢",
+    "pinyin": "xǐ huan",
+    "significado": "Gustar",
+    "ejemplo_uso": "我喜欢吃苹果。(wǒ xǐ huan chī píng guǒ - Me gusta comer manzanas.)",
+    "analogia": "Suena a 'shi juan'. Piensa en alguien que le 'gusta' mucho leer a Juan.",
+    "tarea_para_tars": "Pregúntale al usuario qué comida le gusta."
+  },
+  {
+    "palabra": "认识",
+    "pinyin": "rèn shi",
+    "significado": "Conocer (a alguien)",
+    "ejemplo_uso": "认识你很高兴。(rèn shi nǐ hěn gāo xìng - Encantado de conocerte.)",
+    "analogia": "Suena a 'ren shi'. Conocer a un 'ren' (persona).",
+    "tarea_para_tars": "Dile al usuario que estás feliz de conocerlo."
+  },
+  {
+    "palabra": "去",
+    "pinyin": "qù",
+    "significado": "Ir",
+    "ejemplo_uso": "我去商店。(wǒ qù shāng diàn - Voy a la tienda.)",
+    "analogia": "Suena a 'chu'. Como el tren que se va 'chu chu'.",
+    "tarea_para_tars": "Pregúntale a dónde quiere ir."
+  },
+  {
+    "palabra": "来",
+    "pinyin": "lái",
+    "significado": "Venir",
+    "ejemplo_uso": "来我家。(lái wǒ jiā - Ven a mi casa.)",
+    "analogia": "Suena a 'lai'. Imagina que llamas a alguien diciendo '¡Lai pacá!' (Trae para acá).",
+    "tarea_para_tars": "Pídele que te diga 'ven aquí' en chino."
+  },
+  {
+    "palabra": "回",
+    "pinyin": "huí",
+    "significado": "Regresar / Volver",
+    "ejemplo_uso": "回家(huí jiā - volver a casa).",
+    "analogia": "El símbolo (回) es un cuadrado dentro de otro cuadrado. Es como dar una vuelta y regresar al inicio.",
+    "tarea_para_tars": "Enséñale el símbolo y pídele que diga regresar."
+  },
+  {
+    "palabra": "看",
+    "pinyin": "kàn",
+    "significado": "Mirar / Leer / Ver",
+    "ejemplo_uso": "看书(kàn shū - leer un libro).",
+    "analogia": "El símbolo tiene una mano (手) sobre un ojo (目). Como cuando te pones la mano en la frente para ver a lo lejos.",
+    "tarea_para_tars": "Pídele que ponga su mano sobre los ojos y diga la palabra."
+  },
+  {
+    "palabra": "看见",
+    "pinyin": "kàn jiàn",
+    "significado": "Ver (resultado de mirar)",
+    "ejemplo_uso": "我看见了。(wǒ kàn jiàn le - Ya lo vi.)",
+    "analogia": "Es 'Mirar' (kàn) + 'Ver' (jiàn). Percibir algo con los ojos.",
+    "tarea_para_tars": "Pregúntale si te puede ver."
+  },
+  {
+    "palabra": "听",
+    "pinyin": "tīng",
+    "significado": "Escuchar",
+    "ejemplo_uso": "听我说。(tīng wǒ shuō - Escúchame.)",
+    "analogia": "Suena a 'ting', como el sonido de una campana o un vaso tintineando.",
+    "tarea_para_tars": "Haz un sonido de 'ting' y pídele que diga escuchar."
+  },
+  {
+    "palabra": "说话",
+    "pinyin": "shuō huà",
+    "significado": "Hablar",
+    "ejemplo_uso": "他喜欢说话。(tā xǐ huan shuō huà - Le gusta hablar.)",
+    "analogia": "Suena a 'shuo jua'.",
+    "tarea_para_tars": "Pídele que diga 'hablar'."
+  },
+  {
+    "palabra": "读",
+    "pinyin": "dú",
+    "significado": "Leer en voz alta",
+    "ejemplo_uso": "读书(dú shū - estudiar/leer).",
+    "analogia": "Suena a 'du'. Como la nota musical 'do', necesitas voz para hacerlo.",
+    "tarea_para_tars": "Pídele que lea una palabra en voz alta."
+  },
+  {
+    "palabra": "写",
+    "pinyin": "xiě",
+    "significado": "Escribir",
+    "ejemplo_uso": "写字(xiě zì - escribir caracteres).",
+    "analogia": "Suena a 'shie'. Escribir es plasmar algo en el papel.",
+    "tarea_para_tars": "Pregúntale si sabe escribir su nombre en chino."
+  },
+  {
+    "palabra": "叫",
+    "pinyin": "jiào",
+    "significado": "Llamarse / Gritar",
+    "ejemplo_uso": "我叫Aleks。(wǒ jiào Aleks - Me llamo Aleks.)",
+    "analogia": "Suena a 'jiao'. Como el maullido fuerte de un gato. Es la forma oficial de decir tu nombre.",
+    "tarea_para_tars": "Pídele que diga su nombre usando 'jiào'."
+  },
+  {
+    "palabra": "做",
+    "pinyin": "zuò",
+    "significado": "Hacer",
+    "ejemplo_uso": "做饭(zuò fàn - hacer la comida).",
+    "analogia": "Suena a 'dzuo'. Es el verbo comodín para cualquier actividad manual.",
+    "tarea_para_tars": "Pregúntale qué está haciendo ahora mismo."
+  },
+  {
+    "palabra": "买",
+    "pinyin": "mǎi",
+    "significado": "Comprar",
+    "ejemplo_uso": "买东西(mǎi dōng xi - comprar cosas).",
+    "analogia": "Suena a 'mai', como 'My' en inglés. Compras algo para que sea tuyo.",
+    "tarea_para_tars": "Pregúntale qué quiere comprar."
+  },
+  {
+    "palabra": "开",
+    "pinyin": "kāi",
+    "significado": "Abrir / Conducir",
+    "ejemplo_uso": "开门(kāi mén - abrir la puerta).",
+    "analogia": "Suena a 'kai'. El símbolo (开) parece una puerta que se está abriendo.",
+    "tarea_para_tars": "Pídele que simule abrir una puerta."
+  },
+  {
+    "palabra": "坐",
+    "pinyin": "zuò",
+    "significado": "Sentarse / Tomar un transporte",
+    "ejemplo_uso": "坐火车(zuò huǒ chē - tomar el tren).",
+    "analogia": "El símbolo (坐) son dos personas (人) sentadas sobre la tierra (土).",
+    "tarea_para_tars": "Explícale el símbolo y pídele que se siente."
+  },
+  {
+    "palabra": "住",
+    "pinyin": "zhù",
+    "significado": "Vivir / Residir",
+    "ejemplo_uso": "住在北京(zhù zài běi jīng - vivir en Pekín).",
+    "analogia": "Suena a 'chu'. Como el lugar donde 'chubican' (te ubican).",
+    "tarea_para_tars": "Pregúntale en qué ciudad vive."
+  },
+  {
+    "palabra": "学习",
+    "pinyin": "xué xí",
+    "significado": "Estudiar",
+    "ejemplo_uso": "学习汉语(xué xí hàn yǔ - estudiar chino).",
+    "analogia": "Aprender (xué) y practicar (xí). El combo completo de la educación.",
+    "tarea_para_tars": "Felicítalo por estudiar chino y pídele que repita la palabra."
+  },
+  {
+    "palabra": "工作",
+    "pinyin": "gōng zuò",
+    "significado": "Trabajar / Trabajo",
+    "ejemplo_uso": "去工作(qù gōng zuò - ir a trabajar).",
+    "analogia": "Suena a 'gong dzuo'. Como golpear un gong en la fábrica para empezar a trabajar.",
+    "tarea_para_tars": "Pregúntale si es estudiante o si ya trabaja."
+  },
+  {
+    "palabra": "睡觉",
+    "pinyin": "shuì jiào",
+    "significado": "Dormir",
+    "ejemplo_uso": "去睡觉(qù shuì jiào - ir a dormir).",
+    "analogia": "Suena a 'shuei jiao'. Hacer un sonido suave de 'shh' para no despertar al que duerme.",
+    "tarea_para_tars": "Dile que es tarde y simula irte a dormir."
+  },
+  {
+    "palabra": "打电话",
+    "pinyin": "dǎ diàn huà",
+    "significado": "Llamar por teléfono",
+    "ejemplo_uso": "给他打电话(gěi tā dǎ diàn huà - llámale por teléfono).",
+    "analogia": "Literalmente 'Golpear (dǎ) el habla (huà) eléctrica (diàn)'. Así se marcaba en los teléfonos antiguos de disco.",
+    "tarea_para_tars": "Pídele que haga la seña de un teléfono con la mano y diga la palabra."
+  },
+  {
+    "palabra": "下雨",
+    "pinyin": "xià yǔ",
+    "significado": "Llover",
+    "ejemplo_uso": "昨天下雨了。(zuó tiān xià yǔ le - Ayer llovió.)",
+    "analogia": "Significa 'Baja (xià) la lluvia (yǔ)'. El símbolo de lluvia (雨) parecen gotas cayendo de una nube.",
+    "tarea_para_tars": "Enséñale a decir llover."
+  },
+  {
+    "palabra": "好",
+    "pinyin": "hǎo",
+    "significado": "Bueno / Bien",
+    "ejemplo_uso": "很好。(hěn hǎo - Muy bien.)",
+    "analogia": "El símbolo es una mujer (女) junto a un niño (子). Para los antiguos, no había nada más 'bueno' que una familia unida.",
+    "tarea_para_tars": "Levanta el pulgar y pregúntale cómo está."
+  },
+  {
+    "palabra": "大",
+    "pinyin": "dà",
+    "significado": "Grande",
+    "ejemplo_uso": "大狗(dà gǒu - perro grande).",
+    "analogia": "El símbolo (大) es una persona con los brazos extendidos intentando mostrar algo muy grande. Suena a 'da'.",
+    "tarea_para_tars": "Pídele que extienda los brazos y diga grande."
+  },
+  {
+    "palabra": "小",
+    "pinyin": "xiǎo",
+    "significado": "Pequeño",
+    "ejemplo_uso": "小猫(xiǎo māo - gato pequeño).",
+    "analogia": "El símbolo (小) es una persona con los brazos pegados al cuerpo haciéndose pequeñita. Suena a 'shiao'.",
+    "tarea_para_tars": "Hazte bolita y dile que diga pequeño."
+  },
+  {
+    "palabra": "多",
+    "pinyin": "duō",
+    "significado": "Mucho",
+    "ejemplo_uso": "很多人(hěn duō rén - muchas personas).",
+    "analogia": "Son dos pedazos de carne (夕) amontonados. Tener comida amontonada es tener mucho. Suena a 'duo'.",
+    "tarea_para_tars": "Pídele que diga 'mucho'."
+  },
+  {
+    "palabra": "少",
+    "pinyin": "shǎo",
+    "significado": "Poco",
+    "ejemplo_uso": "很少(hěn shǎo - muy poco).",
+    "analogia": "Es el símbolo de pequeño (小) pero con un tajo. Algo pequeño y además cortado, es muy poco.",
+    "tarea_para_tars": "Enséñale la diferencia entre mucho y poco."
+  },
+  {
+    "palabra": "冷",
+    "pinyin": "lěng",
+    "significado": "Frío",
+    "ejemplo_uso": "今天很冷。(jīn tiān hěn lěng - Hoy hace mucho frío.)",
+    "analogia": "El símbolo tiene dos puntitos a la izquierda (冫) que representan cristales de hielo. Suena a 'leng'.",
+    "tarea_para_tars": "Abraza tus brazos fingiendo frío y que el usuario diga la palabra."
+  },
+  {
+    "palabra": "热",
+    "pinyin": "rè",
+    "significado": "Caliente",
+    "ejemplo_uso": "水很热。(shuǐ hěn rè - El agua está muy caliente.)",
+    "analogia": "Tiene cuatro puntitos abajo (灬) que representan fuego. Suena como 're' del sol incandescente.",
+    "tarea_para_tars": "Finge abanicarte y que diga calor."
+  },
+  {
+    "palabra": "高兴",
+    "pinyin": "gāo xìng",
+    "significado": "Feliz / Contento",
+    "ejemplo_uso": "我很高兴。(wǒ hěn gāo xìng - Estoy muy feliz.)",
+    "analogia": "Literalmente 'Alto (gāo) Ánimo (xìng)'.",
+    "tarea_para_tars": "Sonríe y pregúntale si está feliz."
+  },
+  {
+    "palabra": "漂亮",
+    "pinyin": "piào liang",
+    "significado": "Bonito / Hermoso",
+    "ejemplo_uso": "她很漂亮。(tā hěn piào liang - Ella es muy bonita.)",
+    "analogia": "Suena a 'piao liang'. Se usa generalmente para describir ropa, paisajes o mujeres.",
+    "tarea_para_tars": "Enseña cómo hacer un cumplido usando esta palabra."
+  },
+  {
+    "palabra": "不",
+    "pinyin": "bù",
+    "significado": "No (para presente/futuro)",
+    "ejemplo_uso": "不是(bú shì - no es).",
+    "analogia": "Suena como el susto '¡Bu!'. Es la negación más agresiva y directa.",
+    "tarea_para_tars": "Pídele que se niegue a hacer algo con fuerza."
+  },
+  {
+    "palabra": "没",
+    "pinyin": "méi",
+    "significado": "No (para pasado o posesiones)",
+    "ejemplo_uso": "没有(méi yǒu - no tener).",
+    "analogia": "Es una negación suave, suena a 'mei'. Solo se usa para decir que NO TIENES algo o NO HICISTE algo ayer.",
+    "tarea_para_tars": "Pídele que diga que 'no tiene dinero' usando 'méi'."
+  },
+  {
+    "palabra": "很",
+    "pinyin": "hěn",
+    "significado": "Muy",
+    "ejemplo_uso": "很好(hěn hǎo - muy bien).",
+    "analogia": "En chino no puedes dejar un adjetivo solo, necesitas un conector. 'Hěn' es el pegamento de los adjetivos. Suena a 'jen'.",
+    "tarea_para_tars": "Explícale que no se dice 'Yo bien', se dice 'Yo muy bien'."
+  },
+  {
+    "palabra": "太",
+    "pinyin": "tài",
+    "significado": "Demasiado",
+    "ejemplo_uso": "太热了。(tài rè le - Hace demasiado calor.)",
+    "analogia": "Es el símbolo de grande (大) con un punto extra. Más que grande, es exagerado. Suele ir acompañado de 'le' al final.",
+    "tarea_para_tars": "Pídele que exagere diciendo '¡demasiado bueno!' (tài hǎo le)."
+  },
+  {
+    "palabra": "都",
+    "pinyin": "dōu",
+    "significado": "Todos / Ambos",
+    "ejemplo_uso": "我们都是学生。(wǒ men dōu shì xué sheng - Todos nosotros somos estudiantes.)",
+    "analogia": "Suena a 'dou'. Engloba a todo el sujeto anterior.",
+    "tarea_para_tars": "Haz que diga que ambos son amigos."
+  },
+  {
+    "palabra": "和",
+    "pinyin": "hé",
+    "significado": "Y / Con",
+    "ejemplo_uso": "我和你(wǒ hé nǐ - yo y tú).",
+    "analogia": "Suena a 'je'. Solo sirve para unir sustantivos (pan y agua), no sirve para unir oraciones.",
+    "tarea_para_tars": "Pídele que una dos palabras con 'hé'."
+  },
+  {
+    "palabra": "在",
+    "pinyin": "zài",
+    "significado": "Estar en",
+    "ejemplo_uso": "在家(zài jiā - estar en casa).",
+    "analogia": "Suena a 'dzai'. Te sitúa en un lugar o en una acción en progreso.",
+    "tarea_para_tars": "Pregúntale en dónde está 'zài' ahora mismo."
+  },
+  {
+    "palabra": "的",
+    "pinyin": "de",
+    "significado": "Partícula posesiva (de)",
+    "ejemplo_uso": "我的书(wǒ de shū - mi libro).",
+    "analogia": "Funciona al revés que en español. Es como el apóstrofe 's en inglés. Se pronuncia suave 'da'.",
+    "tarea_para_tars": "Pídele que diga 'Libro de Aleks' (Aleks de shū)."
+  },
+  {
+    "palabra": "了",
+    "pinyin": "le",
+    "significado": "Partícula de cambio de estado / Pasado",
+    "ejemplo_uso": "下雨了。(xià yǔ le - Ya está lloviendo / Empezó a llover.)",
+    "analogia": "Se pone al final de la oración para avisar que algo ya pasó o que la situación cambió.",
+    "tarea_para_tars": "Enséñale a ponerlo al final para hablar del pasado."
+  },
+  {
+    "palabra": "吗",
+    "pinyin": "ma",
+    "significado": "Partícula de pregunta de Sí/No",
+    "ejemplo_uso": "你是医生吗？(nǐ shì yī shēng ma? - ¿Eres médico?)",
+    "analogia": "El signo de interrogación hablado. Pon 'ma' al final de cualquier afirmación y se vuelve pregunta.",
+    "tarea_para_tars": "Pídele que convierta 'Tú estás bien' en '¿Estás bien?' agregando el 'ma'."
+  },
+  {
+    "palabra": "呢",
+    "pinyin": "ne",
+    "significado": "Partícula de rebote (¿Y tú?)",
+    "ejemplo_uso": "我很好，你呢？(wǒ hěn hǎo, nǐ ne? - Estoy muy bien, ¿y tú?)",
+    "analogia": "Como un pase de pelota de ping pong. Le rebotas la misma pregunta al otro.",
+    "tarea_para_tars": "Pregúntale cómo está, y exígele que te rebote la pregunta con 'ne'."
+  },
+  {
+    "palabra": "再见",
+    "pinyin": "zài jiàn",
+    "significado": "Adiós",
+    "ejemplo_uso": "明天再见。(míng tiān zài jiàn - Nos vemos mañana.)",
+    "analogia": "Literalmente significa 'De nuevo (zài) ver (jiàn)'.",
+    "tarea_para_tars": "Despídete del usuario."
+  },
+  {
+    "palabra": "不客气",
+    "pinyin": "bú kè qi",
+    "significado": "De nada",
+    "ejemplo_uso": "谢谢！- 不客气。(xiè xie! - bú kè qi. - ¡Gracias! - De nada.)",
+    "analogia": "Significa 'No seas tan formal / tan cortés'.",
+    "tarea_para_tars": "Dale las gracias y espera a que te diga 'de nada'."
+  },
+  {
+    "palabra": "对不起",
+    "pinyin": "duì bu qǐ",
+    "significado": "Lo siento / Perdón",
+    "ejemplo_uso": "对不起。(duì bu qǐ. - Lo siento.)",
+    "analogia": "Suena a 'duei bu chi'. Se usa cuando cometes un error grave.",
+    "tarea_para_tars": "Haz que pida disculpas por llegar tarde."
+  },
+  {
+    "palabra": "没关系",
+    "pinyin": "méi guān xi",
+    "significado": "No importa / No pasa nada",
+    "ejemplo_uso": "对不起！- 没关系。(duì bu qǐ! - méi guān xi. - ¡Lo siento! - No importa.)",
+    "analogia": "Literalmente 'No hay (méi) conexión/relación (guān xi)'. No tiene importancia.",
+    "tarea_para_tars": "Pídele perdón y enséñale a responder que no importa."
+  },
+  {
+    "palabra": "请",
+    "pinyin": "qǐng",
+    "significado": "Por favor / Invitar",
+    "ejemplo_uso": "请坐。(qǐng zuò - Siéntese, por favor.)",
+    "analogia": "Suena a 'ching'. Es la máxima señal de cortesía al pedir algo.",
+    "tarea_para_tars": "Enséñale a ser cortés y pedir las cosas con un por favor."
+  }
+      ]
+    }
+  ]
+}

@@ -14,8 +14,14 @@ def is_phonetically_similar(target: str, user_input: str) -> bool:
 def load_lesson_json(lesson_id: int) -> dict:
     try:
         base_path = Path(__file__).resolve().parent.parent.parent
-        file_path = base_path / "data_normal_mode" / "data" / f"leccion_{lesson_id}.json"
+        file_path = base_path / "data_normal_mode" / "data" / "tars_150_hsk1.json"
         with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+        raw_vocab = data["modulos_de_aprendizaje"][0]["vocabulario"]
+        transformed_vocab = [
+            {"zh": item["palabra"], "py": item["pinyin"], "es": item["significado"]}
+            for item in raw_vocab
+        ]
+        return {"vocabulary": transformed_vocab}
     except Exception:
         return {"vocabulary": [{"zh": "你好", "py": "nǐ hǎo", "es": "hola"}]}
