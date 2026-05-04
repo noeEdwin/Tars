@@ -47,6 +47,50 @@ export default function VoiceConversationScreen({
     const rawSubtitle = tarsMessages.length > 0 ? tarsMessages[tarsMessages.length - 1].text : '';
     const tarsSubtitle = rawSubtitle ? parseTarsMessage(rawSubtitle).chinese : '';
 
+    // Find current teaching message with audio
+    // Look for the LAST message that is teaching AND has audio cached
+    const teachingMsg = tarsMessages
+        .filter(m => m.isTeaching && m.audio_b64 && m.audio_b64.length > 0)
+        .pop();
+    console.log('[DEBUG] tarsMessages:', tarsMessages.map(m => ({ 
+        id: m.id, 
+        isTeaching: m.isTeaching, 
+        hasAudio: !!m.audio_b64,
+        audioCount: m.audio_b64?.length || 0
+    })));
+    console.log('[DEBUG] teachingMsg:', teachingMsg);
+    const [isReplaying, setIsReplaying] = useState(false);
+    const replayAudioRef = useRef<string[]>([]);
+    const replayIndexRef = useRef(0);
+
+    // Replay cached audio from teaching message
+    const replayTeachingAudio = () => {
+        if (!teachingMsg?.audio_b64 || isReplaying) return;
+        replayAudioRef.current = teachingMsg.audio_b64;
+        replayIndexRef.current = 0;
+        setIsReplaying(true);
+        playNextReplayChunk();
+    };
+
+    const playNextReplayChunk = () => {
+        const idx = replayIndexRef.current;
+        const queue = replayAudioRef.current;
+        if (idx >= queue.length) {
+            setIsReplaying(false);
+            replayAudioRef.current = [];
+            return;
+        }
+        const audio = new Audio(`data:audio/ogg;codecs=opus;base64,${queue[idx]}`);
+        audio.play().catch(e => {
+            console.error('Replay failed:', e);
+            setIsReplaying(false);
+        });
+        audio.onended = () => {
+            replayIndexRef.current = idx + 1;
+            playNextReplayChunk();
+        };
+    };
+
     const pendingPlayRef = useRef(false);
     const audioQueueRef = useRef<string[]>(audioQueue);
     const currentAudioIndexRef = useRef<number>(currentAudioIndex);
@@ -301,6 +345,19 @@ export default function VoiceConversationScreen({
 
                 {/* Controls */}
                 <footer className="voice-footer">
+                    {teachingMsg && (
+                        <button
+                            className="voice-repeat-btn"
+                            title="Repetir frase"
+                            onClick={replayTeachingAudio}
+                            disabled={isReplaying}
+                        >
+                            <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M1 4v6h6" strokeLinecap="round" strokeLinejoin="round"></path>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" strokeLinecap="round" strokeLinejoin="round"></path>
+                            </svg>
+                        </button>
+                    )}
                     <button
                         className="voice-history-btn"
                         title="Transcript History"

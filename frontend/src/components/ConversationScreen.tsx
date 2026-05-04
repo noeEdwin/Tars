@@ -63,6 +63,9 @@ export default function ConversationScreen({
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
     const [showPinyin, setShowPinyin] = useState<Record<string, boolean>>({});
     const [showTranslation, setShowTranslation] = useState<Record<string, boolean>>({});
+    const [isReplaying, setIsReplaying] = useState<Record<string, boolean>>({});
+    const replayAudioRef = useRef<string[]>([]);
+    const replayIndexRef = useRef(0);
 
     const bottomRef = useRef<HTMLDivElement>(null);
     const recogRef = useRef<SpeechRecognition | null>(null);
@@ -80,6 +83,34 @@ export default function ConversationScreen({
     const handleBubbleClick = (id: string, role: string) => {
         if (role === 'user') return;
         setActiveMenuId(prev => (prev === id ? null : id));
+    };
+
+    // Replay teaching audio from cached message
+    const replayTeachingAudio = (audio_b64: string[], msgId: string) => {
+        if (isReplaying[msgId]) return;
+        replayAudioRef.current = audio_b64;
+        replayIndexRef.current = 0;
+        setIsReplaying(prev => ({ ...prev, [msgId]: true }));
+        playNextReplayChunk(msgId);
+    };
+
+    const playNextReplayChunk = (msgId: string) => {
+        const idx = replayIndexRef.current;
+        const queue = replayAudioRef.current;
+        if (idx >= queue.length) {
+            setIsReplaying(prev => ({ ...prev, [msgId]: false }));
+            replayAudioRef.current = [];
+            return;
+        }
+        const audio = new Audio(`data:audio/ogg;codecs=opus;base64,${queue[idx]}`);
+        audio.play().catch(e => {
+            console.error('Replay failed:', e);
+            setIsReplaying(prev => ({ ...prev, [msgId]: false }));
+        });
+        audio.onended = () => {
+            replayIndexRef.current = idx + 1;
+            playNextReplayChunk(msgId);
+        };
     };
 
     // ── Auto-scroll ──────────────────────────────────────────────────────────
@@ -173,6 +204,18 @@ export default function ConversationScreen({
                                                         onClick={(e) => handleToggleTranslation(m.id, e)}
                                                     >
                                                         {showTranslation[m.id] ? 'Hide Translate' : 'A文 Translate'}
+                                                    </button>
+                                                )}
+                                                {m.isTeaching && m.audio_b64 && (
+                                                    <button 
+                                                        className={`toggle-btn ${isReplaying[m.id] ? 'btn-on' : ''}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            replayTeachingAudio(m.audio_b64!, m.id);
+                                                        }}
+                                                        disabled={isReplaying[m.id]}
+                                                    >
+                                                        {isReplaying[m.id] ? 'Replaying...' : '🔁 Repeat'}
                                                     </button>
                                                 )}
                                             </div>

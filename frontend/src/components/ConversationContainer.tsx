@@ -11,6 +11,8 @@ export interface Message {
     id: string;
     role: 'tars' | 'user';
     text: string;
+    audio_b64?: string[];  // Cached audio chunks for repeat
+    isTeaching?: boolean;   // Is this a teaching phrase
 }
 
 interface ConversationContainerProps {
@@ -40,6 +42,7 @@ export default function ConversationContainer({
     const socketRef = useRef<WebSocket | null>(null);
     const [audioQueue, setAudioQueue] = useState<string[]>([]);
     const [currentAudioIndex, setCurrentAudioIndex] = useState(0);
+    const currentTeachingMsgId = useRef<string | null>(null);
 
     // ── FAST PATH: consume the pre-warmed session ──────────────────────────
     useEffect(() => {
@@ -79,17 +82,40 @@ export default function ConversationContainer({
                 setMessages(prev => {
                     const lastMsg = prev[prev.length - 1];
                     if (lastMsg && lastMsg.role === 'tars') {
-                        return [...prev.slice(0, -1), { ...lastMsg, text: lastMsg.text + data.text }];
+                        const updatedText = lastMsg.text + data.text;
+                        // Detect teaching mode: contains **target word** pattern
+                        const isTeaching = updatedText.includes('**');
+                        return [...prev.slice(0, -1), { ...lastMsg, text: updatedText, isTeaching: isTeaching || lastMsg.isTeaching }];
                     }
-                    return [...prev, { id: Date.now().toString() + 't', role: 'tars', text: data.text }];
+                    
+                    const newMsg: Message = { id: Date.now().toString() + 't', role: 'tars', text: data.text, isTeaching: data.text.includes('**') };
+                    if (newMsg.isTeaching) {
+                        currentTeachingMsgId.current = newMsg.id;
+                    }
+                    return [...prev, newMsg];
                 });
             }
 
             if (data.type === 'tars_answer' || data.type === 'audio_chunk') {
-                if (data.audio_b64) setAudioQueue(prev => [...prev, data.audio_b64]);
+                if (data.audio_b64) {
+                    setAudioQueue(prev => [...prev, data.audio_b64]);
+                    // Cache audio for teaching messages
+                    if (currentTeachingMsgId.current) {
+                        setMessages(prev => prev.map(msg => 
+                            msg.id === currentTeachingMsgId.current 
+                                ? { ...msg, audio_b64: [...(msg.audio_b64 || []), data.audio_b64] }
+                                : msg
+                        ));
+                    }
+                }
             }
 
-            if (data.type === 'tars_answer_end') setIsProcessing(false);
+            if (data.type === 'tars_answer_end') {
+                setIsProcessing(false);
+                // Don't reset currentTeachingMsgId here - let the audio finish playing
+                // Reset after a delay to allow audio caching to complete
+                setTimeout(() => { currentTeachingMsgId.current = null; }, 5000);
+            }
             if (data.type === 'error') {
                 console.error('Tars error:', data.message);
                 setIsProcessing(false);
@@ -147,17 +173,43 @@ export default function ConversationContainer({
                 setMessages(prev => {
                     const lastMsg = prev[prev.length - 1];
                     if (lastMsg && lastMsg.role === 'tars') {
-                        return [...prev.slice(0, -1), { ...lastMsg, text: lastMsg.text + data.text }];
+                        const updatedText = lastMsg.text + data.text;
+                        // Detect teaching mode: contains **target word** pattern
+                        const isTeaching = updatedText.includes('**');
+                        // Update currentTeachingMsgId if this becomes a teaching message
+                        if (isTeaching && !lastMsg.isTeaching) {
+                            currentTeachingMsgId.current = lastMsg.id;
+                        }
+                        return [...prev.slice(0, -1), { ...lastMsg, text: updatedText, isTeaching: isTeaching || lastMsg.isTeaching }];
                     }
-                    return [...prev, { id: Date.now().toString() + 't', role: 'tars', text: data.text }];
+                    const newMsg: Message = { id: Date.now().toString() + 't', role: 'tars', text: data.text, isTeaching: data.text.includes('**') };
+                    if (newMsg.isTeaching) {
+                        currentTeachingMsgId.current = newMsg.id;
+                    }
+                    return [...prev, newMsg];
                 });
             }
 
             if (data.type === 'tars_answer' || data.type === 'audio_chunk') {
-                if (data.audio_b64) setAudioQueue(prev => [...prev, data.audio_b64]);
+                if (data.audio_b64) {
+                    setAudioQueue(prev => [...prev, data.audio_b64]);
+                    // Cache audio for teaching messages
+                    if (currentTeachingMsgId.current) {
+                        setMessages(prev => prev.map(msg => 
+                            msg.id === currentTeachingMsgId.current 
+                                ? { ...msg, audio_b64: [...(msg.audio_b64 || []), data.audio_b64] }
+                                : msg
+                        ));
+                    }
+                }
             }
 
-            if (data.type === 'tars_answer_end') setIsProcessing(false);
+            if (data.type === 'tars_answer_end') {
+                setIsProcessing(false);
+                // Don't reset currentTeachingMsgId here - let audio finish playing
+                // Reset after a delay to allow audio caching to complete
+                setTimeout(() => { currentTeachingMsgId.current = null; }, 5000);
+            }
             if (data.type === 'error') {
                 console.error('Tars error:', data.message);
                 setIsProcessing(false);
@@ -215,15 +267,36 @@ export default function ConversationContainer({
                     setMessages(prev => {
                         const last = prev[prev.length - 1];
                         if (last && last.role === 'tars') {
-                            return [...prev.slice(0, -1), { ...last, text: last.text + data.text }];
+                            const updatedText = last.text + data.text;
+                            const isTeaching = updatedText.includes('**');
+                            // Update currentTeachingMsgId if this becomes a teaching message
+                            if (isTeaching && !last.isTeaching) {
+                                currentTeachingMsgId.current = last.id;
+                            }
+                            return [...prev.slice(0, -1), { ...last, text: updatedText, isTeaching: isTeaching || last.isTeaching }];
                         }
-                        return [...prev, { id: Date.now().toString() + 't', role: 'tars', text: data.text }];
+                        const newMsg: Message = { id: Date.now().toString() + 't', role: 'tars', text: data.text, isTeaching: data.text.includes('**') };
+                        if (newMsg.isTeaching) {
+                            currentTeachingMsgId.current = newMsg.id;
+                        }
+                        return [...prev, newMsg];
                     });
                 }
                 if ((data.type === 'tars_answer' || data.type === 'audio_chunk') && data.audio_b64) {
                     setAudioQueue(prev => [...prev, data.audio_b64]);
+                    if (currentTeachingMsgId.current) {
+                        setMessages(prev => prev.map(msg => 
+                            msg.id === currentTeachingMsgId.current 
+                                ? { ...msg, audio_b64: [...(msg.audio_b64 || []), data.audio_b64] }
+                                : msg
+                        ));
+                    }
                 }
-                if (data.type === 'tars_answer_end') setIsProcessing(false);
+                if (data.type === 'tars_answer_end') {
+                    setIsProcessing(false);
+                    // Don't reset currentTeachingMsgId here - let audio finish playing
+                    setTimeout(() => { currentTeachingMsgId.current = null; }, 5000);
+                }
                 if (data.type === 'error') { console.error('Tars error:', data.message); setIsProcessing(false); }
             };
 
