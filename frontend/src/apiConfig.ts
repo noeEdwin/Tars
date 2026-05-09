@@ -21,4 +21,4 @@ export const WS_BASE = trimTrailingSlashes(
     envWsBase ?? `${wsProtocol}//${hostname}:8000`,
 );
 
-console.log('🚀 Tars API conectada a:', API_BASE);
+console.log('🚀 API de Tars conectada a:', API_BASE);

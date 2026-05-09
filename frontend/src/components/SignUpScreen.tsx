@@ -1,4 +1,5 @@
 import { ArrowLeft, User, Mail, Lock, Eye, ArrowRight } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 import './SignUpScreen.css';
 import type { ViewState } from '../App';
 import darkLogo from '../assets/dark_mode.png';
@@ -10,13 +11,13 @@ interface SignUpScreenProps {
 }
 
 export default function SignUpScreen({ setCurrentView, isLightMode }: SignUpScreenProps) {
+    const { t } = useTranslation();
+
     return (
         <div className="signup-container">
-            {/* Background decorative blurs */}
             <div className="signup-decor top-right" />
             <div className="signup-decor bottom-left" />
 
-            {/* Header */}
             <div className="signup-header">
                 <button className="signup-back-btn" onClick={() => setCurrentView('sign-in')}>
                     <ArrowLeft size={24} color="var(--text-main)" />
@@ -31,33 +32,29 @@ export default function SignUpScreen({ setCurrentView, isLightMode }: SignUpScre
                 <div style={{ width: 40 }} />
             </div>
 
-            {/* Main content */}
             <main className="signup-main">
                 <div className="signup-heading">
                     <h1 className="signup-title">
-                        Join the <span className="signup-title-accent">Academy</span>
+                        <Trans i18nKey="signUp.joinAcademy" components={{ accent: <span className="signup-title-accent" /> }} />
                     </h1>
-                    <p className="signup-subtitle">Enter your details to start your journey into deep focus.</p>
+                    <p className="signup-subtitle">{t('signUp.subtitle')}</p>
                 </div>
 
-                {/* Form */}
                 <div className="signup-form">
-                    {/* Full Name */}
                     <div className="signup-field">
-                        <label className="signup-label">Full Name</label>
+                        <label className="signup-label">{t('signUp.fullName')}</label>
                         <div className="signup-input-wrapper">
                             <User size={20} className="signup-input-icon" />
                             <input
                                 type="text"
                                 className="signup-input"
-                                placeholder="Master Confucius"
+                                placeholder={t('signUp.placeholderName')}
                             />
                         </div>
                     </div>
 
-                    {/* Email */}
                     <div className="signup-field">
-                        <label className="signup-label">Email Address</label>
+                        <label className="signup-label">{t('signUp.email')}</label>
                         <div className="signup-input-wrapper">
                             <Mail size={20} className="signup-input-icon" />
                             <input
@@ -68,9 +65,8 @@ export default function SignUpScreen({ setCurrentView, isLightMode }: SignUpScre
                         </div>
                     </div>
 
-                    {/* Password */}
                     <div className="signup-field">
-                        <label className="signup-label">Password</label>
+                        <label className="signup-label">{t('signUp.password')}</label>
                         <div className="signup-input-wrapper">
                             <Lock size={20} className="signup-input-icon" />
                             <input
@@ -85,31 +81,29 @@ export default function SignUpScreen({ setCurrentView, isLightMode }: SignUpScre
                     </div>
                 </div>
 
-                {/* Create Account Button */}
                 <div className="signup-btn-wrapper">
                     <button
                         className="signup-btn"
                         onClick={() => setCurrentView('home')}
                     >
-                        Create Account
+                        {t('signUp.createAccount')}
                         <ArrowRight size={20} />
                     </button>
                 </div>
 
-                {/* Footer */}
                 <div className="signup-footer">
                     <div className="signup-divider">
                         <div className="signup-divider-line" />
-                        <span className="signup-divider-text">Mastery awaits</span>
+                        <span className="signup-divider-text">{t('signUp.masteryAwaits')}</span>
                         <div className="signup-divider-line" />
                     </div>
                     <p className="signup-signin-text">
-                        Already have an account?{' '}
+                        {t('signUp.hasAccount')}{' '}
                         <button
                             className="signup-signin-link"
                             onClick={() => setCurrentView('sign-in')}
                         >
-                            Sign In
+                            {t('signUp.signIn')}
                         </button>
                     </p>
                 </div>

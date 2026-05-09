@@ -1,4 +1,5 @@
 import { Flame, Smartphone, Sun, Moon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './Header.css';
 
 interface HeaderProps {
@@ -7,6 +8,8 @@ interface HeaderProps {
 }
 
 export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
+    const { t } = useTranslation();
+
     return (
         <header className="app-header">
             <div className="profile-section">
@@ -15,7 +18,7 @@ export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
                 </div>
                 <div className="profile-info">
                     <h2 className="profile-name">Tài Sĩ</h2>
-                    <p className="profile-level">LEVEL 24 • ADVANCED</p>
+                    <p className="profile-level">{t('header.level')}</p>
                 </div>
             </div>
 
@@ -29,7 +32,7 @@ export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
                 </button>
                 <div className="streak-pill">
                     <Flame size={16} fill="#fbbf24" color="#fbbf24" />
-                    <span className="streak-text">12 DAYS</span>
+                    <span className="streak-text">{t('header.days')}</span>
                 </div>
             </div>
         </header>

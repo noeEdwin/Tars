@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import VoiceConversationScreen from './VoiceConversationScreen';
 import ConversationScreen from './ConversationScreen';
 import type { ViewState, SessionConfig } from '../App';
@@ -11,16 +12,14 @@ export interface Message {
     id: string;
     role: 'tars' | 'user';
     text: string;
-    audio_b64?: string[];  // Cached audio chunks for repeat
-    isTeaching?: boolean;   // Is this a teaching phrase
+    audio_b64?: string[];
+    isTeaching?: boolean;
 }
 
 interface ConversationContainerProps {
     setCurrentView: (view: ViewState) => void;
     sessionConfig: SessionConfig;
-    /** If provided, skip cold-start and reuse this pre-warmed session */
     preWarmedSession?: PreWarmedSession | null;
-    /** Called after the pre-warmed session is "consumed" so parent can reset */
     onSessionConsumed?: () => void;
 }
 
@@ -30,10 +29,10 @@ export default function ConversationContainer({
     preWarmedSession,
     onSessionConsumed,
 }: ConversationContainerProps) {
+    const { t } = useTranslation();
     const { mode, filename, user_role, tars_role } = sessionConfig;
     const [subView, setSubView] = useState<'voice' | 'text'>('voice');
 
-    // Shared State
     const [messages, setMessages] = useState<Message[]>([]);
     const [threadId, setThreadId] = useState('');
     const [conversationId, setConversationId] = useState(0);
@@ -44,7 +43,6 @@ export default function ConversationContainer({
     const [currentAudioIndex, setCurrentAudioIndex] = useState(0);
     const currentTeachingMsgId = useRef<string | null>(null);
 
-    // ── FAST PATH: consume the pre-warmed session ──────────────────────────
     useEffect(() => {
         if (!preWarmedSession) return;
 
@@ -53,7 +51,6 @@ export default function ConversationContainer({
         setConversationId(preWarmedSession.conversationId);
         setCurrentAudioIndex(preWarmedSession.currentAudioIndex);
 
-        // Inject the preload message as the first TARS bubble (if any)
         const pm = preWarmedSession.preloadMessage;
         const initialMessages: Message[] = pm?.text
             ? [{ id: 'preload-0', role: 'tars', text: pm.text }, ...preWarmedSession.messages]
@@ -61,20 +58,15 @@ export default function ConversationContainer({
 
         setMessages(initialMessages);
 
-        // Preload audio goes FIRST so TARS speaks the greeting immediately
         const initialAudio = [
             ...(pm?.audio_b64 ? [pm.audio_b64] : []),
             ...preWarmedSession.audioQueue,
         ];
         setAudioQueue(initialAudio);
 
-        // The greeting comes from /preload_message — NOT from LangGraph streaming.
-        // tars_answer_end was never sent (socket may have closed before that).
-        // Force isProcessing=false so the mic unlocks once audio finishes.
         setIsProcessing(pm ? false : preWarmedSession.isProcessing);
         setSessionReady(true);
 
-        // Re-attach onmessage so we keep receiving future events
         preWarmedSession.socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
@@ -83,7 +75,6 @@ export default function ConversationContainer({
                     const lastMsg = prev[prev.length - 1];
                     if (lastMsg && lastMsg.role === 'tars') {
                         const updatedText = lastMsg.text + data.text;
-                        // Detect teaching mode: contains **target word** pattern
                         const isTeaching = updatedText.includes('**');
                         return [...prev.slice(0, -1), { ...lastMsg, text: updatedText, isTeaching: isTeaching || lastMsg.isTeaching }];
                     }
@@ -99,7 +90,6 @@ export default function ConversationContainer({
             if (data.type === 'tars_answer' || data.type === 'audio_chunk') {
                 if (data.audio_b64) {
                     setAudioQueue(prev => [...prev, data.audio_b64]);
-                    // Cache audio for teaching messages
                     if (currentTeachingMsgId.current) {
                         setMessages(prev => prev.map(msg => 
                             msg.id === currentTeachingMsgId.current 
@@ -112,26 +102,20 @@ export default function ConversationContainer({
 
             if (data.type === 'tars_answer_end') {
                 setIsProcessing(false);
-                // Don't reset currentTeachingMsgId here - let the audio finish playing
-                // Reset after a delay to allow audio caching to complete
                 setTimeout(() => { currentTeachingMsgId.current = null; }, 5000);
             }
             if (data.type === 'error') {
-                console.error('Tars error:', data.message);
+                console.error(t('conversationContainer.error'), data.message);
                 setIsProcessing(false);
             }
         };
 
-        // Defer until after this synchronous effect finishes.
-        // This guarantees the re-attached onmessage above is active before
-        // App.tsx calls resetPreWarm() (which used to close the socket).
         setTimeout(() => onSessionConsumed?.(), 0);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Run once on mount — preWarmedSession is the initial value
+    }, []);
 
-    // ── COLD PATH: no pre-warm → start from scratch ────────────────────────
     useEffect(() => {
-        if (preWarmedSession) return; // already handled above
+        if (preWarmedSession) return;
 
         const startSession = async () => {
             const res = await fetch(`${API_BASE}/start_session`, {
@@ -145,10 +129,8 @@ export default function ConversationContainer({
             setSessionReady(true);
         };
         startSession();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mode]);
 
-    // Start WebSocket once session is ready (cold path only)
     useEffect(() => {
         if (preWarmedSession) return;
         if (!sessionReady || !threadId) return;
@@ -174,9 +156,7 @@ export default function ConversationContainer({
                     const lastMsg = prev[prev.length - 1];
                     if (lastMsg && lastMsg.role === 'tars') {
                         const updatedText = lastMsg.text + data.text;
-                        // Detect teaching mode: contains **target word** pattern
                         const isTeaching = updatedText.includes('**');
-                        // Update currentTeachingMsgId if this becomes a teaching message
                         if (isTeaching && !lastMsg.isTeaching) {
                             currentTeachingMsgId.current = lastMsg.id;
                         }
@@ -193,7 +173,6 @@ export default function ConversationContainer({
             if (data.type === 'tars_answer' || data.type === 'audio_chunk') {
                 if (data.audio_b64) {
                     setAudioQueue(prev => [...prev, data.audio_b64]);
-                    // Cache audio for teaching messages
                     if (currentTeachingMsgId.current) {
                         setMessages(prev => prev.map(msg => 
                             msg.id === currentTeachingMsgId.current 
@@ -206,12 +185,10 @@ export default function ConversationContainer({
 
             if (data.type === 'tars_answer_end') {
                 setIsProcessing(false);
-                // Don't reset currentTeachingMsgId here - let audio finish playing
-                // Reset after a delay to allow audio caching to complete
                 setTimeout(() => { currentTeachingMsgId.current = null; }, 5000);
             }
             if (data.type === 'error') {
-                console.error('Tars error:', data.message);
+                console.error(t('conversationContainer.error'), data.message);
                 setIsProcessing(false);
             }
         };
@@ -219,7 +196,6 @@ export default function ConversationContainer({
         return () => { socket.close(); };
     }, [sessionReady, threadId]);
 
-    // ── Interrupt ──────────────────────────────────────────────────────────
     const interruptTars = useCallback(() => {
         if (socketRef.current?.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({ type: 'interrupt' }));
@@ -229,7 +205,6 @@ export default function ConversationContainer({
         }
     }, []);
 
-    // ── Send Message ───────────────────────────────────────────────────────
     const sendMessage = useCallback(async (text: string) => {
         if (!text.trim() || !sessionReady || isProcessing) return;
 
@@ -252,15 +227,12 @@ export default function ConversationContainer({
         const currentSocket = socketRef.current;
 
         if (currentSocket && currentSocket.readyState === WebSocket.OPEN) {
-            // Happy path — socket is alive
             doSend(currentSocket);
         } else {
-            // Pre-warm socket died (race). Re-open and send after init.
-            console.warn('[ConversationContainer] Socket not open, reconnecting...');
+            console.warn(t('conversationContainer.socketReconnecting'));
             const newSocket = new WebSocket(`${WS_BASE}/ws/${USER_ID}`);
             socketRef.current = newSocket;
 
-            // Reattach all message handlers to the new socket
             newSocket.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 if (data.type === 'token') {
@@ -269,7 +241,6 @@ export default function ConversationContainer({
                         if (last && last.role === 'tars') {
                             const updatedText = last.text + data.text;
                             const isTeaching = updatedText.includes('**');
-                            // Update currentTeachingMsgId if this becomes a teaching message
                             if (isTeaching && !last.isTeaching) {
                                 currentTeachingMsgId.current = last.id;
                             }
@@ -294,14 +265,12 @@ export default function ConversationContainer({
                 }
                 if (data.type === 'tars_answer_end') {
                     setIsProcessing(false);
-                    // Don't reset currentTeachingMsgId here - let audio finish playing
                     setTimeout(() => { currentTeachingMsgId.current = null; }, 5000);
                 }
-                if (data.type === 'error') { console.error('Tars error:', data.message); setIsProcessing(false); }
+                if (data.type === 'error') { console.error(t('conversationContainer.error'), data.message); setIsProcessing(false); }
             };
 
             newSocket.onopen = () => {
-                // Re-init session state, then immediately send the user message
                 newSocket.send(JSON.stringify({
                     type: 'init_session',
                     thread_id: threadId,
@@ -312,17 +281,12 @@ export default function ConversationContainer({
             };
 
             newSocket.onerror = () => {
-                console.error('[ConversationContainer] Reconnect failed');
+                console.error(t('conversationContainer.reconnectFailed'));
                 setIsProcessing(false);
             };
         }
-    }, [sessionReady, isProcessing, threadId, conversationId, mode]);
+    }, [sessionReady, isProcessing, threadId, conversationId, mode, t]);
 
-    // ── Cleanup ────────────────────────────────────────────────────────────
-    // ConversationContainer is always the final socket owner:
-    //  - fast path: socket was handed off from usePreWarmSession
-    //  - cold path: socket was created here
-    // Either way, close it when this component unmounts.
     useEffect(() => {
         return () => { socketRef.current?.close(); };
     }, []);

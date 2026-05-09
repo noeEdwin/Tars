@@ -1,0 +1,172 @@
+{
+    "app": {
+        "wakingUp": "Despertando a TARS...",
+        "preparingRoleplay": "Preparando roleplay..."
+    },
+    "header": {
+        "level": "NIVEL 24 • AVANZADO",
+        "days": "12 DÍAS"
+    },
+    "bottomNav": {
+        "home": "Inicio",
+        "roleplay": "Roleplay",
+        "profile": "Perfil"
+    },
+    "modeCards": {
+        "normalMode": "MODO NORMAL",
+        "normalSubtitle": "Domina el vocabulario y la gramática",
+        "roleplayMode": "MODO ROLEPLAY",
+        "roleplaySubtitle": "Simulación de diálogo interactivo"
+    },
+    "micButton": {
+        "holdToActivate": "MANTÉN PARA ACTIVAR…",
+        "holdToSpeak": "MANTÉN PARA HABLAR",
+        "releaseToCancel": "SUELTA PARA CANCELAR",
+        "normalMode3sec": "MODO NORMAL · 3 SEGUNDOS"
+    },
+    "loadingScreen": {
+        "tars": "TARS",
+        "wakingUp": "Despertando a TARS...",
+        "toastName": "TARS"
+    },
+    "settings": {
+        "title": "Configuración",
+        "account": "Cuenta",
+        "profile": "Perfil",
+        "profileSub": "Información personal y objetivos",
+        "subscription": "Suscripción",
+        "proActive": "Tài Sī Pro • Activo",
+        "preferences": "Preferencias",
+        "targetLanguage": "Idioma objetivo",
+        "mandarin": "Mandarín (Simplificado)",
+        "voiceSpeed": "Velocidad de voz",
+        "normal": "Normal",
+        "display": "Pantalla",
+        "lightMode": "Modo claro",
+        "darkMode": "Modo oscuro",
+        "logOut": "Cerrar sesión",
+        "version": "Tài Sī v2.4.0 • Diseñado para concentrarte"
+    },
+    "roleplay": {
+        "customScenarios": "Escenarios personalizados",
+        "uploadDocument": "Subir nuevo documento",
+        "supportedFormats": "Formatos: PDF, DOCX, TXT (Máx. 10MB)",
+        "knowledgeBase": "Tu base de conocimiento",
+        "files": "Archivos",
+        "loadingFiles": "Cargando tus archivos...",
+        "recentlyUploaded": "Subido recientemente",
+        "scenario": "ESCENARIO",
+        "startSession": "Iniciar sesión",
+        "setUpRoles": "Configurar roles",
+        "yourRole": "Tu personaje",
+        "tarsRole": "Personaje de TARS",
+        "placeholderCustomer": "ej. Cliente",
+        "placeholderBarista": "ej. Barista"
+    },
+    "profile": {
+        "title": "Perfil del Estudiante",
+        "level": "Nvl 42",
+        "imperialScholar": "Estudiante Imperial",
+        "mandarinMaster": "Maestro del Mandarín",
+        "hoursSpoken": "Horas habladas",
+        "hoursUnit": "h",
+        "thisMonth": "12% este mes",
+        "mastery": "Dominio",
+        "masteryUnit": "%",
+        "hskLevel": "Nivel HSK 5",
+        "currentStreak": "Racha actual",
+        "streakUnit": "d",
+        "topStreak": "Top 1% en racha",
+        "vocabulary": "Vocabulario",
+        "thisWeek": "+150 esta semana"
+    },
+    "personalInfo": {
+        "title": "Información personal",
+        "uploadPhoto": "Subir foto de perfil",
+        "fullName": "Nombre completo",
+        "yourName": "Tu nombre",
+        "nativeLanguage": "Idioma nativo",
+        "english": "Inglés",
+        "french": "Francés",
+        "german": "Alemán",
+        "spanish": "Español",
+        "hskLevel": "Nivel HSK actual",
+        "hsk1": "HSK 1 (Principiante)",
+        "hsk2": "HSK 2 (Elemental)",
+        "hsk3": "HSK 3 (Intermedio)",
+        "hsk4": "HSK 4 (Intermedio alto)",
+        "hsk5": "HSK 5 (Avanzado)",
+        "hsk6": "HSK 6 (Competente)",
+        "learningGoals": "Objetivos de aprendizaje",
+        "travel": "Viaje",
+        "business": "Negocios",
+        "academic": "Académico",
+        "hobby": "Pasatiempo / Cultural",
+        "interests": "Intereses",
+        "saveChanges": "Guardar cambios"
+    },
+    "signIn": {
+        "welcomeBack": "Bienvenido de nuevo",
+        "subtitle": "Continúa tu camino hacia la fluidez.",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "forgotPassword": "¿Olvidaste tu contraseña?",
+        "signIn": "Iniciar sesión",
+        "orContinueWith": "o continúa con",
+        "continueWithGoogle": "Continuar con Google",
+        "noAccount": "¿No tienes cuenta?",
+        "createAccount": "Crea una ahora"
+    },
+    "signUp": {
+        "joinAcademy": "Únete a la <accent>Academia</accent>",
+        "subtitle": "Ingresa tus datos para comenzar tu camino hacia la concentración profunda.",
+        "fullName": "Nombre completo",
+        "placeholderName": "Maestro Confucio",
+        "email": "Correo electrónico",
+        "password": "Contraseña",
+        "createAccount": "Crear cuenta",
+        "masteryAwaits": "El dominio te espera",
+        "hasAccount": "¿Ya tienes cuenta?",
+        "signIn": "Iniciar sesión"
+    },
+    "forgotPassword": {
+        "title": "¿Olvidaste tu <accent>Contraseña?</accent>",
+        "subtitle": "No te preocupes, nos pasa a todos. Ingresa tu correo electrónico para recibir un enlace de restablecimiento de contraseña.",
+        "email": "Correo electrónico",
+        "sendLink": "Enviar enlace",
+        "rememberPassword": "¿Recuerdas tu contraseña?",
+        "logIn": "Iniciar sesión"
+    },
+    "conversation": {
+        "normalModeActive": "Modo normal · Activo",
+        "roleplayModeActive": "Modo roleplay · Activo",
+        "connecting": "Conectando…",
+        "speechNotSupported": "El reconocimiento de voz no es compatible con este navegador.",
+        "hidePinyin": "Ocultar Pinyin",
+        "showPinyin": "Aa Pinyin",
+        "hideTranslate": "Ocultar traducción",
+        "showTranslate": "A文 Traducción",
+        "replaying": "Reproduciendo...",
+        "repeat": "🔁 Repetir",
+        "placeholder": "Escribe o habla…"
+    },
+    "voiceConversation": {
+        "listening": "Escuchando...",
+        "transcribing": "Transcribiendo audio...",
+        "processing": "Procesando...",
+        "back": "← Atrás",
+        "focus": "Concentración",
+        "roleplay": "Roleplay",
+        "couldNotHear": "No pude escucharte claramente.",
+        "connectionError": "Error de conexión:",
+        "serverFailed": "El servidor falló",
+        "micRequired": "Se requiere acceso al micrófono para hablar con Tars.",
+        "repeatPhrase": "Repetir frase",
+        "transcriptHistory": "Historial de transcripción"
+    },
+    "conversationContainer": {
+        "error": "Error de Tars:",
+        "socketReconnecting": "Socket no abierto, reconectando...",
+        "reconnectFailed": "Reconexión fallida"
+    }
+}

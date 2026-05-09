@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ArrowLeft, Mic, MicOff, Send, Settings2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Message } from './ConversationContainer';
 import { parseTarsMessage } from '../utils/messageParser';
 import './ConversationScreen.css';
 
-// ────────────────────────────────────────────────────────────────────────────
-// Web Speech API type declarations (not in lib.dom.d.ts by default)
-// ────────────────────────────────────────────────────────────────────────────
 declare global {
     interface Window {
         SpeechRecognition: new () => SpeechRecognition;
@@ -56,6 +54,7 @@ export default function ConversationScreen({
     onSendMessage,
     onBack
 }: ConversationScreenProps) {
+    const { t } = useTranslation();
     const [isListening, setIsListening] = useState(false);
     const [inputText, setInputText] = useState('');
     const [error, setError] = useState('');
@@ -85,7 +84,6 @@ export default function ConversationScreen({
         setActiveMenuId(prev => (prev === id ? null : id));
     };
 
-    // Replay teaching audio from cached message
     const replayTeachingAudio = (audio_b64: string[], msgId: string) => {
         if (isReplaying[msgId]) return;
         replayAudioRef.current = audio_b64;
@@ -113,23 +111,20 @@ export default function ConversationScreen({
         };
     };
 
-    // ── Auto-scroll ──────────────────────────────────────────────────────────
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Send Message wrapper to clear input
     const handleSend = useCallback((text: string) => {
         if (!text.trim() || !sessionReady || isProcessing) return;
         onSendMessage(text);
         setInputText('');
     }, [sessionReady, isProcessing, onSendMessage]);
 
-    // ── Voice input (Web Speech API) ─────────────────────────────────────────
     const toggleListening = useCallback(() => {
         const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SRClass) {
-            setError('Speech recognition is not supported on this browser.');
+            setError(t('conversation.speechNotSupported'));
             return;
         }
         if (isListening) {
@@ -150,11 +145,10 @@ export default function ConversationScreen({
         recogRef.current = recog;
         recog.start();
         setIsListening(true);
-    }, [isListening, handleSend]);
+    }, [isListening, handleSend, t]);
 
     return (
         <div className="conv-container">
-            {/* Header */}
             <header className="conv-header">
                 <button className="conv-back-btn" onClick={onBack}>
                     <ArrowLeft size={22} color="var(--text-main)" />
@@ -162,13 +156,12 @@ export default function ConversationScreen({
                 <div className="conv-header-info">
                     <h1 className="conv-title">TARS</h1>
                     <span className={`conv-status ${sessionReady ? 'status-online' : 'status-loading'}`}>
-                        {sessionReady ? (mode === 'tars_normal' ? 'Normal Mode · Active' : 'Roleplay Mode · Active') : 'Connecting…'}
+                        {sessionReady ? (mode === 'tars_normal' ? t('conversation.normalModeActive') : t('conversation.roleplayModeActive')) : t('conversation.connecting')}
                     </span>
                 </div>
                 <div style={{ width: 40 }} />
             </header>
 
-            {/* Messages */}
             <main className="conv-messages">
                 {error && (
                     <div className="conv-error">{error}</div>
@@ -195,7 +188,7 @@ export default function ConversationScreen({
                                                         className={`toggle-btn ${showPinyin[m.id] ? 'btn-on' : ''}`}
                                                         onClick={(e) => handleTogglePinyin(m.id, e)}
                                                     >
-                                                        {showPinyin[m.id] ? 'Hide Pinyin' : 'Aa Pinyin'}
+                                                        {showPinyin[m.id] ? t('conversation.hidePinyin') : t('conversation.showPinyin')}
                                                     </button>
                                                 )}
                                                 {parsed.translation && (
@@ -203,7 +196,7 @@ export default function ConversationScreen({
                                                         className={`toggle-btn ${showTranslation[m.id] ? 'btn-on' : ''}`}
                                                         onClick={(e) => handleToggleTranslation(m.id, e)}
                                                     >
-                                                        {showTranslation[m.id] ? 'Hide Translate' : 'A文 Translate'}
+                                                        {showTranslation[m.id] ? t('conversation.hideTranslate') : t('conversation.showTranslate')}
                                                     </button>
                                                 )}
                                                 {m.isTeaching && m.audio_b64 && (
@@ -215,7 +208,7 @@ export default function ConversationScreen({
                                                         }}
                                                         disabled={isReplaying[m.id]}
                                                     >
-                                                        {isReplaying[m.id] ? 'Replaying...' : '🔁 Repeat'}
+                                                        {isReplaying[m.id] ? t('conversation.replaying') : t('conversation.repeat')}
                                                     </button>
                                                 )}
                                             </div>
@@ -236,7 +229,6 @@ export default function ConversationScreen({
                                     m.text
                                 )}
                             </div>
-                            {/* Message Actions indicator icon to hint it's clickable */}
                             {isTars && !isActive && (parsed?.pinyin || parsed?.translation) && (
                                 <div className="conv-hint-icon">
                                     <Settings2 size={14} color="var(--text-muted)" />
@@ -255,7 +247,6 @@ export default function ConversationScreen({
                 <div ref={bottomRef} />
             </main>
 
-            {/* Input bar */}
             <div className="conv-input-bar">
                 <button
                     className={`conv-mic-btn ${isListening ? 'mic-active' : ''}`}
@@ -267,7 +258,7 @@ export default function ConversationScreen({
                 <input
                     className="conv-text-input"
                     type="text"
-                    placeholder="Type or speak…"
+                    placeholder={t('conversation.placeholder')}
                     value={inputText}
                     onChange={e => setInputText(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSend(inputText)}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Message } from './ConversationContainer';
 import { parseTarsMessage } from '../utils/messageParser';
 import { API_BASE } from '../apiConfig';
@@ -33,6 +34,7 @@ export default function VoiceConversationScreen({
     onSwitchToText,
     onInterrupt
 }: VoiceScreenProps) {
+    const { t } = useTranslation();
     const [uiState, setUiState] = useState<UIState>('idle');
     const [interimText, setInterimText] = useState('');
     const [isTranscribing, setIsTranscribing] = useState(false);
@@ -42,13 +44,10 @@ export default function VoiceConversationScreen({
     const streamRef = useRef<MediaStream | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Derive tarsSubtitle from messages
     const tarsMessages = messages.filter(m => m.role === 'tars');
     const rawSubtitle = tarsMessages.length > 0 ? tarsMessages[tarsMessages.length - 1].text : '';
     const tarsSubtitle = rawSubtitle ? parseTarsMessage(rawSubtitle).chinese : '';
 
-    // Find current teaching message with audio
-    // Look for the LAST message that is teaching AND has audio cached
     const teachingMsg = tarsMessages
         .filter(m => m.isTeaching && m.audio_b64 && m.audio_b64.length > 0)
         .pop();
@@ -63,7 +62,6 @@ export default function VoiceConversationScreen({
     const replayAudioRef = useRef<string[]>([]);
     const replayIndexRef = useRef(0);
 
-    // Replay cached audio from teaching message
     const replayTeachingAudio = () => {
         if (!teachingMsg?.audio_b64 || isReplaying) return;
         replayAudioRef.current = teachingMsg.audio_b64;
@@ -97,13 +95,12 @@ export default function VoiceConversationScreen({
     useEffect(() => { audioQueueRef.current = audioQueue; }, [audioQueue]);
     useEffect(() => { currentAudioIndexRef.current = currentAudioIndex; }, [currentAudioIndex]);
 
-    // Plays the current chunk if the audio element is ready
     const tryPlayCurrent = () => {
         const el = audioRef.current;
         const queue = audioQueueRef.current;
         const idx = currentAudioIndexRef.current;
         if (!el || queue.length === 0 || queue.length <= idx) return;
-        if (uiState === 'speaking' && !el.paused && !el.ended) return; // already playing
+        if (uiState === 'speaking' && !el.paused && !el.ended) return;
 
         el.src = `data:audio/ogg;codecs=opus;base64,${queue[idx]}`;
         setUiState('speaking');
@@ -111,7 +108,6 @@ export default function VoiceConversationScreen({
         pendingPlayRef.current = false;
     };
 
-    // Callback ref — fires the instant <audio> is mounted in the DOM
     const setAudioRef = (el: HTMLAudioElement | null) => {
         audioRef.current = el;
         if (el && pendingPlayRef.current) {
@@ -119,9 +115,7 @@ export default function VoiceConversationScreen({
         }
     };
 
-    // Handle Audio Queue
     useEffect(() => {
-        // Queue emptied (e.g. interrupt) → stop
         if (audioQueue.length === 0) {
             if (uiState === 'speaking') setUiState('idle');
             return;
@@ -130,32 +124,26 @@ export default function VoiceConversationScreen({
         if (audioRef.current) {
             tryPlayCurrent();
         } else {
-            // audioRef not mounted yet — flag it so the callback ref triggers play
             pendingPlayRef.current = true;
         }
-    }, [audioQueue, currentAudioIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [audioQueue, currentAudioIndex]);
 
-    // Track processing state cleanly
     useEffect(() => {
         if (isProcessing && uiState !== 'listening') {
             setInterimText('');
         }
     }, [isProcessing, uiState]);
 
-    // ── Pointer Handlers for Holding Mic ────────────────────────────────────
     const handlePointerDown = async (e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
-        // 1. Detener audio actual y avisar al backend 
         if (audioRef.current) {
             audioRef.current.pause();
-            audioRef.current.currentTime = 0; // Reinicia el audio
+            audioRef.current.currentTime = 0;
         }
         onInterrupt();
         setUiState('idle');
 
-        // 2. Desbloqueo de audio para Mobile 
-        // Solo lo hacemos si el src está vacío o es el silencio inicial
         if (audioRef.current && (audioRef.current.src === '' || audioRef.current.src.includes('base64'))) {
             audioRef.current.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
             audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => { });
@@ -179,10 +167,10 @@ export default function VoiceConversationScreen({
 
             mediaRecorder.start();
             setUiState('listening');
-            setInterimText('Listening...');
+            setInterimText(t('voiceConversation.listening'));
         } catch (err) {
             console.error('Microphone access denied or error:', err);
-            alert('Microphone access is required to speak to Tars.');
+            alert(t('voiceConversation.micRequired'));
             setUiState('idle');
         }
     };
@@ -194,13 +182,11 @@ export default function VoiceConversationScreen({
 
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
             mediaRecorderRef.current.onstop = async () => {
-                // Stop all tracks to release mic
                 if (streamRef.current) {
                     streamRef.current.getTracks().forEach(track => track.stop());
                     streamRef.current = null;
                 }
 
-                // Dynamically handle MIME type for Safari/iOS support
                 const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
                 let ext = 'webm';
                 if (mimeType.includes('mp4') || mimeType.includes('m4a')) ext = 'm4a';
@@ -236,12 +222,12 @@ export default function VoiceConversationScreen({
                     if (text && text.trim()) {
                         onSendMessage(text);
                     } else {
-                        setInterimText('Could not hear anything clearly.');
+                        setInterimText(t('voiceConversation.couldNotHear'));
                         setTimeout(() => setInterimText(''), 3000);
                     }
                 } catch (error: any) {
                     console.error('STT error:', error);
-                    setInterimText(`Connection error: ${error.message || 'Server failed'}`);
+                    setInterimText(`${t('voiceConversation.connectionError')} ${error.message || t('voiceConversation.serverFailed')}`);
                     setTimeout(() => setInterimText(''), 4000);
                 } finally {
                     setIsTranscribing(false);
@@ -266,32 +252,27 @@ export default function VoiceConversationScreen({
                         setCurrentAudioIndex(nextIndex);
                     } else {
                         setCurrentAudioIndex(nextIndex);
-                        setUiState('idle'); // Finalizó de hablar todos los chunks
+                        setUiState('idle');
                     }
                 }}
             />
             <div className="ambient-glow"></div>
 
             <main className="voice-main">
-
-                {/* Header */}
                 <header className="voice-header">
                     <button
                         onClick={onBack}
                         className="voice-back-btn"
                     >
-                        &larr; Back
+                        {t('voiceConversation.back')}
                     </button>
                     <h1 className="voice-title">
-                        Tài Sī · {mode === 'tars_normal' ? 'Focus' : 'Roleplay'}
+                        Tài Sī · {mode === 'tars_normal' ? t('voiceConversation.focus') : t('voiceConversation.roleplay')}
                     </h1>
                 </header>
 
-                {/* Voice Interface */}
                 <section className="voice-interface">
                     <div className={`voice-mic-wrapper ${uiState === 'listening' ? 'listening' : ''}`}>
-
-                        {/* Outer Glow Ring */}
                         <div
                             onPointerDown={handlePointerDown}
                             onPointerUp={handlePointerUp}
@@ -300,7 +281,6 @@ export default function VoiceConversationScreen({
                             className={`voice-mic-ring ${uiState === 'listening' ? 'listening' : 'idle'}`}
                         >
                             <div className="inner-circle">
-                                {/* Microphone Icon */}
                                 <svg
                                     className={`voice-mic-icon ${uiState === 'listening' ? 'listening' : ''}`}
                                     fill="none"
@@ -318,7 +298,6 @@ export default function VoiceConversationScreen({
                         </div>
                     </div>
 
-                    {/* Subtitles Area */}
                     <div className="subtitles-container">
                         {uiState === 'listening' && (
                             <p className="voice-interim">
@@ -327,12 +306,12 @@ export default function VoiceConversationScreen({
                         )}
                         {isTranscribing && (
                             <p className="voice-processing">
-                                Transcribing audio...
+                                {t('voiceConversation.transcribing')}
                             </p>
                         )}
                         {isProcessing && !isTranscribing && (
                             <p className="voice-processing">
-                                Processing...
+                                {t('voiceConversation.processing')}
                             </p>
                         )}
                         {(uiState === 'speaking' || uiState === 'idle') && !isProcessing && !isTranscribing && tarsSubtitle && (
@@ -343,12 +322,11 @@ export default function VoiceConversationScreen({
                     </div>
                 </section>
 
-                {/* Controls */}
                 <footer className="voice-footer">
                     {teachingMsg && (
                         <button
                             className="voice-repeat-btn"
-                            title="Repetir frase"
+                            title={t('voiceConversation.repeatPhrase')}
                             onClick={replayTeachingAudio}
                             disabled={isReplaying}
                         >
@@ -360,7 +338,7 @@ export default function VoiceConversationScreen({
                     )}
                     <button
                         className="voice-history-btn"
-                        title="Transcript History"
+                        title={t('voiceConversation.transcriptHistory')}
                         onClick={onSwitchToText}
                     >
                         <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

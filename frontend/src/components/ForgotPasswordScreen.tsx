@@ -1,4 +1,5 @@
 import { ArrowLeft, Mail, Send } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
 import './ForgotPasswordScreen.css';
 import type { ViewState } from '../App';
 
@@ -7,37 +8,34 @@ interface ForgotPasswordScreenProps {
 }
 
 export default function ForgotPasswordScreen({ setCurrentView }: ForgotPasswordScreenProps) {
+    const { t } = useTranslation();
+
     return (
         <div className="fp-container">
-            {/* Background grid + blurs */}
             <div className="fp-grid-bg" />
             <div className="fp-decor top-right" />
             <div className="fp-decor bottom-left" />
 
             <div className="fp-inner">
-                {/* Back Button */}
                 <div className="fp-back-row">
                     <button className="fp-back-btn" onClick={() => setCurrentView('sign-in')}>
                         <ArrowLeft size={22} />
                     </button>
                 </div>
 
-                {/* Glass Card */}
                 <div className="fp-card">
-                    {/* Header */}
                     <div className="fp-card-header">
                         <h1 className="fp-title">
-                            Forgot <span className="fp-title-accent">Password?</span>
+                            <Trans i18nKey="forgotPassword.title" components={{ accent: <span className="fp-title-accent" /> }} />
                         </h1>
                         <p className="fp-subtitle">
-                            Don't worry, it happens to the best of us. Enter your email address to receive a password reset link.
+                            {t('forgotPassword.subtitle')}
                         </p>
                     </div>
 
-                    {/* Form */}
                     <div className="fp-form">
                         <div className="fp-field">
-                            <label className="fp-label">Email address</label>
+                            <label className="fp-label">{t('forgotPassword.email')}</label>
                             <div className="fp-input-wrapper">
                                 <Mail size={20} className="fp-input-icon" />
                                 <input
@@ -49,20 +47,19 @@ export default function ForgotPasswordScreen({ setCurrentView }: ForgotPasswordS
                         </div>
 
                         <button className="fp-submit-btn">
-                            <span>Send Reset Link</span>
+                            <span>{t('forgotPassword.sendLink')}</span>
                             <Send size={20} />
                         </button>
                     </div>
 
-                    {/* Bottom link */}
                     <div className="fp-footer">
                         <p className="fp-footer-text">
-                            Remember your password?{' '}
+                            {t('forgotPassword.rememberPassword')}{' '}
                             <button
                                 className="fp-login-link"
                                 onClick={() => setCurrentView('sign-in')}
                             >
-                                Log in
+                                {t('forgotPassword.logIn')}
                             </button>
                         </p>
                     </div>

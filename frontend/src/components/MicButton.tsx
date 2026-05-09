@@ -1,16 +1,18 @@
 import { useRef, useState } from 'react';
 import { Mic } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './MicButton.css';
 import type { ViewState } from '../App';
 
-const HOLD_DURATION = 3000; // 3 seconds
+const HOLD_DURATION = 3000;
 
 interface MicButtonProps {
     setCurrentView: (view: ViewState) => void;
 }
 
 export default function MicButton({ setCurrentView }: MicButtonProps) {
-    const [progress, setProgress] = useState(0); // 0–100
+    const { t } = useTranslation();
+    const [progress, setProgress] = useState(0);
     const [holding, setHolding] = useState(false);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const startRef = useRef<number>(0);
@@ -39,8 +41,7 @@ export default function MicButton({ setCurrentView }: MicButtonProps) {
         setProgress(0);
     };
 
-    // SVG ring params
-    const R = 108;           // radius (half of 220px - 2px padding)
+    const R = 108;
     const circumference = 2 * Math.PI * R;
     const dashoffset = circumference * (1 - progress / 100);
 
@@ -52,7 +53,6 @@ export default function MicButton({ setCurrentView }: MicButtonProps) {
                 onPointerUp={cancelHold}
                 onPointerLeave={cancelHold}
             >
-                {/* SVG progress ring overlay */}
                 {holding && (
                     <svg className="mic-progress-ring" viewBox="0 0 220 220">
                         <circle
@@ -83,10 +83,10 @@ export default function MicButton({ setCurrentView }: MicButtonProps) {
 
             <div className="mic-text-container">
                 <h1 className="mic-title">
-                    {holding ? 'HOLD TO ACTIVATE…' : 'HOLD TO SPEAK'}
+                    {holding ? t('micButton.holdToActivate') : t('micButton.holdToSpeak')}
                 </h1>
                 <p className="mic-subtitle">
-                    {holding ? 'RELEASE TO CANCEL' : 'NORMAL MODE · 3 SECONDS'}
+                    {holding ? t('micButton.releaseToCancel') : t('micButton.normalMode3sec')}
                 </p>
             </div>
         </div>

@@ -86,7 +86,7 @@ def stage_b_quality_filter(conn, job_id):
             SELECT id FROM messages
             WHERE (
                 (char_length(content) < 10 AND has_chinese = FALSE)
-                OR lower(regexp_replace(content, '[^\\w\\s]', '', 'g')) IN ({greeting_list})
+                OR lower(regexp_replace(content, '[^[:alnum:][:space:]]', '', 'g')) IN ({greeting_list})
             )
             AND embedding IS NOT NULL
         )
