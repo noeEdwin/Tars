@@ -148,3 +148,54 @@ def get_all_knowledge_for_lesson(lesson_id: int) -> str:
     except Exception as e:
         print(f"⚠️ Error retrieving complete lesson knowledge: {e}")
         return ""
+    
+def retrieve_character_context(character_name: str, doc_id: int = None) -> str:
+    """
+    Busca en 'document_store' fragmentos específicos del libro 
+    para armar el perfil psicológico del personaje.
+    """
+    try:
+        # 1. Creamos el vector de lo que queremos saber del personaje
+        query_text = f"Detalles sobre {character_name}: personalidad, diálogos, acciones y forma de ser."
+        query_embedding = get_embedding(query_text)
+        
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        if doc_id is not None:
+            # 2. Truco pro: Si doc_id es solo un "pedazo" del libro, buscamos su 'filename' 
+            # para buscar contexto en TODO el libro, no solo en ese pedazo.
+            query = """
+                WITH target_doc AS (
+                    SELECT filename FROM document_store WHERE id = %s
+                )
+                SELECT content
+                FROM document_store
+                WHERE filename = (SELECT filename FROM target_doc)
+                ORDER BY embedding::vector <=> %s::vector
+                LIMIT 4;
+            """
+            cur.execute(query, (doc_id, query_embedding))
+        else:
+            # Búsqueda general si no hay documento específico
+            query = """
+                SELECT content
+                FROM document_store
+                ORDER BY embedding::vector <=> %s::vector
+                LIMIT 4;
+            """
+            cur.execute(query, (query_embedding,))
+            
+        results = cur.fetchall()
+        cur.close()
+        conn.close()
+        
+        if results:
+            # Unimos los 4 fragmentos más relevantes del libro
+            return "\n...\n".join([row[0] for row in results])
+        
+        return "No se encontraron detalles específicos del personaje en el documento."
+        
+    except Exception as e:
+        print(f"⚠️ Error recuperando contexto del documento para el personaje: {e}")
+        return "Error al leer el documento."

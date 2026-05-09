@@ -5,6 +5,7 @@ Run with: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
 import os
 import sys
 import uuid
+import shutil
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -18,7 +19,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import base64
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
@@ -30,7 +31,8 @@ openai_client = OpenAI()
 
 from agents.brain.nodes import workflow, config as base_config
 from agents.RAG.save_memory import get_db_uri, save_long_term_memory
-from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile
+from agents.RAG.ingest_document import ingest_pdf
+from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile, delete_document_by_filename
 from dataBase.user_management import get_or_create_active_conversation
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
 
@@ -112,6 +114,38 @@ def _extract_tars_message(result: dict, start_len: int = 0) -> str:
 def get_roleplay_files(user_id: int = 1):
     filenames = get_roleplay_contexts(user_id)
     return {"files": filenames}
+
+@app.delete("/roleplay/files/{filename:path}")
+def delete_roleplay_file(filename: str, user_id: int = 1):
+    """Elimina un documento del modo roleplay."""
+    success = delete_document_by_filename(user_id, filename)
+    if success:
+        return {"status": "success", "message": f"Documento {filename} eliminado"}
+    else:
+        raise HTTPException(status_code=500, detail="Error al intentar eliminar el archivo")
+
+@app.post("/roleplay/upload")
+async def upload_roleplay_file(user_id: int = Form(1), file: UploadFile = File(...)):
+    """Recibe un archivo PDF, lo guarda temporalmente y procesa los embeddings."""
+    try:
+        temp_file_path = f"temp_{file.filename}"
+        with open(temp_file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        print(f"Archivo {file.filename} guardado temporalmente. Iniciando procesamiento RAG...")
+        
+        await asyncio.to_thread(ingest_pdf, temp_file_path, user_id)
+        
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+            
+        return {"status": "success", "filename": file.filename, "message": "Documento procesado correctamente"}
+        
+    except Exception as e:
+        print(f"Error procesando el archivo subido: {e}")
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        raise HTTPException(status_code=500, detail="Fallo en la ingestión del documento")
 
 @app.post("/start_session", response_model=StartSessionResponse)
 async def start_session(req: StartSessionRequest):
@@ -297,14 +331,24 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
             
         print(f"[TIMER WS] 3. Listo para astream_events: {time.time() - t_start:.2f}s")
         
+        in_json_block = False
+        
         async for event in app_instance.astream_events(input_data, cfg, version="v2"):
             if event["event"] == "on_chat_model_stream":
                 token = event["data"]["chunk"].content
                 if token:
+                    if "{" in token:
+                        in_json_block = True
+                    if "}" in token:
+                        in_json_block = False
+                        continue
+                    
+                    if in_json_block:
+                        continue
+                    
                     print(f"DEBUG: Token recibido -> {token}")
                     full_response_content += token
                     sentence_buffer += token
-                    # 1. Enviamos el token al texto (UI)
                     await websocket.send_json({"type": "token", "text": token})
                     # 2. ¿Es el fin de una frase? (Detectar . ! ? 。 ！ ？)
                     if re.search(r'[。！？.!?]', token):
