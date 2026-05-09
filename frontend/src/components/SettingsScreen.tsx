@@ -104,7 +104,13 @@ export default function SettingsScreen({ setCurrentView, isLightMode, toggleThem
 
                 {/* Logout / Footer */}
                 <div className="settings-footer">
-                    <button className="logout-btn" onClick={() => setCurrentView('sign-in')}>
+                    <button className="logout-btn" onClick={() => {
+                        localStorage.removeItem('tars_token');
+                        localStorage.removeItem('tars_user_id');
+                        localStorage.removeItem('tars_username');
+                        localStorage.removeItem('tars_first_name');
+                        setCurrentView('sign-in');
+                    }}>
                         <LogOut size={20} />
                         Log Out
                     </button>

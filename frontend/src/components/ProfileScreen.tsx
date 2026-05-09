@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Settings, TrendingUp, Sparkles, Flame, PlusCircle } from 'lucide-react';
 import './ProfileScreen.css';
 import type { ViewState } from '../App';
@@ -7,6 +8,18 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({ setCurrentView }: ProfileScreenProps) {
+    const [userName, setUserName] = useState('User');
+
+    useEffect(() => {
+        const firstName = localStorage.getItem('tars_first_name');
+        const username = localStorage.getItem('tars_username');
+        if (firstName && firstName !== 'null') {
+            setUserName(firstName);
+        } else if (username) {
+            setUserName(username);
+        }
+    }, []);
+
     return (
         <div className="profile-container">
             {/* Profile Header */}
@@ -40,7 +53,7 @@ export default function ProfileScreen({ setCurrentView }: ProfileScreenProps) {
                     </div>
 
                     <div className="user-details">
-                        <h2 className="user-name">Lin Yao</h2>
+                        <h2 className="user-name">{userName}</h2>
                         <p className="user-title">Imperial Scholar</p>
                         <div className="user-status">
                             <Sparkles size={18} color="var(--jade-accent)" fill="var(--jade-accent)" />

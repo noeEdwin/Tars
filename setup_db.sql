@@ -53,3 +53,31 @@ CREATE TABLE IF NOT EXISTS character_personas (
 
 -- Índice para búsquedas rápidas cuando TARS necesita "ponerse la máscara"
 CREATE INDEX idx_persona_name ON character_personas (name);
+
+-- ─── Tabla de Usuarios (Autenticación) ───────────────────────────────────────
+-- ⚠️  La tabla `users` YA EXISTE en Supabase con ID Integer (SERIAL).
+--     NO ejecutes el bloque de abajo si la tabla ya existe.
+--     Solo úsalo como referencia de la estructura real, o ejecuta los ALTER
+--     si necesitas añadir las nuevas columnas de perfil.
+
+-- EJECUTA ESTO EN SUPABASE PARA AÑADIR LAS COLUMNAS FALTANTES:
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS learning_goals TEXT DEFAULT 'Travel';
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS interests TEXT DEFAULT '';
+
+-- Estructura de referencia (NO re-crear si ya existe):
+-- CREATE TABLE IF NOT EXISTS users (
+--     id              SERIAL      PRIMARY KEY,
+--     username        TEXT        NOT NULL UNIQUE,
+--     first_name      TEXT        NOT NULL,
+--     last_name       TEXT        NOT NULL,
+--     email           TEXT        UNIQUE,
+--     hashed_password TEXT        NOT NULL,
+--     hsk_level       INTEGER     NOT NULL DEFAULT 1,
+--     native_language TEXT        NOT NULL DEFAULT 'es',
+--     learning_goals  TEXT        DEFAULT 'Travel',
+--     interests       TEXT        DEFAULT ''
+-- );
+
+CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
+CREATE INDEX IF NOT EXISTS idx_users_email    ON users (email);

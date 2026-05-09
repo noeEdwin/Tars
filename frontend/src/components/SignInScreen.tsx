@@ -1,8 +1,10 @@
-import { Mail, Lock, Eye, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader } from 'lucide-react';
 import './SignInScreen.css';
 import type { ViewState } from '../App';
 import darkLogo from '../assets/dark_mode.png';
 import lightLogo from '../assets/light_mode.png';
+import { API_BASE } from '../apiConfig';
 
 interface SignInScreenProps {
     setCurrentView: (view: ViewState) => void;
@@ -10,6 +12,51 @@ interface SignInScreenProps {
 }
 
 export default function SignInScreen({ setCurrentView, isLightMode }: SignInScreenProps) {
+    const [username, setUsername]         = useState('');
+    const [password, setPassword]         = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError]               = useState('');
+    const [isLoading, setIsLoading]       = useState(false);
+
+    const handleLogin = async () => {
+        setError('');
+
+        // Validación en cliente
+        if (!username.trim() || !password.trim()) {
+            setError('Por favor, completa todos los campos.');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const res = await fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username.trim(), password }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                // El backend devuelve { detail: "..." }
+                setError(data.detail ?? 'Error al iniciar sesión. Inténtalo de nuevo.');
+                return;
+            }
+
+            // Guardar token y datos básicos del usuario en localStorage
+            localStorage.setItem('tars_token',      data.access_token);
+            localStorage.setItem('tars_user_id',    data.user_id);
+            localStorage.setItem('tars_username',   data.username);
+            localStorage.setItem('tars_first_name', data.first_name);
+
+            setCurrentView('home');
+        } catch {
+            setError('No se pudo conectar con el servidor. Verifica tu conexión.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="signin-container">
             {/* Background mesh gradients */}
@@ -32,18 +79,31 @@ export default function SignInScreen({ setCurrentView, isLightMode }: SignInScre
                     <p className="signin-subtitle">Continue your journey to fluency.</p>
                 </div>
 
+                {/* Error global */}
+                {error && (
+                    <div className="signin-error-banner" role="alert">
+                        {error}
+                    </div>
+                )}
+
                 {/* Form */}
                 <div className="signin-form">
 
-                    {/* Email */}
+                    {/* Username */}
                     <div className="signin-field">
-                        <label className="signin-label">Email Address</label>
+                        <label className="signin-label" htmlFor="signin-username">Username</label>
                         <div className="signin-input-wrapper group-field">
                             <Mail size={20} className="signin-input-icon" />
                             <input
-                                type="email"
+                                id="signin-username"
+                                type="text"
                                 className="signin-input"
-                                placeholder="name@example.com"
+                                placeholder="tu_usuario"
+                                value={username}
+                                onChange={e => setUsername(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                                autoComplete="username"
+                                disabled={isLoading}
                             />
                         </div>
                     </div>
@@ -51,56 +111,70 @@ export default function SignInScreen({ setCurrentView, isLightMode }: SignInScre
                     {/* Password */}
                     <div className="signin-field">
                         <div className="signin-label-row">
-                            <label className="signin-label">Password</label>
-                            <button className="signin-forgot" onClick={() => setCurrentView('forgot-password')}>Forgot Password?</button>
+                            <label className="signin-label" htmlFor="signin-password">Password</label>
+                            <button
+                                className="signin-forgot"
+                                onClick={() => setCurrentView('forgot-password')}
+                                type="button"
+                            >
+                                Forgot Password?
+                            </button>
                         </div>
                         <div className="signin-input-wrapper group-field">
                             <Lock size={20} className="signin-input-icon" />
                             <input
-                                type="password"
+                                id="signin-password"
+                                type={showPassword ? 'text' : 'password'}
                                 className="signin-input"
                                 placeholder="••••••••"
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                                autoComplete="current-password"
+                                disabled={isLoading}
                             />
-                            <button type="button" className="signin-eye-btn">
-                                <Eye size={20} />
+                            <button
+                                type="button"
+                                className="signin-eye-btn"
+                                onClick={() => setShowPassword(p => !p)}
+                                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                disabled={isLoading}
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                             </button>
                         </div>
                     </div>
 
                     {/* Sign In Button */}
                     <button
+                        id="signin-submit-btn"
                         className="signin-btn"
-                        onClick={() => setCurrentView('home')}
+                        onClick={handleLogin}
+                        disabled={isLoading}
                     >
-                        Sign In
-                        <ArrowRight size={20} />
+                        {isLoading ? (
+                            <>
+                                <Loader size={20} className="signin-spinner" />
+                                Signing in…
+                            </>
+                        ) : (
+                            <>
+                                Sign In
+                                <ArrowRight size={20} />
+                            </>
+                        )}
                     </button>
 
-                </div>
-
-                {/* Divider */}
-                <div className="signin-divider">
-                    <div className="signin-divider-line" />
-                    <span className="signin-divider-text">or continue with</span>
-                    <div className="signin-divider-line" />
                 </div>
 
                 {/* Social & Register */}
-                <div className="signin-social">
-                    <button className="signin-google-btn">
-                        <img
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDkurYWaGtt5X4Ph50IoA9JQYcgLzADTziFhxySkWa5NV4LIaN4Sk1MDLj9fuJKBv5g_WrCLwwRtnPAwI3_Qg6xxL6R4sZuWGvzg62Oc5K4jtoQ36FBFeMGd1BnYo4xlnAMptGhADVH0AxtsENpU-jTWBX4JHJTzftUeulJIOkJVUa8ZYM1lNVogfAiQ5sHDLkSPw2QPSP2i3uPd1uJAxtLuJgbRsIfah-VRypgy-E0o3cJvI51qp1wr5pgIz5j6ceRYRHUZMY-AUxD"
-                            alt="Google"
-                            className="signin-google-logo"
-                        />
-                        Continue with Google
-                    </button>
-
+                <div className="signin-social" style={{ marginTop: '24px' }}>
                     <p className="signin-register-text">
                         Don't have an account?{' '}
                         <button
                             className="signin-register-link"
                             onClick={() => setCurrentView('sign-up')}
+                            type="button"
                         >
                             Create one now
                         </button>

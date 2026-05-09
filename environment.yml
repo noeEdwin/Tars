@@ -110,7 +110,7 @@ dependencies:
       - audioread==3.1.0
       - babel==2.18.0
       - backoff==2.2.1
-      - bcrypt==5.0.0
+      - bcrypt>=4.0.1      
       - beautifulsoup4==4.14.3
       - build==1.4.0
       - chromadb==1.4.0
@@ -269,4 +269,7 @@ dependencies:
       - zipp==3.23.0
       - thefuzz
       - python-multipart
+      - passlib[bcrypt]==1.7.4
+      - python-jose[cryptography]==3.3.0
+      - email-validator==2.2.0
 prefix: /home/lancelot/miniconda3/envs/agentes_ia

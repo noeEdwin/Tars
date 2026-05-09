@@ -38,7 +38,13 @@ export interface SessionConfig {
 
 function App() {
     const [isLightMode, setIsLightMode] = useState(false);
-    const [currentView, setCurrentView] = useState<ViewState>('loading');
+    
+    // Si no hay token guardado, iniciamos directamente en la vista de login.
+    // Si lo hay, iniciamos en 'loading' para hacer el pre-warm y pasar al 'home'.
+    const [currentView, setCurrentView] = useState<ViewState>(() => {
+        return localStorage.getItem('tars_token') ? 'loading' : 'sign-in';
+    });
+    
     const [sessionConfig, setSessionConfig] = useState<SessionConfig>({ mode: 'tars_normal' });
 
     // ── Pre-warm normal mode ────────────────────

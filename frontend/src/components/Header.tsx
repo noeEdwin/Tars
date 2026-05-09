@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Flame, Smartphone, Sun, Moon } from 'lucide-react';
 import './Header.css';
 
@@ -7,6 +8,18 @@ interface HeaderProps {
 }
 
 export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
+    const [userName, setUserName] = useState('User');
+
+    useEffect(() => {
+        const firstName = localStorage.getItem('tars_first_name');
+        const username = localStorage.getItem('tars_username');
+        if (firstName && firstName !== 'null') {
+            setUserName(firstName);
+        } else if (username) {
+            setUserName(username);
+        }
+    }, []);
+
     return (
         <header className="app-header">
             <div className="profile-section">
@@ -14,7 +27,7 @@ export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
                     <Smartphone size={18} color="#ffffff" strokeWidth={2.5} />
                 </div>
                 <div className="profile-info">
-                    <h2 className="profile-name">Tài Sĩ</h2>
+                    <h2 className="profile-name">{userName}</h2>
                     <p className="profile-level">LEVEL 24 • ADVANCED</p>
                 </div>
             </div>

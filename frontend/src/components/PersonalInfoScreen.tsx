@@ -1,17 +1,104 @@
-import { ChevronLeft, Camera } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronLeft, Camera, Loader } from 'lucide-react';
 import './PersonalInfoScreen.css';
 import type { ViewState } from '../App';
+import { API_BASE } from '../apiConfig';
 
 interface PersonalInfoScreenProps {
     setCurrentView: (view: ViewState) => void;
 }
 
 export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScreenProps) {
+    const [fullName, setFullName] = useState('');
+    const [nativeLanguage, setNativeLanguage] = useState('es');
+    const [hskLevel, setHskLevel] = useState(1);
+    const [learningGoals, setLearningGoals] = useState('Travel');
+    const [interests, setInterests] = useState('');
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [message, setMessage] = useState({ text: '', type: '' });
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const token = localStorage.getItem('tars_token');
+            if (!token) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/user/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setFullName(`${data.first_name} ${data.last_name}`.trim());
+                    setNativeLanguage(data.native_language || 'es');
+                    setHskLevel(data.hsk_level || 1);
+                    setLearningGoals(data.learning_goals || 'Travel');
+                    setInterests(data.interests || '');
+                }
+            } catch (err) {
+                console.error("Error fetching profile", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProfile();
+    }, []);
+
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setMessage({ text: '', type: '' });
+        setIsSaving(true);
+
+        const token = localStorage.getItem('tars_token');
+        const nameParts = fullName.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        try {
+            const res = await fetch(`${API_BASE}/api/user/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    first_name: firstName,
+                    last_name: lastName,
+                    hsk_level: hskLevel,
+                    native_language: nativeLanguage,
+                    learning_goals: learningGoals,
+                    interests: interests
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('tars_first_name', data.first_name);
+                setMessage({ text: 'Profile updated successfully!', type: 'success' });
+            } else {
+                setMessage({ text: 'Failed to update profile.', type: 'error' });
+            }
+        } catch (err) {
+            setMessage({ text: 'Network error.', type: 'error' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <div className="pinfo-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Loader size={32} className="spinning" color="var(--primary)" />
+            </div>
+        );
+    }
+
     return (
         <div className="pinfo-container">
             {/* Header */}
             <header className="pinfo-header">
-                <button className="pinfo-back-btn" onClick={() => setCurrentView('settings')}>
+                <button className="pinfo-back-btn" onClick={() => setCurrentView('settings')} type="button">
                     <ChevronLeft size={24} color="var(--text-muted)" />
                 </button>
                 <h1 className="pinfo-title">Personal Info</h1>
@@ -31,7 +118,7 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                                 className="pinfo-avatar-img"
                             />
                         </div>
-                        <button className="pinfo-avatar-edit">
+                        <button className="pinfo-avatar-edit" type="button">
                             <Camera size={16} color="white" />
                         </button>
                     </div>
@@ -39,7 +126,21 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                 </section>
 
                 {/* Form */}
-                <form className="pinfo-form">
+                <form className="pinfo-form" onSubmit={handleSave}>
+
+                    {/* Messages */}
+                    {message.text && (
+                        <div style={{ 
+                            padding: '10px', 
+                            marginBottom: '15px', 
+                            borderRadius: '8px', 
+                            textAlign: 'center',
+                            backgroundColor: message.type === 'success' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)',
+                            color: message.type === 'success' ? '#2ecc71' : '#e74c3c'
+                        }}>
+                            {message.text}
+                        </div>
+                    )}
 
                     {/* Full Name */}
                     <div className="pinfo-field">
@@ -48,8 +149,10 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                             <input
                                 type="text"
                                 className="pinfo-input"
-                                defaultValue="Alexander Chen"
+                                value={fullName}
+                                onChange={e => setFullName(e.target.value)}
                                 placeholder="Your Name"
+                                required
                             />
                         </div>
                     </div>
@@ -58,7 +161,11 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                     <div className="pinfo-field">
                         <label className="pinfo-label">Native Language</label>
                         <div className="pinfo-input-box">
-                            <select className="pinfo-input pinfo-select">
+                            <select 
+                                className="pinfo-input pinfo-select"
+                                value={nativeLanguage}
+                                onChange={e => setNativeLanguage(e.target.value)}
+                            >
                                 <option value="en">English</option>
                                 <option value="fr">French</option>
                                 <option value="de">German</option>
@@ -71,13 +178,17 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                     <div className="pinfo-field">
                         <label className="pinfo-label">Current HSK Level</label>
                         <div className="pinfo-input-box">
-                            <select className="pinfo-input pinfo-select">
-                                <option>HSK 1 (Beginner)</option>
-                                <option>HSK 2 (Elementary)</option>
-                                <option defaultValue="">HSK 3 (Intermediate)</option>
-                                <option>HSK 4 (Upper Intermediate)</option>
-                                <option>HSK 5 (Advanced)</option>
-                                <option>HSK 6 (Proficient)</option>
+                            <select 
+                                className="pinfo-input pinfo-select"
+                                value={hskLevel}
+                                onChange={e => setHskLevel(Number(e.target.value))}
+                            >
+                                <option value={1}>HSK 1 (Beginner)</option>
+                                <option value={2}>HSK 2 (Elementary)</option>
+                                <option value={3}>HSK 3 (Intermediate)</option>
+                                <option value={4}>HSK 4 (Upper Intermediate)</option>
+                                <option value={5}>HSK 5 (Advanced)</option>
+                                <option value={6}>HSK 6 (Proficient)</option>
                             </select>
                         </div>
                     </div>
@@ -86,11 +197,15 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                     <div className="pinfo-field">
                         <label className="pinfo-label">Learning Goals</label>
                         <div className="pinfo-input-box">
-                            <select className="pinfo-input pinfo-select">
-                                <option>Travel</option>
-                                <option>Business</option>
-                                <option>Academic</option>
-                                <option>Hobby / Cultural</option>
+                            <select 
+                                className="pinfo-input pinfo-select"
+                                value={learningGoals}
+                                onChange={e => setLearningGoals(e.target.value)}
+                            >
+                                <option value="Travel">Travel</option>
+                                <option value="Business">Business</option>
+                                <option value="Academic">Academic</option>
+                                <option value="Hobby / Cultural">Hobby / Cultural</option>
                             </select>
                         </div>
                     </div>
@@ -102,7 +217,8 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                             <input
                                 type="text"
                                 className="pinfo-input"
-                                defaultValue="Engineering, Technology, Urbanism"
+                                value={interests}
+                                onChange={e => setInterests(e.target.value)}
                                 placeholder="e.g. Engineering, Literature"
                             />
                         </div>
@@ -110,8 +226,8 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
 
                     {/* Save Button */}
                     <div className="pinfo-save-wrapper">
-                        <button type="submit" className="pinfo-save-btn">
-                            Save Changes
+                        <button type="submit" className="pinfo-save-btn" disabled={isSaving}>
+                            {isSaving ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
 

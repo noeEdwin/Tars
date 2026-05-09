@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import base64
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
@@ -32,7 +32,11 @@ from agents.brain.nodes import workflow, config as base_config
 from agents.RAG.save_memory import get_db_uri, save_long_term_memory
 from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile
 from dataBase.user_management import get_or_create_active_conversation
+from dataBase.auth_queries import get_user_by_username, get_user_by_email, get_user_by_username_simple, create_user, get_user_by_id, update_user_profile
+from auth.security import hash_password, verify_password, create_access_token, get_current_user
+from auth.schemas import RegisterRequest, RegisterResponse, LoginRequest, TokenResponse, UserProfile, ProfileUpdateRequest
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
+
 
 # ─── App ────────────────────────────────────────────────────────────────────
 app_state = {}
@@ -472,3 +476,151 @@ async def stt_endpoint(audio: UploadFile = File(...)):
     except Exception as e:
         print(f"Error in backend STT: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── Auth ────────────────────────────────────────────────────────────────────
+
+@app.post("/auth/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+async def register(req: RegisterRequest):
+    """
+    Registra un nuevo usuario en Tars.
+
+    Flujo:
+    1. Pydantic valida los campos (longitud, formato, contraseñas coinciden).
+    2. Verificar que username y email no estén ya en uso.
+    3. Hashear la contraseña con bcrypt (cost=12).
+    4. Insertar el registro en la BD y devolver 201.
+
+    Seguridad:
+    - La contraseña NUNCA se almacena en texto plano.
+    - Los mensajes de error distinguen entre username y email para mejorar
+      la UX en registro (es aceptable; el problema de enumeración es más
+      crítico en /login).
+    """
+    # Verificar unicidad de username
+    if await asyncio.to_thread(get_user_by_username_simple, req.username):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El nombre de usuario ya está en uso. Elige otro.",
+        )
+
+    # Verificar unicidad de email
+    if await asyncio.to_thread(get_user_by_email, req.email):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe una cuenta con ese correo electrónico.",
+        )
+
+    # Hash de contraseña (operación bloqueante → hilo separado)
+    hashed = await asyncio.to_thread(hash_password, req.password)
+
+    # Insertar usuario — id es SERIAL (Integer), la BD lo asigna automáticamente
+    try:
+        new_user = await asyncio.to_thread(
+            create_user,
+            req.username,
+            req.first_name,
+            req.last_name,
+            req.email,
+            hashed,
+            req.hsk_level,
+            req.native_language,
+            req.learning_goals,
+            req.interests,
+        )
+    except Exception as exc:
+        print(f"[/auth/register] Error al crear usuario: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno al crear el usuario. Inténtalo de nuevo.",
+        )
+
+    return RegisterResponse(
+        message="Cuenta creada exitosamente. ¡Bienvenido a Tars!",
+        user_id=new_user["id"],          # Integer SERIAL
+        username=new_user["username"],
+    )
+
+
+@app.post("/auth/login", response_model=TokenResponse)
+async def login(req: LoginRequest):
+    """
+    Autentica a un usuario existente y devuelve un token JWT.
+
+    Flujo:
+    1. Buscar al usuario por username.
+    2. Verificar la contraseña con bcrypt.
+    3. Generar y devolver un JWT con user_id (Integer) en el payload.
+
+    Seguridad (OWASP):
+    - Mensaje de error genérico para evitar enumeración de usuarios.
+    - verify_password usa tiempo constante (passlib) para prevenir timing attacks.
+    - El hashed_password NUNCA se incluye en la respuesta.
+    """
+    # Buscar usuario (incluye hashed_password para verificación)
+    user = await asyncio.to_thread(get_user_by_username, req.username)
+
+    # Mensaje genérico deliberado: no revelar si el usuario existe o no
+    INVALID_CREDENTIALS = "Usuario o contraseña incorrectos."
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=INVALID_CREDENTIALS,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    password_ok = await asyncio.to_thread(
+        verify_password, req.password, user["hashed_password"]
+    )
+    if not password_ok:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=INVALID_CREDENTIALS,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Generar token JWT — user_id es Integer SERIAL
+    token = await asyncio.to_thread(
+        create_access_token,
+        {"sub": user["username"], "user_id": user["id"]},
+    )
+
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user_id=user["id"],              # Integer SERIAL
+        username=user["username"],
+        first_name=user["first_name"],
+        hsk_level=user["hsk_level"],
+    )
+
+
+@app.get("/api/user/profile", response_model=UserProfile)
+async def get_profile(current_user_id: int = Depends(get_current_user)):
+    """Obtiene el perfil completo del usuario autenticado."""
+    user = await asyncio.to_thread(get_user_by_id, current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return UserProfile(**user)
+
+
+@app.put("/api/user/profile", response_model=UserProfile)
+async def update_profile(
+    profile_data: ProfileUpdateRequest,
+    current_user_id: int = Depends(get_current_user)
+):
+    """Actualiza la información del perfil del usuario."""
+    updated_user = await asyncio.to_thread(
+        update_user_profile,
+        current_user_id,
+        profile_data.first_name,
+        profile_data.last_name,
+        profile_data.hsk_level,
+        profile_data.native_language,
+        profile_data.learning_goals,
+        profile_data.interests,
+    )
+    if not updated_user:
+        raise HTTPException(status_code=500, detail="Error al actualizar el perfil")
+    return UserProfile(**updated_user)
