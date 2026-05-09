@@ -1,45 +1,59 @@
 import os
 from dotenv import load_dotenv
 from agents.RAG.utils import get_embedding
+from agents.RAG.filter import normalize_text, contains_chinese, should_embed
 from dataBase.connection import get_db_connection
 
+
 def save_long_term_memory(conversation_id: int, role: str, content: str):
-    """
-    Guarda el mensaje con su vector en la tabla 'messages'.
-    Esto es para RAG a largo plazo.
-    """
     conn = get_db_connection()
     try:
-        vector = get_embedding(content)
+        normalized = normalize_text(content)
+        has_zh = contains_chinese(content)
+
+        if not should_embed(content):
+            return
+
         cur = conn.cursor()
+
+        cur.execute(
+            "SELECT id FROM messages WHERE normalized_text = %s LIMIT 1",
+            (normalized,)
+        )
+        existing = cur.fetchone()
+        if existing:
+            cur.execute(
+                "UPDATE messages SET last_used_timestamp = NOW() WHERE id = %s",
+                (existing[0],)
+            )
+            conn.commit()
+            cur.close()
+            return
+
+        vector = get_embedding(content)
         query = """
-            INSERT INTO messages (conversation_id, role, content, embedding)
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO messages (conversation_id, role, content, embedding,
+                                  normalized_text, has_chinese, access_count)
+            VALUES (%s, %s, %s, %s, %s, %s, 0)
         """
-        cur.execute(query, (conversation_id, role, content, vector))
+        cur.execute(query, (conversation_id, role, content, vector, normalized, has_zh))
         conn.commit()
         cur.close()
     except Exception as e:
-        print(f"❌ Error guardando mensaje: {e}")
+        print(f"Error guardando mensaje: {e}")
     finally:
         conn.close()
 
+
 def retrieve_user_memory(user_id: int, query_text: str, limit: int = 5) -> list[str]:
-    """
-    Recupera los mensajes pasados semánticamente similares 
-    solo del usuario actual aislando por user_id.
-    """
     conn = get_db_connection()
     past_memories = []
     try:
-        # Obtenemos el embedding de la pregunta actual
         query_vector = get_embedding(query_text)
-        
+
         cur = conn.cursor()
-        # Query: Buscar en 'messages' aislando por 'user_id' de 'conversations'
-        # Usamos <-> (L2 distance) de pgvector para buscar similitud.
         query = """
-            SELECT m.role, m.content
+            SELECT m.id, m.role, m.content
             FROM messages m
             JOIN conversations c ON m.conversation_id = c.id
             WHERE c.user_id = %s
@@ -48,18 +62,24 @@ def retrieve_user_memory(user_id: int, query_text: str, limit: int = 5) -> list[
         """
         cur.execute(query, (user_id, query_vector, limit))
         results = cur.fetchall()
-        
+
         for row in results:
-            role, content = row
+            msg_id, role, content = row
             past_memories.append(f"[{role}]: {content}")
-            
+            cur.execute(
+                "UPDATE messages SET access_count = access_count + 1 WHERE id = %s",
+                (msg_id,)
+            )
+
+        conn.commit()
         cur.close()
     except Exception as e:
-        print(f"❌ Error recuperando memoria para usuario {user_id}: {e}")
+        print(f"Error recuperando memoria para usuario {user_id}: {e}")
     finally:
         conn.close()
-        
+
     return past_memories
+
 
 def get_db_uri():
     load_dotenv()
@@ -68,5 +88,5 @@ def get_db_uri():
     host = os.getenv("DB_HOST")
     port = os.getenv("DB_PORT")
     dbname = os.getenv("DB_NAME")
-    
+
     return f"postgresql://{user}:{password}@{host}:{port}/{dbname}"

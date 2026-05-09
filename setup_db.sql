@@ -1,14 +1,24 @@
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Create table for chat history
-CREATE TABLE IF NOT EXISTS historial_chat (
+-- Create table for long-term semantic memory (RAG)
+CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
-    rol TEXT NOT NULL,
-    mensaje TEXT NOT NULL,
-    embedding VECTOR(1536), -- Dimension based on OpenAI embedding model usually used
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    conversation_id INT NOT NULL,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    embedding VECTOR(1536),
+    normalized_text TEXT,
+    last_used_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    access_count INT DEFAULT 0,
+    has_chinese BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Indexes for messages table
+CREATE INDEX IF NOT EXISTS idx_messages_normalized ON messages (normalized_text);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages (conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_access ON messages (access_count, created_at);
 
 -- Create table for knowledge base (HSK data)
 CREATE TABLE IF NOT EXISTS base_conocimiento (
@@ -53,3 +63,15 @@ CREATE TABLE IF NOT EXISTS character_personas (
 
 -- Índice para búsquedas rápidas cuando TARS necesita "ponerse la máscara"
 CREATE INDEX idx_persona_name ON character_personas (name);
+
+-- Table for tracking async vacuum jobs
+CREATE TABLE IF NOT EXISTS vacuum_jobs (
+    job_id UUID PRIMARY KEY,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    progress INT DEFAULT 0,
+    current_stage TEXT,
+    stats JSONB DEFAULT '{}',
+    error_log TEXT
+);

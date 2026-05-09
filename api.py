@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import base64
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
@@ -30,6 +30,7 @@ openai_client = OpenAI()
 
 from agents.brain.nodes import workflow, config as base_config
 from agents.RAG.save_memory import get_db_uri, save_long_term_memory
+from agents.RAG.vacuum import create_vacuum_job, run_vacuum_job, get_vacuum_job_status
 from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile
 from dataBase.user_management import get_or_create_active_conversation
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
@@ -340,6 +341,21 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.post("/admin/vacuum", status_code=202)
+async def trigger_vacuum(background_tasks: BackgroundTasks):
+    job_id = create_vacuum_job()
+    background_tasks.add_task(run_vacuum_job, job_id)
+    return {"job_id": str(job_id), "status": "pending"}
+
+
+@app.get("/admin/vacuum/status/{job_id}")
+async def get_vacuum_status(job_id: uuid.UUID):
+    status = get_vacuum_job_status(job_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Vacuum job not found")
+    return status
 
 
 @app.get("/greeting")
