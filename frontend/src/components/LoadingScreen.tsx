@@ -5,11 +5,6 @@ import sleepAnimation from '../assets/animations/sleep.json';
 import { API_BASE } from '../apiConfig';
 import './LoadingScreen.css';
 
-function getUserId(): number {
-    const stored = localStorage.getItem('tars_user_id');
-    return stored ? parseInt(stored, 10) : 1;
-}
-
 interface LoadingScreenProps {
     fallbackMessage?: string;
     personalised?: boolean;
@@ -26,8 +21,13 @@ export default function LoadingScreen({
     useEffect(() => {
         if (!personalised) return;
 
+        const token = localStorage.getItem('tars_token');
+        if (!token) return;
+
         let cancelled = false;
-        fetch(`${API_BASE}/greeting?user_id=${getUserId()}`)
+        fetch(`${API_BASE}/greeting`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        })
             .then(r => r.json())
             .then(data => {
                 if (!cancelled && data.greeting) {

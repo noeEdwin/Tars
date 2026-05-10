@@ -130,8 +130,12 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 // always lands even if `enabled` flips false mid-flight.
                 if (mode === 'tars_normal') {
                     let patchSent = false;
-                    const preloadUrl = `${API_BASE}/preload_message?user_id=${getUserId()}`;
-                    fetch(preloadUrl, { signal: controller.signal })
+                    const token = localStorage.getItem('tars_token');
+                    const preloadUrl = `${API_BASE}/preload_message`;
+                    fetch(preloadUrl, {
+                        signal: controller.signal,
+                        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                    })
                         .then(r => r.json())
                         .then(({ text, audio_b64 }: { text?: string; audio_b64?: string }) => {
                             if (patchSent || !text) return;

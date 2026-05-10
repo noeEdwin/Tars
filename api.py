@@ -362,13 +362,13 @@ async def get_vacuum_status(job_id: uuid.UUID):
 
 
 @app.get("/greeting")
-async def get_greeting(user_id: int = 1):
+async def get_greeting(current_user_id: int = Depends(get_current_user)):
     """
     Returns a short, personalised greeting from TARS based on the
     user's name, HSK level, and interest area stored in the DB.
     Uses GPT-4o-mini for speed (< 1 s round-trip).
     """
-    profile = await asyncio.to_thread(get_user_profile, user_id)
+    profile = await asyncio.to_thread(get_user_profile, current_user_id)
 
     username    = profile["username"]
     hsk_level   = profile["hsk_level"]
@@ -408,7 +408,7 @@ EMOTION_MAP = {
 }
 
 @app.get("/preload_message")
-async def get_preload_message(user_id: int = 1):
+async def get_preload_message(current_user_id: int = Depends(get_current_user)):
     """
     Fast personalised TARS greeting for Normal Mode.
     Returns: { text, audio_b64 }
@@ -419,8 +419,8 @@ async def get_preload_message(user_id: int = 1):
     """
     # ── Parallel DB reads ─────────────────────────────────────────────────────
     profile, uploaded_files = await asyncio.gather(
-        asyncio.to_thread(get_user_profile, user_id),
-        asyncio.to_thread(get_roleplay_contexts, user_id),
+        asyncio.to_thread(get_user_profile, current_user_id),
+        asyncio.to_thread(get_roleplay_contexts, current_user_id),
     )
 
     username  = profile["username"]

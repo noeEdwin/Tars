@@ -49,7 +49,7 @@ export default function SignInScreen({ setCurrentView, isLightMode }: SignInScre
             localStorage.setItem('tars_username',   data.username);
             localStorage.setItem('tars_first_name', data.first_name);
 
-            setCurrentView('home');
+            setCurrentView('loading');
         } catch {
             setError('No se pudo conectar con el servidor. Verifica tu conexión.');
         } finally {
