@@ -75,7 +75,6 @@ active_tasks = {}
 
 # ─── Models ─────────────────────────────────────────────────────────────────
 class StartSessionRequest(BaseModel):
-    user_id: int = 1
     mode: str = "tars_normal"   # or "tars_roleplay"
     filename: str | None = None
     tars_role: str | None = None
@@ -115,21 +114,21 @@ def _extract_tars_message(result: dict, start_len: int = 0) -> str:
     return ""
 
 @app.get("/roleplay/files")
-def get_roleplay_files(user_id: int = 1):
-    filenames = get_roleplay_contexts(user_id)
+def get_roleplay_files(current_user_id: int = Depends(get_current_user)):
+    filenames = get_roleplay_contexts(current_user_id)
     return {"files": filenames}
 
 @app.delete("/roleplay/files/{filename:path}")
-def delete_roleplay_file(filename: str, user_id: int = 1):
+def delete_roleplay_file(filename: str, current_user_id: int = Depends(get_current_user)):
     """Elimina un documento del modo roleplay."""
-    success = delete_document_by_filename(user_id, filename)
+    success = delete_document_by_filename(current_user_id, filename)
     if success:
         return {"status": "success", "message": f"Documento {filename} eliminado"}
     else:
         raise HTTPException(status_code=500, detail="Error al intentar eliminar el archivo")
 
 @app.post("/roleplay/upload")
-async def upload_roleplay_file(user_id: int = Form(1), file: UploadFile = File(...)):
+async def upload_roleplay_file(file: UploadFile = File(...), current_user_id: int = Depends(get_current_user)):
     """Recibe un archivo PDF, lo guarda temporalmente y procesa los embeddings."""
     temp_file_path = None
     try:
@@ -139,7 +138,7 @@ async def upload_roleplay_file(user_id: int = Form(1), file: UploadFile = File(.
             
         print(f"Archivo {file.filename} guardado temporalmente. Iniciando procesamiento RAG...")
         
-        await asyncio.to_thread(ingest_pdf, temp_file_path, user_id)
+        await asyncio.to_thread(ingest_pdf, temp_file_path, current_user_id)
         
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
@@ -153,16 +152,16 @@ async def upload_roleplay_file(user_id: int = Form(1), file: UploadFile = File(.
         raise HTTPException(status_code=500, detail="Fallo en la ingestión del documento")
 
 @app.post("/start_session", response_model=StartSessionResponse)
-async def start_session(req: StartSessionRequest):
+async def start_session(req: StartSessionRequest, current_user_id: int = Depends(get_current_user)):
     """
     Initialise a session for a user.
     """
     if req.mode == "tars_roleplay":
-        thread_id = f"{req.user_id}_roleplay_{uuid.uuid4().hex[:8]}"
+        thread_id = f"{current_user_id}_roleplay_{uuid.uuid4().hex[:8]}"
     else:
-        thread_id = f"{req.user_id}_normal"
+        thread_id = f"{current_user_id}_normal"
         
-    conversation_id = get_or_create_active_conversation(req.user_id, req.mode)
+    conversation_id = get_or_create_active_conversation(current_user_id, req.mode)
 
     cfg = {**base_config, "configurable": {"thread_id": thread_id}}
     app_instance = app_state["app_instance"]
@@ -175,7 +174,7 @@ async def start_session(req: StartSessionRequest):
             scene = req.scene or "A generic roleplay scenario."
             doc_id = None
             if req.filename:
-                res = get_scene_from_filename(req.user_id, req.filename)
+                res = get_scene_from_filename(current_user_id, req.filename)
                 if res:
                     doc_id, scene = res
 
@@ -184,8 +183,8 @@ async def start_session(req: StartSessionRequest):
             init_state = {
                     "user_mode": "tars_roleplay",
                     "active_expert": "tars_roleplay",
-                    "user_id": req.user_id,
-                    "hsk_level": get_user_hsk_level(req.user_id),
+                    "user_id": current_user_id,
+                    "hsk_level": get_user_hsk_level(current_user_id),
                     "current_lesson": 1,
                     "scene_context": scene,
                     "user_role": req.user_role,
@@ -197,10 +196,10 @@ async def start_session(req: StartSessionRequest):
            init_state = {
                 "user_mode": req.mode,
                 "active_expert": req.mode,
-                "user_id": req.user_id,
-                "hsk_level": get_user_hsk_level(req.user_id),
+                "user_id": current_user_id,
+                "hsk_level": get_user_hsk_level(current_user_id),
                 "current_lesson": 1,
-                "awaiting_answer": False,  # lesson_prompt_node will set True after first word
+                "awaiting_answer": False,
                 "messages": [HumanMessage(
                     content=(
                         "SYSTEM UPDATE: A new Chinese learning session has started. "
@@ -225,16 +224,28 @@ async def start_session(req: StartSessionRequest):
                 await app_instance.aupdate_state(cfg, {"messages": tool_recovery})
 
         if req.mode == "tars_normal":
-            # Reseteo de estado para lección fresca
-            await app_instance.aupdate_state(cfg, {
-                "lesson_words":    None,
-                "lesson_progress": 0,
-                "target_word":     None,
-                "awaiting_answer": False,
-            })
+            saved_progress = snapshot.values.get("lesson_progress", 0)
+            saved_target = snapshot.values.get("target_word")
+            saved_words = snapshot.values.get("lesson_words")
+            saved_awaiting = snapshot.values.get("awaiting_answer", False)
+
+            if saved_progress > 0 and saved_target:
+                resume_msg = (
+                    f"SYSTEM: El usuario ha regresado. "
+                    f"Progreso guardado: {saved_progress} palabras completadas. "
+                    f"Palabra actual: {saved_target}. "
+                    f"Retoma la lección donde la dejaste — NO empieces desde cero."
+                )
+            else:
+                resume_msg = "SYSTEM: Nueva sesión de lección. Presenta la primera palabra."
+
             await app_instance.aupdate_state(cfg, {
                 "user_mode": "tars_normal",
-                "messages": [HumanMessage(content="SYSTEM: Nueva sesión de lección. Presenta la primera palabra.")]
+                "lesson_words": saved_words,
+                "lesson_progress": saved_progress,
+                "target_word": saved_target,
+                "awaiting_answer": saved_awaiting,
+                "messages": [HumanMessage(content=resume_msg)],
             })
             tars_message = ""
         else:

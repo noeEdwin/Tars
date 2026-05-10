@@ -64,10 +64,14 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
             try {
                 // ── Phase 1: session (blocks home-page transition) ────────────
                 const startUrl = `${API_BASE}/start_session`;
+                const token = localStorage.getItem('tars_token');
                 const sessionRes = await fetch(startUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: getUserId(), mode, filename, user_role, tars_role }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    },
+                    body: JSON.stringify({ mode, filename, user_role, tars_role }),
                     signal: controller.signal,
                 });
                 if (!sessionRes.ok) {

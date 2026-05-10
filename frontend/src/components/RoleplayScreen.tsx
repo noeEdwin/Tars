@@ -22,9 +22,11 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
     const confirmDelete = async () => {
         if (!fileToDelete) return;
 
+        const token = localStorage.getItem('tars_token');
         try {
-            const response = await fetch(`${API_BASE}/roleplay/files/${encodeURIComponent(fileToDelete)}?user_id=1`, {
+            const response = await fetch(`${API_BASE}/roleplay/files/${encodeURIComponent(fileToDelete)}`, {
                 method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` },
             });
 
             if (response.ok) {
@@ -46,11 +48,12 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
         setIsUploading(true);
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("user_id", "1");
 
+        const token = localStorage.getItem('tars_token');
         try {
             const response = await fetch(`${API_BASE}/roleplay/upload`, {
                 method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
                 body: formData,
             });
 
@@ -68,7 +71,10 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
     };
 
     useEffect(() => {
-        fetch(`${API_BASE}/roleplay/files?user_id=1`)
+        const token = localStorage.getItem('tars_token');
+        fetch(`${API_BASE}/roleplay/files`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        })
             .then(res => res.json())
             .then(data => {
                 if (data.files) setFiles(data.files);

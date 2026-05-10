@@ -121,10 +121,14 @@ export default function ConversationContainer({
         if (preWarmedSession) return;
 
         const startSession = async () => {
+            const token = localStorage.getItem('tars_token');
             const res = await fetch(`${API_BASE}/start_session`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: getUserId(), mode, filename, user_role, tars_role }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({ mode, filename, user_role, tars_role }),
             });
             const data = await res.json();
             setThreadId(data.thread_id);
