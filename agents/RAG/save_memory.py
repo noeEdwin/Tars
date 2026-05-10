@@ -5,7 +5,7 @@ from agents.RAG.filter import normalize_text, contains_chinese, should_embed
 from dataBase.connection import get_db_connection
 
 
-def save_long_term_memory(conversation_id: int, role: str, content: str):
+def save_long_term_memory(conversation_id: int, role: str, content: str, embedding: list[float] = None):
     conn = get_db_connection()
     try:
         normalized = normalize_text(content)
@@ -30,7 +30,7 @@ def save_long_term_memory(conversation_id: int, role: str, content: str):
             cur.close()
             return
 
-        vector = get_embedding(content)
+        vector = embedding or get_embedding(content)
         query = """
             INSERT INTO messages (conversation_id, role, content, embedding,
                                   normalized_text, has_chinese, access_count)
@@ -45,11 +45,11 @@ def save_long_term_memory(conversation_id: int, role: str, content: str):
         conn.close()
 
 
-def retrieve_user_memory(user_id: int, query_text: str, limit: int = 5) -> list[str]:
+def retrieve_user_memory(user_id: int, query_text: str, limit: int = 5, query_embedding: list[float] = None) -> list[str]:
     conn = get_db_connection()
     past_memories = []
     try:
-        query_vector = get_embedding(query_text)
+        query_vector = query_embedding or get_embedding(query_text)
 
         cur = conn.cursor()
         query = """

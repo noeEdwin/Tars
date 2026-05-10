@@ -4,6 +4,8 @@ from dataBase.persona_db import fetch_persona_from_db
 from brain.identity_agent import generate_persona
 from RAG.retrieve import retrieve_knowledge, retrieve_character_context
 from brain.context_builders import _build_rag_context, _append_memory_context
+from brain.history import truncate_messages
+from RAG.utils import get_embedding
 from langchain_core.runnables import RunnableConfig
 import re
 
@@ -100,14 +102,16 @@ async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
     last_user_msg  = state["messages"][-1].content
     current_lesson = state.get("current_lesson")
 
-    rag_ctx = _build_rag_context(last_user_msg, current_lesson)
+    query_embedding = get_embedding(last_user_msg) if last_user_msg and len(last_user_msg) > 10 else None
+    rag_ctx = _build_rag_context(last_user_msg, current_lesson, query_embedding=query_embedding)
     protocol_text = protocol_text.replace(
         "{context}", rag_ctx or "No relevant memories found for this interaction."
     )
-    protocol_text = _append_memory_context(state.get("user_id"), last_user_msg, protocol_text)
+    protocol_text = _append_memory_context(state.get("user_id"), last_user_msg, protocol_text, query_embedding=query_embedding)
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
-    response = await dynamic_chain.ainvoke(state, config=config)
+    truncated_state = {**state, "messages": truncate_messages(state["messages"])}
+    response = await dynamic_chain.ainvoke(truncated_state, config=config)
 
     cleaned_content = re.sub(r'^\{.*?\}(?=\s*[\w\[])', '', response.content, flags=re.DOTALL).strip()
     if cleaned_content:

@@ -79,9 +79,10 @@ def get_tars_expert(expert_type:str):
     """Factory de LLM con temperatura ajustada para mayor personalidad."""
     if expert_type == "tars_normal":
         return ChatOpenAI(
-            model="gpt-4o", 
+            model="gpt-4o-mini", 
             temperature=0.85,
-            streaming=True
+            streaming=True,
+            max_tokens=700
         )
 
     if os.getenv("DEEPSEEK_API_KEY") and expert_type in ["tars_engineer", "tars_sales"]:
@@ -90,13 +91,14 @@ def get_tars_expert(expert_type:str):
             temperature=0.7,
             base_url="[https://api.deepseek.com](https://api.deepseek.com)",
             api_key=os.getenv("DEEPSEEK_API_KEY"),
-            streaming=True
+            streaming=True,
+            max_tokens=700
         )
 
     if expert_type == "tars_roleplay":
-        return ChatOpenAI(model="gpt-4o-mini", temperature=0.5, streaming=True)
+        return ChatOpenAI(model="gpt-4o-mini", temperature=0.5, streaming=True, max_tokens=700)
     
-    return ChatOpenAI(model="gpt-4o", temperature=0.7, streaming=True)
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0.7, streaming=True, max_tokens=700)
 
 def get_embeddings_model():
     return OpenAIEmbeddings(model="text-embedding-3-small")

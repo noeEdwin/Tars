@@ -8,13 +8,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from RAG.utils import get_embedding
 from dataBase.connection import get_db_connection
 
-def retrieve_knowledge(user_query: str, current_lesson: int = 1) -> list[dict]:
+def retrieve_knowledge(user_query: str, current_lesson: int = 1, query_embedding: list[float] = None) -> list[dict]:
     """
     Recupera conocimiento técnico (vocabulario/gramática) de 'base_conocimiento'.
     Usa similitud de coseno con cast explícito a vector.
     """
     try:
-        user_question_embedding = get_embedding(user_query)
+        user_question_embedding = query_embedding or get_embedding(user_query)
         conn = get_db_connection()
         cur = conn.cursor()
         

@@ -3,6 +3,8 @@ from brain.chains import PROTOCOLS, get_tars_expert, actor_prompt_template
 from brain.utils import load_lesson_json, is_phonetically_similar
 from brain.context_builders import _build_rag_context, _append_memory_context
 from brain.personality_rag import append_style_examples
+from brain.history import truncate_messages
+from RAG.utils import get_embedding
 from langchain_core.runnables import RunnableConfig
 
 async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:
@@ -32,7 +34,10 @@ async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:
             "target_word":     target_word,
     })
 
-    lesson_vocab_str = ", ".join(lesson_words)
+    start = max(0, lesson_progress - 2)
+    end = min(len(lesson_words), lesson_progress + 3)
+    nearby_words = lesson_words[start:end]
+    lesson_vocab_str = ", ".join(nearby_words)
     target_info      = vocab_by_zh.get(target_word, {})
     target_pinyin    = target_info.get("py", "")
     target_meaning   = target_info.get("es", "")
@@ -49,7 +54,7 @@ NO pidas la palabra aislada "{target_word}". DEBES crear una frase de 3 palabras
 - Si es VERBO: Sujeto + Verbo + Objeto → Ej: 我喝茶
 
 ### LECCIÓN EN CURSO — ACCIÓN: INTRODUCIR PALABRA
-Lección {current_lesson} | Vocabulario completo: {lesson_vocab_str}
+Lección {current_lesson} | Vocabulario: {lesson_vocab_str}
 Progreso: {lesson_progress}/{len(lesson_words)} palabras completadas
 Palabra objetivo: **{target_word}** ({target_pinyin}) — "{target_meaning}"
 
@@ -62,9 +67,10 @@ INSTRUCCIÓN OBLIGATORIA:
 
     last_user_msg = (state["messages"][-1].content if state.get("messages") else "")
     print(f"[TIMER NODE] 2. Pre-RAG listo: {time.time() - t_n:.2f}s")
-    
+
     import asyncio
-    mem_ctx = await asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, "")
+    query_embedding = get_embedding(last_user_msg) if last_user_msg and len(last_user_msg) > 10 else None
+    mem_ctx = await asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, "", query_embedding)
     protocol_text += mem_ctx
     
     protocol_text = append_style_examples(last_user_msg, "INTRODUCE", protocol_text)
@@ -73,7 +79,8 @@ INSTRUCCIÓN OBLIGATORIA:
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
     print(f"[TIMER NODE] 4. Llamando a OpenAI ainvoke...")
     t_llm = time.time()
-    response = await dynamic_chain.ainvoke(state, config=config)
+    truncated_state = {**state, "messages": truncate_messages(state["messages"])}
+    response = await dynamic_chain.ainvoke(truncated_state, config=config)
     print(f"[TIMER NODE] 5. Fin LLM ainvoke: {time.time() - t_llm:.2f}s")
 
     return {
@@ -133,7 +140,10 @@ async def lesson_check_node(state: TarsState, config: RunnableConfig) -> dict:
         feedback_type = "RETRY"
         state_updates = {"awaiting_answer": True}
 
-    lesson_vocab_str = ", ".join(lesson_words)
+    start = max(0, lesson_progress - 2)
+    end = min(len(lesson_words), lesson_progress + 3)
+    nearby_words = lesson_words[start:end]
+    lesson_vocab_str = ", ".join(nearby_words)
     protocol_text    = PROTOCOLS.get("tars_normal", "Standard operating procedures.")
     protocol_text    = protocol_text.replace("{context}", "No relevant context for this turn.")
 
@@ -164,8 +174,9 @@ INSTRUCCIÓN: ¡El usuario completó todas las palabras de la lección! Felicít
 """
 
     import asyncio
-    rag_task = asyncio.to_thread(_build_rag_context, last_user_msg, current_lesson)
-    mem_task = asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, "")
+    query_embedding = get_embedding(last_user_msg) if last_user_msg and len(last_user_msg) > 10 else None
+    rag_task = asyncio.to_thread(_build_rag_context, last_user_msg, current_lesson, query_embedding)
+    mem_task = asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, "", query_embedding)
     rag_ctx, mem_ctx = await asyncio.gather(rag_task, mem_task)
     
     if rag_ctx:
@@ -174,6 +185,7 @@ INSTRUCCIÓN: ¡El usuario completó todas las palabras de la lección! Felicít
     protocol_text = append_style_examples(last_user_msg, feedback_type, protocol_text)
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
-    response = await dynamic_chain.ainvoke(state, config=config)
+    truncated_state = {**state, "messages": truncate_messages(state["messages"])}
+    response = await dynamic_chain.ainvoke(truncated_state, config=config)
 
     return {"messages": [response], **state_updates}

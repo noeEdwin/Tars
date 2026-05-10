@@ -31,6 +31,7 @@ openai_client = OpenAI()
 
 from agents.brain.nodes import workflow, config as base_config
 from agents.RAG.save_memory import get_db_uri, save_long_term_memory
+from agents.RAG.utils import clear_turn_cache, get_embedding
 from agents.RAG.vacuum import create_vacuum_job, run_vacuum_job, get_vacuum_job_status
 from agents.RAG.ingest_document import ingest_pdf
 from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile, delete_document_by_filename
@@ -64,7 +65,9 @@ app.add_middleware(
         "https://localhost:5173",
         "https://127.0.0.1:5173",
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
+        "http://127.0.0.1:5173",
+        "https://192.168.3.11:5173",
+        "http://192.168.3.11:5173"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -303,6 +306,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
     full_response_content = ""
     sentence_buffer = ""
     app_instance = app_state["app_instance"]
+    clear_turn_cache()
     
     try:
         audio_queue = asyncio.Queue()
@@ -332,7 +336,8 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
                 input_data = {"messages": [HumanMessage(content=user_input)]}
         else:
             if user_input:
-                asyncio.create_task(asyncio.to_thread(save_long_term_memory, conv_id, "user", user_input))
+                user_embedding = get_embedding(user_input)
+                asyncio.create_task(asyncio.to_thread(save_long_term_memory, conv_id, "user", user_input, user_embedding))
                 input_data = {
                     "user_mode": mode,
                     "active_expert": mode,
