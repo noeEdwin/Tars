@@ -1,41 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { ArrowLeft, Mic, MicOff, Send, Settings2 } from 'lucide-react';
+import { ArrowLeft, Send, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Message } from './ConversationContainer';
 import { parseTarsMessage } from '../utils/messageParser';
 import './ConversationScreen.css';
-
-declare global {
-    interface Window {
-        SpeechRecognition: new () => SpeechRecognition;
-        webkitSpeechRecognition: new () => SpeechRecognition;
-    }
-    interface SpeechRecognition extends EventTarget {
-        lang: string;
-        continuous: boolean;
-        interimResults: boolean;
-        start(): void;
-        stop(): void;
-        onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => void) | null;
-        onerror: ((this: SpeechRecognition, ev: Event) => void) | null;
-        onend: ((this: SpeechRecognition, ev: Event) => void) | null;
-    }
-    interface SpeechRecognitionEvent extends Event {
-        results: SpeechRecognitionResultList;
-    }
-    interface SpeechRecognitionResultList {
-        readonly length: number;
-        [index: number]: SpeechRecognitionResult;
-    }
-    interface SpeechRecognitionResult {
-        readonly isFinal: boolean;
-        [index: number]: SpeechRecognitionAlternative;
-    }
-    interface SpeechRecognitionAlternative {
-        readonly transcript: string;
-        readonly confidence: number;
-    }
-}
 
 interface ConversationScreenProps {
     mode?: 'tars_normal' | 'tars_roleplay';
@@ -55,9 +23,7 @@ export default function ConversationScreen({
     onBack
 }: ConversationScreenProps) {
     const { t } = useTranslation();
-    const [isListening, setIsListening] = useState(false);
     const [inputText, setInputText] = useState('');
-    const [error, setError] = useState('');
 
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
     const [showPinyin, setShowPinyin] = useState<Record<string, boolean>>({});
@@ -67,7 +33,6 @@ export default function ConversationScreen({
     const replayIndexRef = useRef(0);
 
     const bottomRef = useRef<HTMLDivElement>(null);
-    const recogRef = useRef<SpeechRecognition | null>(null);
 
     const handleTogglePinyin = (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -121,32 +86,6 @@ export default function ConversationScreen({
         setInputText('');
     }, [sessionReady, isProcessing, onSendMessage]);
 
-    const toggleListening = useCallback(() => {
-        const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SRClass) {
-            setError(t('conversation.speechNotSupported'));
-            return;
-        }
-        if (isListening) {
-            recogRef.current?.stop();
-            setIsListening(false);
-            return;
-        }
-        const recog = new SRClass();
-        recog.lang = 'en-US';
-        recog.continuous = false;
-        recog.interimResults = false;
-        recog.onresult = (e: SpeechRecognitionEvent) => {
-            const transcript = e.results[0][0].transcript;
-            handleSend(transcript);
-        };
-        recog.onerror = () => setIsListening(false);
-        recog.onend = () => setIsListening(false);
-        recogRef.current = recog;
-        recog.start();
-        setIsListening(true);
-    }, [isListening, handleSend, t]);
-
     return (
         <div className="conv-container">
             <header className="conv-header">
@@ -163,9 +102,6 @@ export default function ConversationScreen({
             </header>
 
             <main className="conv-messages">
-                {error && (
-                    <div className="conv-error">{error}</div>
-                )}
                 {messages.map(m => {
                     const isTars = m.role === 'tars';
                     const parsed = isTars ? parseTarsMessage(m.text) : null;
