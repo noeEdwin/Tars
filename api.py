@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import base64
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
@@ -33,6 +33,9 @@ from agents.RAG.save_memory import get_db_uri, save_long_term_memory
 from agents.RAG.vacuum import create_vacuum_job, run_vacuum_job, get_vacuum_job_status
 from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile
 from dataBase.user_management import get_or_create_active_conversation
+from dataBase.auth_queries import get_user_by_username, get_user_by_email, get_user_by_username_simple, create_user, get_user_by_id, update_user_profile
+from auth.security import hash_password, verify_password, create_access_token, get_current_user
+from auth.schemas import RegisterRequest, RegisterResponse, LoginRequest, TokenResponse, UserProfile, ProfileUpdateRequest
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
 
 # ─── App ────────────────────────────────────────────────────────────────────
@@ -488,3 +491,114 @@ async def stt_endpoint(audio: UploadFile = File(...)):
     except Exception as e:
         print(f"Error in backend STT: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ─── Auth ────────────────────────────────────────────────────────────────────
+
+@app.post("/auth/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+async def register(req: RegisterRequest):
+    if await asyncio.to_thread(get_user_by_username_simple, req.username):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El nombre de usuario ya está en uso. Elige otro.",
+        )
+
+    if await asyncio.to_thread(get_user_by_email, req.email):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ya existe una cuenta con ese correo electrónico.",
+        )
+
+    hashed = await asyncio.to_thread(hash_password, req.password)
+
+    try:
+        new_user = await asyncio.to_thread(
+            create_user,
+            req.username,
+            req.first_name,
+            req.last_name,
+            req.email,
+            hashed,
+            req.hsk_level,
+            req.native_language,
+            req.learning_goals,
+            req.interests,
+        )
+    except Exception as exc:
+        print(f"[/auth/register] Error al crear usuario: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno al crear el usuario. Inténtalo de nuevo.",
+        )
+
+    return RegisterResponse(
+        message="Cuenta creada exitosamente. ¡Bienvenido a Tars!",
+        user_id=new_user["id"],
+        username=new_user["username"],
+    )
+
+
+@app.post("/auth/login", response_model=TokenResponse)
+async def login(req: LoginRequest):
+    user = await asyncio.to_thread(get_user_by_username, req.username)
+
+    INVALID_CREDENTIALS = "Usuario o contraseña incorrectos."
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=INVALID_CREDENTIALS,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    password_ok = await asyncio.to_thread(
+        verify_password, req.password, user["hashed_password"]
+    )
+    if not password_ok:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=INVALID_CREDENTIALS,
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token = await asyncio.to_thread(
+        create_access_token,
+        {"sub": user["username"], "user_id": user["id"]},
+    )
+
+    return TokenResponse(
+        access_token=token,
+        token_type="bearer",
+        user_id=user["id"],
+        username=user["username"],
+        first_name=user["first_name"],
+        hsk_level=user["hsk_level"],
+    )
+
+
+@app.get("/api/user/profile", response_model=UserProfile)
+async def get_profile(current_user_id: int = Depends(get_current_user)):
+    user = await asyncio.to_thread(get_user_by_id, current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return UserProfile(**user)
+
+
+@app.put("/api/user/profile", response_model=UserProfile)
+async def update_profile(
+    profile_data: ProfileUpdateRequest,
+    current_user_id: int = Depends(get_current_user)
+):
+    updated_user = await asyncio.to_thread(
+        update_user_profile,
+        current_user_id,
+        profile_data.first_name,
+        profile_data.last_name,
+        profile_data.hsk_level,
+        profile_data.native_language,
+        profile_data.learning_goals,
+        profile_data.interests,
+    )
+    if not updated_user:
+        raise HTTPException(status_code=500, detail="Error al actualizar el perfil")
+    return UserProfile(**updated_user)

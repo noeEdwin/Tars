@@ -1,5 +1,5 @@
+import { useState, useEffect } from 'react';
 import { Flame, Smartphone, Sun, Moon } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import './Header.css';
 
 interface HeaderProps {
@@ -8,7 +8,17 @@ interface HeaderProps {
 }
 
 export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
-    const { t } = useTranslation();
+    const [userName, setUserName] = useState('User');
+
+    useEffect(() => {
+        const firstName = localStorage.getItem('tars_first_name');
+        const username = localStorage.getItem('tars_username');
+        if (firstName && firstName !== 'null') {
+            setUserName(firstName);
+        } else if (username) {
+            setUserName(username);
+        }
+    }, []);
 
     return (
         <header className="app-header">
@@ -17,8 +27,8 @@ export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
                     <Smartphone size={18} color="#ffffff" strokeWidth={2.5} />
                 </div>
                 <div className="profile-info">
-                    <h2 className="profile-name">Tài Sĩ</h2>
-                    <p className="profile-level">{t('header.level')}</p>
+                    <h2 className="profile-name">{userName}</h2>
+                    <p className="profile-level">LEVEL 24 • ADVANCED</p>
                 </div>
             </div>
 
@@ -32,7 +42,7 @@ export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
                 </button>
                 <div className="streak-pill">
                     <Flame size={16} fill="#fbbf24" color="#fbbf24" />
-                    <span className="streak-text">{t('header.days')}</span>
+                    <span className="streak-text">12 DAYS</span>
                 </div>
             </div>
         </header>

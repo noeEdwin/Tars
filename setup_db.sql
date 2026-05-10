@@ -75,3 +75,15 @@ CREATE TABLE IF NOT EXISTS vacuum_jobs (
     stats JSONB DEFAULT '{}',
     error_log TEXT
 );
+
+-- ─── Tabla de Usuarios (Autenticación) ───────────────────────────────────────
+-- La tabla `users` YA EXISTE en Supabase con ID Integer (SERIAL).
+-- Ejecuta los ALTER si necesitas añadir las nuevas columnas de perfil:
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT UNIQUE;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT;
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS learning_goals TEXT DEFAULT 'Travel';
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS interests TEXT DEFAULT '';
+
+CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
+CREATE INDEX IF NOT EXISTS idx_users_email    ON users (email);

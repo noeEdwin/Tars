@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import Header from './components/Header';
 import MicButton from './components/MicButton';
 import ModeCards from './components/ModeCards';
@@ -27,8 +26,8 @@ export type ViewState =
     | 'sign-up'
     | 'forgot-password'
     | 'conversation'
-    | 'loading'
-    | 'loading-conversation';
+    | 'loading'               // initial app load — pre-warming normal session
+    | 'loading-conversation'; // transition to conversation — pre-warming for chosen mode
 
 export interface SessionConfig {
     mode: 'tars_normal' | 'tars_roleplay';
@@ -38,11 +37,17 @@ export interface SessionConfig {
 }
 
 function App() {
-    const { t } = useTranslation();
     const [isLightMode, setIsLightMode] = useState(false);
-    const [currentView, setCurrentView] = useState<ViewState>('loading');
+    
+    // Si no hay token guardado, iniciamos directamente en la vista de login.
+    // Si lo hay, iniciamos en 'loading' para hacer el pre-warm y pasar al 'home'.
+    const [currentView, setCurrentView] = useState<ViewState>(() => {
+        return localStorage.getItem('tars_token') ? 'loading' : 'sign-in';
+    });
+    
     const [sessionConfig, setSessionConfig] = useState<SessionConfig>({ mode: 'tars_normal' });
 
+    // ── Pre-warm normal mode ────────────────────
     const {
         session: preWarmedSession,
         reset: resetPreWarm,
@@ -50,7 +55,7 @@ function App() {
         mode: 'tars_normal',
         enabled: currentView === 'loading' || currentView === 'home' || currentView === 'conversation',
     });
-
+    // ── Pre-warm roleplay mode when config is chosen in RoleplayScreen ────
     const [roleplayConfig, setRoleplayConfig] = useState<SessionConfig | null>(null);
     const {
         session: preWarmedRoleplaySession,
@@ -63,23 +68,34 @@ function App() {
         tars_role: roleplayConfig?.tars_role,
     });
 
+    /**
+     * Called by ModeCards for Normal Mode.
+     * Everything is guaranteed ready (session + preloadMessage) by the time
+     * home is shown — go directly to conversation, zero loading screen.
+     */
     const startConversation = (config: SessionConfig) => {
         setSessionConfig(config);
-        setCurrentView('conversation');
+        setCurrentView('conversation'); // direct — no second loading screen
     };
 
+    // Transition: loading → home
+    // Waits for BOTH the session AND the preloadMessage so the greeting
+    // is guaranteed available the instant the user clicks Normal Mode.
+    // Falls back after 5 s so a slow network never blocks indefinitely.
     useEffect(() => {
         if (currentView !== 'loading') return;
         if (preWarmedSession?.preloadMessage) {
             setCurrentView('home');
             return;
         }
+        // Fallback: show home even if preload message didn't arrive
         const fallback = setTimeout(() => {
             if (preWarmedSession) setCurrentView('home');
         }, 5000);
         return () => clearTimeout(fallback);
     }, [currentView, preWarmedSession]);
 
+    // Transition: loading-conversation → conversation (roleplay only)
     useEffect(() => {
         if (currentView !== 'loading-conversation') return;
         if (preWarmedRoleplaySession) {
@@ -87,6 +103,10 @@ function App() {
         }
     }, [currentView, preWarmedRoleplaySession]);
 
+    /**
+     * Called by RoleplayScreen → lets us pre-warm the roleplay session
+     * right after the user picks a scenario (before they even press Start).
+     */
     const prepareRoleplaySession = (config: SessionConfig) => {
         setRoleplayConfig(config);
         setSessionConfig(config);
@@ -118,17 +138,19 @@ function App() {
 
     return (
         <div className="mobile-container">
+            {/* Boot loading screen — only shown once at startup */}
             {currentView === 'loading' && (
                 <LoadingScreen
                     personalised={true}
-                    fallbackMessage={t('app.wakingUp')}
+                    fallbackMessage="Waking up TARS..."
                 />
             )}
 
+            {/* Roleplay preparation loading screen */}
             {currentView === 'loading-conversation' && (
                 <LoadingScreen
                     personalised={false}
-                    fallbackMessage={t('app.preparingRoleplay')}
+                    fallbackMessage="Preparing roleplay..."
                 />
             )}
 
