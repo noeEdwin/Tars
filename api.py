@@ -5,6 +5,7 @@ Run with: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
 import os
 import sys
 import uuid
+import shutil
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -18,7 +19,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import base64
-from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, status, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks, status, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
@@ -31,7 +32,8 @@ openai_client = OpenAI()
 from agents.brain.nodes import workflow, config as base_config
 from agents.RAG.save_memory import get_db_uri, save_long_term_memory
 from agents.RAG.vacuum import create_vacuum_job, run_vacuum_job, get_vacuum_job_status
-from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile
+from agents.RAG.ingest_document import ingest_pdf
+from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile, delete_document_by_filename
 from dataBase.user_management import get_or_create_active_conversation
 from dataBase.auth_queries import get_user_by_username, get_user_by_email, get_user_by_username_simple, create_user, get_user_by_id, update_user_profile
 from auth.security import hash_password, verify_password, create_access_token, get_current_user
@@ -116,6 +118,39 @@ def _extract_tars_message(result: dict, start_len: int = 0) -> str:
 def get_roleplay_files(user_id: int = 1):
     filenames = get_roleplay_contexts(user_id)
     return {"files": filenames}
+
+@app.delete("/roleplay/files/{filename:path}")
+def delete_roleplay_file(filename: str, user_id: int = 1):
+    """Elimina un documento del modo roleplay."""
+    success = delete_document_by_filename(user_id, filename)
+    if success:
+        return {"status": "success", "message": f"Documento {filename} eliminado"}
+    else:
+        raise HTTPException(status_code=500, detail="Error al intentar eliminar el archivo")
+
+@app.post("/roleplay/upload")
+async def upload_roleplay_file(user_id: int = Form(1), file: UploadFile = File(...)):
+    """Recibe un archivo PDF, lo guarda temporalmente y procesa los embeddings."""
+    temp_file_path = None
+    try:
+        temp_file_path = f"temp_{file.filename}"
+        with open(temp_file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        print(f"Archivo {file.filename} guardado temporalmente. Iniciando procesamiento RAG...")
+        
+        await asyncio.to_thread(ingest_pdf, temp_file_path, user_id)
+        
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+            
+        return {"status": "success", "filename": file.filename, "message": "Documento procesado correctamente"}
+        
+    except Exception as e:
+        print(f"Error procesando el archivo subido: {e}")
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        raise HTTPException(status_code=500, detail="Fallo en la ingestión del documento")
 
 @app.post("/start_session", response_model=StartSessionResponse)
 async def start_session(req: StartSessionRequest):
@@ -236,12 +271,13 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int):
                 user_input = data.get("text")
                 thread_id = data.get("thread_id")
                 conv_id = data.get("conversation_id")
+                mode = data.get("mode", "tars_roleplay")
 
                 if user_id in active_tasks and not active_tasks[user_id].done():
                     active_tasks[user_id].cancel()
 
                 task = asyncio.create_task(
-                    handle_tars_response(websocket, user_id, user_input, thread_id, conv_id)
+                    handle_tars_response(websocket, user_id, user_input, thread_id, conv_id, mode)
                 )
                 active_tasks[user_id] = task
     except WebSocketDisconnect:
@@ -249,97 +285,105 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int):
             active_tasks[user_id].cancel()    
 
 async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_id, mode="tars_normal"):
-    """
-    Procesa la respuesta de Tars, genera audio y envía por el socket.
-    Esta función es cancelable si el usuario interrumpe.
-    """
     import time
     import re
     t_start = time.time()
-    print(f"[TIMER WS] 1. Llegó mensaje / inicio handler: 0.00s")
     cfg = {**base_config, "configurable": {"thread_id": thread_id}}
     full_response_content = ""
     sentence_buffer = ""
     app_instance = app_state["app_instance"]
+    
     try:
         audio_queue = asyncio.Queue()
         
         async def audio_worker():
             while True:
                 text_chunk = await audio_queue.get()
-                if text_chunk is None:
-                    break
+                if text_chunk is None: break
                 try:
-                    # Generamos el audio de la frase secuencialmente pero en paralelo a la recepción de texto
                     audio_bytes = await get_mixed_audio_bytes(text_chunk)
                     if audio_bytes:
                         audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
-                        await websocket.send_json({
-                            "type": "audio_chunk",
-                            "audio_b64": audio_b64
-                        })
+                        await websocket.send_json({"type": "audio_chunk", "audio_b64": audio_b64})
                 except Exception as e:
-                    print(f"Error procesando chunk de audio: {e}")
+                    print(f"Error en TTS: {e}")
                 finally:
                     audio_queue.task_done()
                     
         worker_task = asyncio.create_task(audio_worker())
 
-        if user_input:
-            # 1. Fire-and-forget: we do NOT await this. It saves in the background!
-            asyncio.create_task(asyncio.to_thread(save_long_term_memory, conv_id, "user", user_input))
-            
-            input_data = {
-                "user_mode": mode,
-                "active_expert": mode,
-                "user_id": user_id,
-                "hsk_level": get_user_hsk_level(user_id),
-                "messages": [HumanMessage(content=user_input)],
-            }
+        if mode == "tars_roleplay":
+            if not user_input or str(user_input).strip() in ["", "null", "None"]:
+                texto_secreto = "[COMANDO_INTERNO]: iniciar_roleplay"
+                input_data = {"messages": [HumanMessage(content=texto_secreto)]}
+                print("DEBUG: Enviando Kickstart a LangGraph para Roleplay")
+            else:
+                input_data = {"messages": [HumanMessage(content=user_input)]}
         else:
-            input_data = None
-            
-        print(f"[TIMER WS] 3. Listo para astream_events: {time.time() - t_start:.2f}s")
+            if user_input:
+                asyncio.create_task(asyncio.to_thread(save_long_term_memory, conv_id, "user", user_input))
+                input_data = {
+                    "user_mode": mode,
+                    "active_expert": mode,
+                    "user_id": user_id,
+                    "hsk_level": get_user_hsk_level(user_id),
+                    "messages": [HumanMessage(content=user_input)],
+                }
+            else:
+                input_data = None
+
+        is_json_filtered = False
+        first_tokens_buffer = ""
         
         async for event in app_instance.astream_events(input_data, cfg, version="v2"):
             if event["event"] == "on_chat_model_stream":
                 token = event["data"]["chunk"].content
                 if token:
-                    print(f"DEBUG: Token recibido -> {token}")
-                    full_response_content += token
-                    sentence_buffer += token
-                    # 1. Enviamos el token al texto (UI)
-                    await websocket.send_json({"type": "token", "text": token})
-                    # 2. ¿Es el fin de una frase? (Detectar . ! ? 。 ！ ？)
-                    if re.search(r'[。！？.!?]', token):
-                        # Detectamos fin de frase. Añadimos a la cola de TTS
-                        text_to_process = sentence_buffer.strip()
-                        sentence_buffer = "" # Limpiamos el buffer para la siguiente frase
-                        if text_to_process:
-                            audio_queue.put_nowait(text_to_process)
-        print("DEBUG: Fin de streaming de texto")
+                    if mode == "tars_roleplay" and not is_json_filtered:
+                        first_tokens_buffer += token
+                        if not first_tokens_buffer.lstrip().startswith("{"):
+                            is_json_filtered = True
+                            await websocket.send_json({"type": "token", "text": first_tokens_buffer})
+                            full_response_content += first_tokens_buffer
+                        elif "}" in first_tokens_buffer:
+                            is_json_filtered = True
+                            clean_text = first_tokens_buffer.split("}", 1)[1].lstrip(" \n-_")
+                            if clean_text:
+                                await websocket.send_json({"type": "token", "text": clean_text})
+                                full_response_content += clean_text
+                    else:
+                        full_response_content += token
+                        sentence_buffer += token
+                        await websocket.send_json({"type": "token", "text": token})
+                        
+                        if re.search(r'[。！？.!?]', token):
+                            text_to_process = sentence_buffer.strip()
+                            sentence_buffer = ""
+                            if text_to_process:
+                                audio_queue.put_nowait(text_to_process)
 
-        print(f"[TIMER WS] 5. Todos los tokens procesados (fin LangGraph): {time.time() - t_start:.2f}s")
-        # 3. Procesar cualquier residuo que haya quedado en el buffer al final
+            if mode == "tars_roleplay":
+                if event["event"] == "on_chat_model_end" and len(full_response_content.strip()) > 0:
+                    print("DEBUG: El LLM terminó de hablar. Liberando interfaz.")
+                    break
+
         if sentence_buffer.strip():
             audio_queue.put_nowait(sentence_buffer.strip())
-
-        # 4. Cerramos la cola y esperamos a que envíe todo antes de cerrar
         audio_queue.put_nowait(None)
-        await worker_task
 
-        # 5. Mensaje de cierre 
+        if mode == "tars_roleplay":
+            print("DEBUG: Liberando interfaz de Roleplay.")
+        else:
+            await worker_task
+
         await websocket.send_json({"type": "tars_answer_end", "text": full_response_content})
-        
-        # Guardar en memoria (sin bloquear)
         asyncio.create_task(asyncio.to_thread(save_long_term_memory, conv_id, "assistant", full_response_content))
         
     except asyncio.CancelledError:
-        # Aquí es donde ocurre la magia: si task.cancel() se llama, el código salta aquí.
         await websocket.send_json({"type": "status", "message": "Interrumpido por el usuario."})
     except Exception as e:
         print(f"Error en Tars Response: {e}")
-        await websocket.send_json({"type": "error", "message": "Ocurrió un error interno."})
+        await websocket.send_json({"type": "error", "message": str(e)})
 
 @app.get("/health")
 def health():

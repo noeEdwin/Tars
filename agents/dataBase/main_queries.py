@@ -81,3 +81,17 @@ def get_scene_from_filename(user_id: str, filename: str):
     except Exception as e:
         print(f"Error fetching scene content: {e}")
         return None, filename
+
+def delete_document_by_filename(user_id: str, filename: str) -> bool:
+    """Elimina un documento de la base de datos por su nombre y user_id."""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM document_store WHERE user_id = %s AND filename = %s", (int(user_id), filename))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error al eliminar el documento {filename}: {e}")
+        return False

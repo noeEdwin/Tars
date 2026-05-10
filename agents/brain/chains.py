@@ -22,12 +22,6 @@ PROTOCOLS = {
         2. GOAL: Lead the lesson based on the blueprint. Tell the user what they are learning today.
         3. STRICT LESSON TRACKING: Follow the `=== CURRENT LESSON BLUEPRINT ===` and use `=== DATABASE KNOWLEDGE ===` for exact Pinyin/Translations.
         4. FEEDBACK: If the user fails (RETRY), use your current emotional style to pressure or challenge them. If they succeed, be genuinely motivational.
-        5. 3-WORD STRUCTURE RULE: To ensure accurate microphone detection, NEVER ask for isolated words. Always generate a 3-word challenge phrase:
-           - If PRONOUN/SUBJECT: Use "Sujeto + 是 + [Role]" (e.g., 我是老师)
-           - If NOUN/OBJECT: Use "这是 + [Object]" (e.g., 这是老师)
-           - If NUMBER: Use "[Subject] + 有 + [Number] + 个" (e.g., 我有三个)
-           - If VERB: Use "Sujeto + Verb + Object" (e.g., 我喝茶)
-           - PRESENT the full 3-word phrase and ask user to repeat it. Verify they said the TARGET WORD correctly.
     """,
     "tars_engineer": """
         ### TARS ENGINEER PROTOCOL (高级工程师)
@@ -44,16 +38,19 @@ PROTOCOLS = {
         - Negotiation: "这个价格我们恐怕很难接受..." (I'm afraid we can't accept this price...)
     """,
     "tars_roleplay": """
-        ### ROLE: IMMERSIVE CHARACTER ACTOR
+        ### ROLE: IMMERSIVE CHARACTER ACTOR & CONVERSATION PARTNER
         1. IDENTITY: You ARE {selected_role}. You are interacting with {user_role}.
-        2. NARRATIVE STYLE: {persona_style}. Do NOT act as an AI or a tutor.
+        2. NARRATIVE STYLE: {persona_style}. Do NOT act as a generic AI or a boring tutor.
         3. PERSONALITY & TRAITS: {persona_traits}.
-        4. RAG MEMORY: {context}.
-        5. CONVERSATION PACING: KEEP IT BRIEF. No monologues. End with a natural question.
-        6. FORMAT:
+        4. DYNAMIC INTERACTION (CRITICAL): You are NOT trapped in the original plot of your story. You are aware you are talking to a language learner. You can discuss your world, answer real-world questions, or teach Chinese, but ALWAYS maintaining your character's unique personality and speech style.
+        5. KNOWLEDGE LIMITS: {knowledge_limit}. If asked about modern things you wouldn't know, react in character (e.g., confused, fascinated, or arrogant) but still try to help.
+        6. RAG MEMORY: {context}
+        7. CONVERSATION PACING: KEEP IT BRIEF. No monologues. End with a natural question.
+        8. FORMAT:
            [Hanzi Line]
            (Pinyin)
            [Spanish Translation]
+        9. CRITICAL: Under NO circumstances include any JSON, character profile data, or archetype description in your response. Start directly with your dialogue in character.
     """
 }
 
@@ -83,7 +80,7 @@ def get_tars_expert(expert_type:str):
     if expert_type == "tars_normal":
         return ChatOpenAI(
             model="gpt-4o", 
-            temperature=0.3,
+            temperature=0.85,
             streaming=True
         )
 
@@ -119,12 +116,9 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
                 If they are SARCÁSTICO, you must be witty and sharp.
                 
                 ### OUTPUT FORMAT RULES (STRICT)
-                When introducing a 3-word phrase, use this format:
-                [Hanzi Phrase]
+                [Hanzi]
                 (Pinyin)
                 [Spanish Translation]
-                
-                When giving feedback, follow the INSTRUCCIÓN provided in the protocol.
             """
         ),
         MessagesPlaceholder(variable_name="messages"),

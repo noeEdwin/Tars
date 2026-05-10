@@ -32,6 +32,7 @@ def ingest_pdf(file_path: str, user_id: int = None):
         text = ""
         for page in reader.pages:
             text += page.extract_text() + "\n"
+        text = text.replace('\x00', '')
             
         if not text.strip():
             print("⚠️ Warning: No text extracted from PDF. It might be scanned or empty.")
@@ -57,7 +58,8 @@ def ingest_pdf(file_path: str, user_id: int = None):
         conn = get_db_connection()
         cur = conn.cursor()
         
-        filename = os.path.basename(file_path)
+        raw_filename = os.path.basename(file_path)
+        filename = raw_filename[5:] if raw_filename.startswith("temp_") else raw_filename
         
         # Determine current max ID to maybe help with debugging or just rely on SERIAL
         
