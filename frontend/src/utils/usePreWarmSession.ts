@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE, WS_BASE } from '../apiConfig';
 import type { Message } from '../components/ConversationContainer';
+import { clearAuth } from './auth';
 
 function getUserId(): number {
     const stored = localStorage.getItem('tars_user_id');
@@ -75,6 +76,11 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                     signal: controller.signal,
                 });
                 if (!sessionRes.ok) {
+                    if (sessionRes.status === 401) {
+                        clearAuth();
+                        window.location.href = '/';
+                        return;
+                    }
                     const body = await sessionRes.text().catch(() => '');
                     throw new Error(
                         `[PreWarm] start_session failed (${sessionRes.status} ${sessionRes.statusText}) url=${startUrl} body=${body.slice(0, 500)}`,
@@ -140,8 +146,15 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                         signal: controller.signal,
                         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
                     })
-                        .then(r => r.json())
-                        .then(({ text, audio_b64 }: { text?: string; audio_b64?: string }) => {
+                        .then(r => {
+                            if (r.status === 401) {
+                                clearAuth();
+                                window.location.href = '/';
+                                return null;
+                            }
+                            return r.json();
+                        })
+                        .then(({ text, audio_b64 }: { text?: string; audio_b64?: string } | null) => {
                             if (patchSent || !text) return;
                             patchSent = true;
                             const pm: PreloadMessage = { text, audio_b64: audio_b64 ?? null };

@@ -50,8 +50,12 @@ export default function SignInScreen({ setCurrentView, isLightMode }: SignInScre
             localStorage.setItem('tars_first_name', data.first_name);
 
             setCurrentView('loading');
-        } catch {
-            setError('No se pudo conectar con el servidor. Verifica tu conexión.');
+        } catch (err: any) {
+            if (err instanceof TypeError && err.message?.includes('fetch')) {
+                setError('No se pudo conectar con el servidor. Verifica que el backend esté corriendo con SSL.');
+            } else {
+                setError('Error inesperado. Inténtalo de nuevo.');
+            }
         } finally {
             setIsLoading(false);
         }

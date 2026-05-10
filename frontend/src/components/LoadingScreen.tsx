@@ -3,6 +3,7 @@ import Lottie from 'lottie-react';
 import { useTranslation } from 'react-i18next';
 import sleepAnimation from '../assets/animations/sleep.json';
 import { API_BASE } from '../apiConfig';
+import { clearAuth } from '../utils/auth';
 import './LoadingScreen.css';
 
 interface LoadingScreenProps {
@@ -28,9 +29,16 @@ export default function LoadingScreen({
         fetch(`${API_BASE}/greeting`, {
             headers: { 'Authorization': `Bearer ${token}` },
         })
-            .then(r => r.json())
+            .then(r => {
+                if (r.status === 401) {
+                    clearAuth();
+                    window.location.href = '/';
+                    return null;
+                }
+                return r.json();
+            })
             .then(data => {
-                if (!cancelled && data.greeting) {
+                if (!cancelled && data?.greeting) {
                     setGreeting(data.greeting);
                     setToastVisible(true);
                     setTimeout(() => {

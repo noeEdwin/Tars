@@ -13,6 +13,7 @@ import ForgotPasswordScreen from './components/ForgotPasswordScreen';
 import ConversationContainer from './components/ConversationContainer';
 import LoadingScreen from './components/LoadingScreen';
 import { usePreWarmSession } from './utils/usePreWarmSession';
+import { isTokenValid } from './utils/auth';
 import './index.css';
 import './App.css';
 
@@ -42,7 +43,7 @@ function App() {
     // Si no hay token guardado, iniciamos directamente en la vista de login.
     // Si lo hay, iniciamos en 'loading' para hacer el pre-warm y pasar al 'home'.
     const [currentView, setCurrentView] = useState<ViewState>(() => {
-        return localStorage.getItem('tars_token') ? 'loading' : 'sign-in';
+        return isTokenValid() ? 'loading' : 'sign-in';
     });
     
     const [sessionConfig, setSessionConfig] = useState<SessionConfig>({ mode: 'tars_normal' });
