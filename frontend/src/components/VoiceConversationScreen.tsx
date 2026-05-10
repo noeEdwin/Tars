@@ -51,9 +51,9 @@ export default function VoiceConversationScreen({
     const teachingMsg = tarsMessages
         .filter(m => m.isTeaching && m.audio_b64 && m.audio_b64.length > 0)
         .pop();
-    console.log('[DEBUG] tarsMessages:', tarsMessages.map(m => ({ 
-        id: m.id, 
-        isTeaching: m.isTeaching, 
+    console.log('[DEBUG] tarsMessages:', tarsMessages.map(m => ({
+        id: m.id,
+        isTeaching: m.isTeaching,
         hasAudio: !!m.audio_b64,
         audioCount: m.audio_b64?.length || 0
     })));
@@ -63,8 +63,19 @@ export default function VoiceConversationScreen({
     const replayIndexRef = useRef(0);
 
     const replayTeachingAudio = () => {
-        if (!teachingMsg?.audio_b64 || isReplaying) return;
-        replayAudioRef.current = teachingMsg.audio_b64;
+        if (!teachingMsg || isReplaying) return;
+
+        const isolatedAudio = teachingMsg.target_phrase_audio_b64;
+
+        if (isolatedAudio) {
+            replayAudioRef.current = [isolatedAudio];
+        } else if (teachingMsg.audio_b64) {
+            console.warn("Isolated target phrase audio not found. Falling back to full message audio.");
+            replayAudioRef.current = teachingMsg.audio_b64;
+        } else {
+            return;
+        }
+
         replayIndexRef.current = 0;
         setIsReplaying(true);
         playNextReplayChunk();

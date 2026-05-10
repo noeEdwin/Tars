@@ -17,6 +17,7 @@ export interface Message {
     text: string;
     audio_b64?: string[];
     isTeaching?: boolean;
+    target_phrase_audio_b64?: string;
 }
 
 interface ConversationContainerProps {
@@ -81,7 +82,7 @@ export default function ConversationContainer({
                         const isTeaching = updatedText.includes('**');
                         return [...prev.slice(0, -1), { ...lastMsg, text: updatedText, isTeaching: isTeaching || lastMsg.isTeaching }];
                     }
-                    
+
                     const newMsg: Message = { id: Date.now().toString() + 't', role: 'tars', text: data.text, isTeaching: data.text.includes('**') };
                     if (newMsg.isTeaching) {
                         currentTeachingMsgId.current = newMsg.id;
@@ -94,8 +95,8 @@ export default function ConversationContainer({
                 if (data.audio_b64) {
                     setAudioQueue(prev => [...prev, data.audio_b64]);
                     if (currentTeachingMsgId.current) {
-                        setMessages(prev => prev.map(msg => 
-                            msg.id === currentTeachingMsgId.current 
+                        setMessages(prev => prev.map(msg =>
+                            msg.id === currentTeachingMsgId.current
                                 ? { ...msg, audio_b64: [...(msg.audio_b64 || []), data.audio_b64] }
                                 : msg
                         ));
@@ -177,17 +178,33 @@ export default function ConversationContainer({
                 if (data.audio_b64) {
                     setAudioQueue(prev => [...prev, data.audio_b64]);
                     if (currentTeachingMsgId.current) {
-                        setMessages(prev => prev.map(msg => 
-                            msg.id === currentTeachingMsgId.current 
+                        setMessages(prev => prev.map(msg =>
+                            msg.id === currentTeachingMsgId.current
                                 ? { ...msg, audio_b64: [...(msg.audio_b64 || []), data.audio_b64] }
                                 : msg
                         ));
                     }
                 }
+                const isolatedAudio = data.phrase_audio_b64 || data.target_phrase_audio_b64 || data.target_phrase_audio || data.target_audio_b64;
+                if (isolatedAudio && currentTeachingMsgId.current) {
+                    setMessages(prev => prev.map(msg =>
+                        msg.id === currentTeachingMsgId.current
+                            ? { ...msg, target_phrase_audio_b64: isolatedAudio }
+                            : msg
+                    ));
+                }
             }
 
             if (data.type === 'tars_answer_end') {
                 setIsProcessing(false);
+                const isolatedAudio = data.phrase_audio_b64 || data.target_phrase_audio_b64 || data.target_phrase_audio || data.target_audio_b64;
+                if (isolatedAudio && currentTeachingMsgId.current) {
+                    setMessages(prev => prev.map(msg =>
+                        msg.id === currentTeachingMsgId.current
+                            ? { ...msg, target_phrase_audio_b64: isolatedAudio }
+                            : msg
+                    ));
+                }
                 setTimeout(() => { currentTeachingMsgId.current = null; }, 5000);
             }
             if (data.type === 'error') {
@@ -259,8 +276,8 @@ export default function ConversationContainer({
                 if ((data.type === 'tars_answer' || data.type === 'audio_chunk') && data.audio_b64) {
                     setAudioQueue(prev => [...prev, data.audio_b64]);
                     if (currentTeachingMsgId.current) {
-                        setMessages(prev => prev.map(msg => 
-                            msg.id === currentTeachingMsgId.current 
+                        setMessages(prev => prev.map(msg =>
+                            msg.id === currentTeachingMsgId.current
                                 ? { ...msg, audio_b64: [...(msg.audio_b64 || []), data.audio_b64] }
                                 : msg
                         ));
