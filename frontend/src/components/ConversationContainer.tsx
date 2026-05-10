@@ -6,7 +6,10 @@ import type { ViewState, SessionConfig } from '../App';
 import type { PreWarmedSession } from '../utils/usePreWarmSession';
 import { API_BASE, WS_BASE } from '../apiConfig';
 
-const USER_ID = 1;
+function getUserId(): number {
+    const stored = localStorage.getItem('tars_user_id');
+    return stored ? parseInt(stored, 10) : 1;
+}
 
 export interface Message {
     id: string;
@@ -121,7 +124,7 @@ export default function ConversationContainer({
             const res = await fetch(`${API_BASE}/start_session`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: USER_ID, mode, filename, user_role, tars_role }),
+                body: JSON.stringify({ user_id: getUserId(), mode, filename, user_role, tars_role }),
             });
             const data = await res.json();
             setThreadId(data.thread_id);
@@ -135,7 +138,7 @@ export default function ConversationContainer({
         if (preWarmedSession) return;
         if (!sessionReady || !threadId) return;
 
-        const socket = new WebSocket(`${WS_BASE}/ws/${USER_ID}`);
+        const socket = new WebSocket(`${WS_BASE}/ws/${getUserId()}`);
         socketRef.current = socket;
 
         socket.onopen = () => {
@@ -230,7 +233,7 @@ export default function ConversationContainer({
             doSend(currentSocket);
         } else {
             console.warn(t('conversationContainer.socketReconnecting'));
-            const newSocket = new WebSocket(`${WS_BASE}/ws/${USER_ID}`);
+            const newSocket = new WebSocket(`${WS_BASE}/ws/${getUserId()}`);
             socketRef.current = newSocket;
 
             newSocket.onmessage = (event) => {

@@ -7,7 +7,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 
 # ─── Configuración JWT ────────────────────────────────────────────────────────
-_JWT_SECRET: str = os.getenv("JWT_SECRET", "CAMBIA_ESTO_EN_PRODUCCION")
+#usamos JWT un valor por defecto para desarrollo, pero SE CAMBIA EN PRODUCCIÓN
+_JWT_SECRET: str = os.getenv("JWT_SECRET", "CAMBIAR_PRODUCCION")
 _JWT_ALGORITHM: str = "HS256"
 _JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
 
@@ -15,7 +16,7 @@ _JWT_EXPIRE_MINUTES: int = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
 
 def hash_password(plain_password: str) -> str:
     """
-    Hashea la contraseña usando bcrypt nativo. 
+    Hashea la contraseña usando bcrypt nativo.
     Esto evita el error de '72 bytes' de passlib.
     """
     # Convertir a bytes, generar salt (12 rondas para OWASP) y hashear
@@ -30,7 +31,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     try:
         return bcrypt.checkpw(
-            plain_password.encode('utf-8'), 
+            plain_password.encode('utf-8'),
             hashed_password.encode('utf-8')
         )
     except Exception:

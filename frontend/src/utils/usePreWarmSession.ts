@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE, WS_BASE } from '../apiConfig';
 import type { Message } from '../components/ConversationContainer';
 
-const USER_ID = 1;
+function getUserId(): number {
+    const stored = localStorage.getItem('tars_user_id');
+    return stored ? parseInt(stored, 10) : 1;
+}
 
 export interface PreloadMessage {
     text: string;
@@ -64,7 +67,7 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 const sessionRes = await fetch(startUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: USER_ID, mode, filename, user_role, tars_role }),
+                    body: JSON.stringify({ user_id: getUserId(), mode, filename, user_role, tars_role }),
                     signal: controller.signal,
                 });
                 if (!sessionRes.ok) {
@@ -79,7 +82,7 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 });
                 if (cancelled) return;
 
-                const socket = new WebSocket(`${WS_BASE}/ws/${USER_ID}`);
+                const socket = new WebSocket(`${WS_BASE}/ws/${getUserId()}`);
                 socketRef.current = socket;
 
                 socket.onopen = () => {
@@ -127,7 +130,7 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 // always lands even if `enabled` flips false mid-flight.
                 if (mode === 'tars_normal') {
                     let patchSent = false;
-                    const preloadUrl = `${API_BASE}/preload_message?user_id=${USER_ID}`;
+                    const preloadUrl = `${API_BASE}/preload_message?user_id=${getUserId()}`;
                     fetch(preloadUrl, { signal: controller.signal })
                         .then(r => r.json())
                         .then(({ text, audio_b64 }: { text?: string; audio_b64?: string }) => {
