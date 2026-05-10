@@ -46,7 +46,7 @@ interface ConversationScreenProps {
     onBack: () => void;
 }
 
-export default function ConversationScreen({ 
+export default function ConversationScreen({
     mode = 'tars_normal',
     messages,
     sessionReady,
@@ -173,18 +173,18 @@ export default function ConversationScreen({
 
                     return (
                         <div key={m.id} className={`conv-bubble-row ${isTars ? 'row-tars' : 'row-user'}`}>
-                            <div 
+                            <div
                                 className={`conv-bubble ${isTars ? 'bubble-tars' : 'bubble-user'} ${isActive ? 'bubble-active' : ''}`}
                                 onClick={() => handleBubbleClick(m.id, m.role)}
                             >
                                 {isTars && parsed ? (
                                     <>
                                         <div className="conv-chinese">{parsed.chinese}</div>
-                                        
+
                                         {isActive && (parsed.pinyin || parsed.translation) && (
                                             <div className="conv-toggles animated-fade-in">
                                                 {parsed.pinyin && (
-                                                    <button 
+                                                    <button
                                                         className={`toggle-btn ${showPinyin[m.id] ? 'btn-on' : ''}`}
                                                         onClick={(e) => handleTogglePinyin(m.id, e)}
                                                     >
@@ -192,7 +192,7 @@ export default function ConversationScreen({
                                                     </button>
                                                 )}
                                                 {parsed.translation && (
-                                                    <button 
+                                                    <button
                                                         className={`toggle-btn ${showTranslation[m.id] ? 'btn-on' : ''}`}
                                                         onClick={(e) => handleToggleTranslation(m.id, e)}
                                                     >
@@ -200,11 +200,16 @@ export default function ConversationScreen({
                                                     </button>
                                                 )}
                                                 {m.isTeaching && m.audio_b64 && (
-                                                    <button 
+                                                    <button
                                                         className={`toggle-btn ${isReplaying[m.id] ? 'btn-on' : ''}`}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            replayTeachingAudio(m.audio_b64!, m.id);
+                                                            const isolatedAudio = m.target_phrase_audio_b64;
+                                                            if (isolatedAudio) {
+                                                                replayTeachingAudio([isolatedAudio], m.id);
+                                                            } else {
+                                                                replayTeachingAudio(m.audio_b64!, m.id);
+                                                            }
                                                         }}
                                                         disabled={isReplaying[m.id]}
                                                     >
@@ -213,7 +218,7 @@ export default function ConversationScreen({
                                                 )}
                                             </div>
                                         )}
-                                        
+
                                         {showPinyin[m.id] && parsed.pinyin && (
                                             <div className="conv-pinyin animated-slide-down">{parsed.pinyin}</div>
                                         )}
@@ -248,13 +253,7 @@ export default function ConversationScreen({
             </main>
 
             <div className="conv-input-bar">
-                <button
-                    className={`conv-mic-btn ${isListening ? 'mic-active' : ''}`}
-                    onClick={toggleListening}
-                    disabled={!sessionReady || isProcessing}
-                >
-                    {isListening ? <MicOff size={22} /> : <Mic size={22} />}
-                </button>
+
                 <input
                     className="conv-text-input"
                     type="text"
