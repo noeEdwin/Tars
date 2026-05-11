@@ -29,7 +29,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 from openai import OpenAI
 openai_client = OpenAI()
 
-from agents.brain.nodes import workflow, config as base_config
+from agents.brain.nodes import workflow, config as base_config, ACTOR, LESSON_PROMPT, LESSON_CHECK
 from agents.RAG.save_memory import get_db_uri, save_long_term_memory
 from agents.RAG.utils import clear_turn_cache, get_embedding
 from agents.RAG.vacuum import create_vacuum_job, run_vacuum_job, get_vacuum_job_status
@@ -210,7 +210,8 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
                     )
                 )],
             }
-        await app_instance.aupdate_state(cfg, init_state)
+        as_node = ACTOR if req.mode == "tars_roleplay" else LESSON_PROMPT
+        await app_instance.aupdate_state(cfg, init_state, as_node=as_node)
         tars_message = ""
     
     else:
@@ -224,7 +225,7 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
                     ToolMessage(content="System: session resumed.", tool_call_id=tc["id"])
                     for tc in last.tool_calls
                 ]
-                await app_instance.aupdate_state(cfg, {"messages": tool_recovery})
+                await app_instance.aupdate_state(cfg, {"messages": tool_recovery}, as_node=ACTOR)
 
         if req.mode == "tars_normal":
             saved_progress = snapshot.values.get("lesson_progress", 0)
@@ -249,7 +250,7 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
                 "target_word": saved_target,
                 "awaiting_answer": saved_awaiting,
                 "messages": [HumanMessage(content=resume_msg)],
-            })
+            }, as_node=LESSON_PROMPT)
             tars_message = ""
         else:
             tars_message = "¡Bienvenido de vuelta! Continuemos donde nos quedamos."
