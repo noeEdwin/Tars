@@ -33,6 +33,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/preload_roleplay_message': {
+        target: 'https://tars_backend:8000',
+        changeOrigin: true,
+        secure: false,
+      },
       '/stt': {
         target: 'https://tars_backend:8000',
         changeOrigin: true,

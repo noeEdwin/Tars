@@ -92,55 +92,118 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 });
                 if (cancelled) return;
 
-                const socket = new WebSocket(`${WS_BASE}/ws/${getUserId()}`);
-                socketRef.current = socket;
+                const threadId = data.thread_id;
+                const conversationId = data.conversation_id;
 
-                socket.onopen = () => {
-                    socket.send(JSON.stringify({
-                        type: 'init_session',
-                        thread_id: data.thread_id,
-                        conversation_id: data.conversation_id,
-                        mode,
-                    }));
+                const connectSocket = (hasPreload: boolean) => {
+                    if (cancelled) return;
+                    const socket = new WebSocket(`${WS_BASE}/ws/${getUserId()}`);
+                    socketRef.current = socket;
+
+                    socket.onopen = () => {
+                        socket.send(JSON.stringify({
+                            type: 'init_session',
+                            thread_id: threadId,
+                            conversation_id: conversationId,
+                            mode,
+                            has_preload: hasPreload,
+                        }));
+                    };
+
+                    socket.onmessage = (event) => {
+                        if (cancelled) return;
+                        const msg = JSON.parse(event.data);
+
+                        if (msg.type === 'token') {
+                            const last = bufferedMessages[bufferedMessages.length - 1];
+                            if (last && last.role === 'tars') {
+                                last.text += msg.text;
+                            } else {
+                                bufferedMessages.push({ id: Date.now().toString() + 't', role: 'tars', text: msg.text });
+                            }
+                        }
+                        if ((msg.type === 'tars_answer' || msg.type === 'audio_chunk') && msg.audio_b64) {
+                            bufferedAudio.push(msg.audio_b64);
+                        }
+                        if (msg.type === 'tars_answer_end') latestProcessing = false;
+
+                        const next: PreWarmedSession = {
+                            threadId,
+                            conversationId,
+                            socket,
+                            messages: [...bufferedMessages],
+                            audioQueue: [...bufferedAudio],
+                            isProcessing: latestProcessing,
+                            currentAudioIndex: 0,
+                            preloadMessage: sessionRef.current?.preloadMessage ?? null,
+                        };
+                        sessionRef.current = next;
+                        setSession(next);
+                    };
+
+                    return socket;
                 };
 
-                socket.onmessage = (event) => {
+                if (mode === 'tars_roleplay') {
+                    // ── Roleplay: preload FIRST, then connect socket ────────
+                    // The socket must not open until the preload response is
+                    // ready so init_session carries has_preload: true and the
+                    // backend skips the duplicate LangGraph greeting.
+                    let preloadHasMessage = false;
+                    if (user_role && tars_role) {
+                        try {
+                            const preloadRes = await fetch(`${API_BASE}/preload_roleplay_message`, {
+                                method: 'POST',
+                                signal: controller.signal,
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                                },
+                                body: JSON.stringify({ user_role, tars_role }),
+                            });
+                            if (preloadRes.status === 401) {
+                                clearAuth();
+                                window.location.href = '/';
+                                return;
+                            }
+                            const pmData = await preloadRes.json().catch(() => null);
+                            if (!cancelled && pmData?.text) {
+                                const pm: PreloadMessage = { text: pmData.text, audio_b64: pmData.audio_b64 ?? null };
+                                sessionRef.current = {
+                                    threadId, conversationId,
+                                    socket: null as unknown as WebSocket,
+                                    messages: [], audioQueue: [],
+                                    isProcessing: true, currentAudioIndex: 0,
+                                    preloadMessage: pm,
+                                };
+                                preloadHasMessage = true;
+                            }
+                        } catch { /* preload is cosmetic — never block on error */ }
+                    }
                     if (cancelled) return;
-                    const msg = JSON.parse(event.data);
 
-                    if (msg.type === 'token') {
-                        const last = bufferedMessages[bufferedMessages.length - 1];
-                        if (last && last.role === 'tars') {
-                            last.text += msg.text;
-                        } else {
-                            bufferedMessages.push({ id: Date.now().toString() + 't', role: 'tars', text: msg.text });
-                        }
-                    }
-                    if ((msg.type === 'tars_answer' || msg.type === 'audio_chunk') && msg.audio_b64) {
-                        bufferedAudio.push(msg.audio_b64);
-                    }
-                    if (msg.type === 'tars_answer_end') latestProcessing = false;
+                    connectSocket(preloadHasMessage);
 
-                    const next: PreWarmedSession = {
-                        threadId: data.thread_id,
-                        conversationId: data.conversation_id,
-                        socket,
-                        messages: [...bufferedMessages],
-                        audioQueue: [...bufferedAudio],
-                        isProcessing: latestProcessing,
+                    // ── Snapshot ────────────────────────────────────────────
+                    const snap: PreWarmedSession = {
+                        threadId,
+                        conversationId,
+                        socket: socketRef.current!,
+                        messages: [],
+                        audioQueue: [],
+                        isProcessing: true,
                         currentAudioIndex: 0,
                         preloadMessage: sessionRef.current?.preloadMessage ?? null,
                     };
-                    sessionRef.current = next;
-                    setSession(next);
-                };
+                    sessionRef.current = snap;
+                    setSession(snap);
 
-                // ── Phase 2: start BEFORE snapshot so it's always in-flight ──
-                // Uses its own flag independent of `cancelled` so the patch
-                // always lands even if `enabled` flips false mid-flight.
-                if (mode === 'tars_normal') {
+                } else {
+                    // ── Normal mode: connect immediately, preload in parallel ─
+                    connectSocket(false);
+
+                    // ── Phase 2: preload message (fire-and-forget) ─────────
                     let patchSent = false;
-                    const token = localStorage.getItem('tars_token');
                     const preloadUrl = `${API_BASE}/preload_message`;
                     fetch(preloadUrl, {
                         signal: controller.signal,
@@ -158,7 +221,6 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                             if (patchSent || !text) return;
                             patchSent = true;
                             const pm: PreloadMessage = { text, audio_b64: audio_b64 ?? null };
-                            // Always patch via ref — works even if `cancelled` is true
                             if (sessionRef.current) {
                                 const patched = { ...sessionRef.current, preloadMessage: pm };
                                 sessionRef.current = patched;
@@ -166,21 +228,21 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                             }
                         })
                         .catch(() => { /* preload is cosmetic — never block on error */ });
-                }
 
-                // ── Snapshot: session is ready → unblocks home page ──────────
-                const snap: PreWarmedSession = {
-                    threadId: data.thread_id,
-                    conversationId: data.conversation_id,
-                    socket,
-                    messages: [],
-                    audioQueue: [],
-                    isProcessing: true,
-                    currentAudioIndex: 0,
-                    preloadMessage: null,
-                };
-                sessionRef.current = snap;
-                setSession(snap);
+                    // ── Snapshot ────────────────────────────────────────────
+                    const snap: PreWarmedSession = {
+                        threadId,
+                        conversationId,
+                        socket: socketRef.current!,
+                        messages: [],
+                        audioQueue: [],
+                        isProcessing: true,
+                        currentAudioIndex: 0,
+                        preloadMessage: null,
+                    };
+                    sessionRef.current = snap;
+                    setSession(snap);
+                }
 
             } catch (err) {
                 // Fetch can throw TypeError("NetworkError...") for CORS/TLS/mixed-content/offline.
