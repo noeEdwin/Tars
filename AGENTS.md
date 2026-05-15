@@ -35,6 +35,10 @@ docker-compose up -d db  # available at localhost:5433
    OPENAI_API_KEY=...
    GOOGLE_APPLICATION_CREDENTIALS=/path/to/creds.json
    ```
+3. **Google Cloud credentials** (for TTS):
+   - Option A: Set `GOOGLE_JSON_CREDENTIALS` env var with the JSON content of your service account key
+   - Option B: Set `GOOGLE_APPLICATION_CREDENTIALS` env var pointing to a JSON key file on disk
+   - **Never commit service account keys to the repository** — `tars.json` and `*-service-account.json` are in `.gitignore`
 
 ## Architecture
 

@@ -2,6 +2,7 @@
 .env
 agents/.env
 tars.json
+*-service-account.json
 *.key
 *.pem
 
