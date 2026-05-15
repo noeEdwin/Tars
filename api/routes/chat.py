@@ -106,13 +106,13 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
 
             if saved_progress > 0 and saved_target:
                 resume_msg = (
-                    f"SYSTEM: El usuario ha regresado. "
-                    f"Progreso guardado: {saved_progress} palabras completadas. "
-                    f"Palabra actual: {saved_target}. "
-                    f"Retoma la lección donde la dejaste — NO empieces desde cero."
+                    f"SYSTEM: The user has returned. "
+                    f"Saved progress: {saved_progress} words completed. "
+                    f"Current word: {saved_target}. "
+                    f"Resume the lesson where you left off — do NOT start from scratch."
                 )
             else:
-                resume_msg = "SYSTEM: Nueva sesión de lección. Presenta la primera palabra."
+                resume_msg = "SYSTEM: New lesson session. Present the first word."
 
             await app_instance.aupdate_state(cfg, {
                 "user_mode": "tars_normal",
@@ -201,8 +201,8 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
 
         if mode == "tars_roleplay":
             if not user_input or str(user_input).strip() in ["", "null", "None"]:
-                texto_secreto = "[COMANDO_INTERNO]: iniciar_roleplay"
-                input_data = {"messages": [HumanMessage(content=texto_secreto)]}
+                kickstart_msg = "[COMANDO_INTERNO]: iniciar_roleplay"
+                input_data = {"messages": [HumanMessage(content=kickstart_msg)]}
                 logger.debug("Sending Kickstart to LangGraph for Roleplay")
             else:
                 input_data = {"messages": [HumanMessage(content=user_input)]}
@@ -272,7 +272,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
         )
 
     except asyncio.CancelledError:
-        await websocket.send_json({"type": "status", "message": "Interrumpido por el usuario."})
+        await websocket.send_json({"type": "status", "message": "Interrupted by user."})
     except Exception as e:
         logger.error("Error in Tars Response: %s", e)
         await websocket.send_json({"type": "error", "message": str(e)})

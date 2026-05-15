@@ -66,7 +66,7 @@ INSTRUCCIÓN OBLIGATORIA:
 """
 
     last_user_msg = (state["messages"][-1].content if state.get("messages") else "")
-    print(f"[TIMER NODE] 2. Pre-RAG listo: {time.time() - t_n:.2f}s")
+    print(f"[TIMER NODE] 2. Pre-RAG ready: {time.time() - t_n:.2f}s")
 
     import asyncio
     query_embedding = get_embedding(last_user_msg) if last_user_msg and len(last_user_msg) > 10 else None
@@ -74,14 +74,14 @@ INSTRUCCIÓN OBLIGATORIA:
     protocol_text += mem_ctx
     
     protocol_text = append_style_examples(last_user_msg, "INTRODUCE", protocol_text)
-    print(f"[TIMER NODE] 3. RAG finalizado: {time.time() - t_n:.2f}s")
+    print(f"[TIMER NODE] 3. RAG completed: {time.time() - t_n:.2f}s")
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
-    print(f"[TIMER NODE] 4. Llamando a OpenAI ainvoke...")
+    print(f"[TIMER NODE] 4. Calling OpenAI ainvoke...")
     t_llm = time.time()
     truncated_state = {**state, "messages": truncate_messages(state["messages"])}
     response = await dynamic_chain.ainvoke(truncated_state, config=config)
-    print(f"[TIMER NODE] 5. Fin LLM ainvoke: {time.time() - t_llm:.2f}s")
+    print(f"[TIMER NODE] 5. LLM ainvoke completed: {time.time() - t_llm:.2f}s")
 
     return {
         "messages":        [response],

@@ -27,9 +27,9 @@ def delete_roleplay_file(filename: str, current_user_id: int = Depends(get_curre
     """Delete a roleplay document."""
     success = delete_document_by_filename(current_user_id, filename)
     if success:
-        return {"status": "success", "message": f"Documento {filename} eliminado"}
+        return {"status": "success", "message": f"Document {filename} deleted"}
     else:
-        raise HTTPException(status_code=500, detail="Error al intentar eliminar el archivo")
+        raise HTTPException(status_code=500, detail="Error deleting file")
 
 
 @router.post("/upload")
@@ -48,10 +48,10 @@ async def upload_roleplay_file(file: UploadFile = File(...), current_user_id: in
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-        return {"status": "success", "filename": file.filename, "message": "Documento procesado correctamente"}
+        return {"status": "success", "filename": file.filename, "message": "Document processed successfully"}
 
     except Exception as e:
         logger.error("Error processing uploaded file: %s", e)
         if temp_file_path and os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-        raise HTTPException(status_code=500, detail="Fallo en la ingestión del documento")
+        raise HTTPException(status_code=500, detail="Document ingestion failed")

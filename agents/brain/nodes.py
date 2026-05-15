@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from langgraph.graph import END, START, StateGraph
 from agents.brain.schema import TarsState
 
-# Importamos los nodos modularizados
+# Import modularized nodes
 from agents.brain.node_learning import lesson_prompt_node, lesson_check_node
 from agents.brain.node_roleplay import actor_node
 

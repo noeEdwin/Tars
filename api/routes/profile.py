@@ -31,7 +31,7 @@ EMOTION_MAP = {
 async def get_profile(current_user_id: int = Depends(get_current_user)):
     user = await asyncio.to_thread(get_user_by_id, current_user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        raise HTTPException(status_code=404, detail="User not found")
     return UserProfile(**user)
 
 
@@ -51,7 +51,7 @@ async def update_profile(
         profile_data.interests,
     )
     if not updated_user:
-        raise HTTPException(status_code=500, detail="Error al actualizar el perfil")
+        raise HTTPException(status_code=500, detail="Error updating profile")
     return UserProfile(**updated_user)
 
 
@@ -99,13 +99,13 @@ async def get_preload_message(current_user_id: int = Depends(get_current_user)):
     username = profile["username"]
     hsk_level = profile["hsk_level"]
     interest = profile["interest_area"]
-    files_tip = f"Tiene escenarios: {', '.join(uploaded_files[:2])}." if uploaded_files else ""
+    files_tip = f"Has scenarios available: {', '.join(uploaded_files[:2])}." if uploaded_files else ""
 
     prompt = (
-        f"Eres TARS. Saluda a {username} (HSK{hsk_level}, fandom: {interest}) "
-        f"en UNA oración breve. {files_tip} "
-        f"Dale un apodo basado en su fandom. Incluye 一个汉字 (pīnyīn). "
-        f"Solo el mensaje, sin explicaciones."
+        f"You are TARS. Greet {username} (HSK{hsk_level}, fandom: {interest}) "
+        f"in ONE brief sentence. {files_tip} "
+        f"Give them a nickname based on their fandom. Include 一个汉字 (pīnyīn). "
+        f"Only the message, no explanations. Respond in Spanish."
     )
 
     llm_response = await asyncio.to_thread(

@@ -16,7 +16,7 @@ class RouteQuery(BaseModel):
 PROTOCOLS = {
     "tars_normal": """
         ### TARS DYNAMIC TUTOR PROTOCOL (HSK)
-        1. PERSONA: You are TARS, a brilliant but UNCONVENTIONAL Chinese teacher. 
+        1. PERSONA: You are TARS, a brilliant but UNCONVENTIONAL Chinese teacher.
            - You have a modular personality. You MUST adapt your mood (sarcastic, motivational, etc.) based on the "ESTILO DE PERSONALIDAD".
            - If the style is SARCÁSTICO, be witty, slightly sharp, and use the examples provided as your primary voice.
         2. GOAL: Lead the lesson based on the blueprint. Tell the user what they are learning today.
@@ -26,7 +26,7 @@ PROTOCOLS = {
     "tars_engineer": """
         ### TARS ENGINEER PROTOCOL (高级工程师)
         1. PERSONA: You are a Senior Software Engineer at a top tech company in Beijing.
-        2. LANGUAGE: Use professional technical Chinese (e.g., '架构', '算法', '并发', '解耦'). 
+        2. LANGUAGE: Use professional technical Chinese (e.g., '架构', '算法', '并发', '解耦').
         3. GOAL: Teach the user how to discuss code in Chinese.
         - When reviewing code: "这段代码 de 耦合度太高了..." (This code has high coupling...)
     """,
@@ -54,9 +54,8 @@ PROTOCOLS = {
     """
 }
 
-# --- ESTO ES LO QUE FALTABA Y CAUSABA EL ERROR ---
 IDENTITY_PROFILER_PROMPT = """
-Eres un experto en análisis literario y diseño de personajes. 
+Eres un experto en análisis literario y diseño de personajes.
 Tu tarea es leer los siguientes fragmentos de un documento original y extraer la "esencia" del personaje {character_name}.
 
 CONTEXTO RECUPERADO:
@@ -76,10 +75,10 @@ IMPORTANTE: Devuelve SOLAMENTE el texto JSON puro. NO uses bloques de código (`
 """
 
 def get_tars_expert(expert_type:str):
-    """Factory de LLM con temperatura ajustada para mayor personalidad."""
+    """LLM factory with adjusted temperature for more personality."""
     if expert_type == "tars_normal":
         return ChatOpenAI(
-            model="gpt-4o-mini", 
+            model="gpt-4o-mini",
             temperature=0.85,
             streaming=True,
             max_tokens=700
@@ -97,13 +96,13 @@ def get_tars_expert(expert_type:str):
 
     if expert_type == "tars_roleplay":
         return ChatOpenAI(model="gpt-4o-mini", temperature=0.5, streaming=True, max_tokens=700)
-    
+
     return ChatOpenAI(model="gpt-4o-mini", temperature=0.7, streaming=True, max_tokens=700)
 
 def get_embeddings_model():
     return OpenAIEmbeddings(model="text-embedding-3-small")
 
-router_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0) 
+router_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 planner_chain = router_llm.with_structured_output(RouteQuery)
 
 actor_prompt_template = ChatPromptTemplate.from_messages(
@@ -113,10 +112,10 @@ actor_prompt_template = ChatPromptTemplate.from_messages(
             """
                 ### CRITICAL PERSONALITY RULE
                 You are not a standard AI. You must CLONE the attitude and tone found in the "{protocol}" section.
-                
-                If "ESTILO DE PERSONALIDAD" examples are provided, they are your TOP PRIORITY. 
+
+                If "ESTILO DE PERSONALIDAD" examples are provided, they are your TOP PRIORITY.
                 If they are SARCÁSTICO, you must be witty and sharp.
-                
+
                 ### OUTPUT FORMAT RULES (STRICT)
                 [Hanzi]
                 (Pinyin)

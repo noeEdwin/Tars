@@ -43,7 +43,7 @@ def ingest_hsk1_knowledge_base(file_path):
         df = pd.read_csv(file_path)
         df = df.fillna('')
 
-        print(f"🚀 Iniciando ingesta semántica BATCH de {len(df)} filas...")
+        print(f"Starting BATCH semantic ingestion of {len(df)} rows...")
 
         batch_size = 100
         total_batches = math.ceil(len(df) / batch_size)
@@ -53,7 +53,7 @@ def ingest_hsk1_knowledge_base(file_path):
             end_idx = min(start_idx + batch_size, len(df))
             batch_df = df.iloc[start_idx:end_idx]
 
-            print(f"Procesando lote {i+1}/{total_batches}...")
+            print(f"Processing batch {i+1}/{total_batches}...")
 
             # Prepare texts for batch embedding
             texts_to_embed = []
@@ -82,8 +82,8 @@ def ingest_hsk1_knowledge_base(file_path):
                     row['Pinyin'], 
                     row['traduccion_es'], 
                     nivel_hsk, 
-                    "Vocabulario", 
-                    "Palabra", 
+                    "Vocabulary",
+                    "Word", 
                     embeddings[j],
                     lesson_id,
                     row['grammar_ref'],
@@ -92,12 +92,12 @@ def ingest_hsk1_knowledge_base(file_path):
                 ))
 
             conn.commit()
-            print(f"Lote {i+1} insertado.")
+            print(f"Batch {i+1} inserted.")
 
-        print("✅ Ingesta semántica completada con éxito en Postgres.")
+        print("Semantic ingestion completed successfully in Postgres.")
 
     except Exception as e:
-        print(f"❌ Error durante la ingesta: {e}")
+        print(f"Error during ingestion: {e}")
         conn.rollback()
     finally:
         cur.close()

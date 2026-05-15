@@ -22,11 +22,11 @@ def _build_rag_context(last_user_msg: str, current_lesson: int | None, query_emb
                     trad    = item.get("traduccion_es", "")
                     pos     = item.get("pos", "")
                     grammar = item.get("grammar_ref", "")
-                    s = f"- {zh} ({pinyin}) - Significado: {trad}"
+                    s = f"- {zh} ({pinyin}) - Meaning: {trad}"
                     if pos:
                         s += f", POS: {pos}"
                     if grammar:
-                        s += f", Regla HSK: {grammar}"
+                        s += f", HSK Rule: {grammar}"
                     formatted.append(s)
             return "\n".join(formatted)
         return str(context_docs)

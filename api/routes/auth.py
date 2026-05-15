@@ -29,13 +29,13 @@ async def register(req: RegisterRequest):
     if await asyncio.to_thread(get_user_by_username_simple, req.username):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="El nombre de usuario ya está en uso. Elige otro.",
+            detail="Username already in use. Choose another.",
         )
 
     if await asyncio.to_thread(get_user_by_email, req.email):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Ya existe una cuenta con ese correo electrónico.",
+            detail="An account with that email already exists.",
         )
 
     hashed = await asyncio.to_thread(hash_password, req.password)
@@ -57,11 +57,11 @@ async def register(req: RegisterRequest):
         logger.error("Error creating user: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno al crear el usuario. Inténtalo de nuevo.",
+            detail="Internal error creating user. Please try again.",
         )
 
     return RegisterResponse(
-        message="Cuenta creada exitosamente. ¡Bienvenido a Tars!",
+        message="Account created successfully. Welcome to Tars!",
         user_id=new_user["id"],
         username=new_user["username"],
     )
@@ -71,7 +71,7 @@ async def register(req: RegisterRequest):
 async def login(req: LoginRequest):
     user = await asyncio.to_thread(get_user_by_username, req.username)
 
-    INVALID_CREDENTIALS = "Usuario o contraseña incorrectos."
+    INVALID_CREDENTIALS = "Invalid username or password."
 
     if not user:
         raise HTTPException(
