@@ -120,11 +120,9 @@ All endpoints maintain their original URLs:
 | `/admin/vacuum/status/{job_id}` | GET | `admin.py` |
 | `/health` | GET | `app.py` |
 
-### Remaining Work (Step 2.4)
+### Remaining Work
 
-- **Step 2.4**: Delete backward-compat shims:
-  - `agents/dataBase/connection.py` — shim wrapping `pool.py`
-  - Root `api.py` — 6-line shim (`from api.app import app`)
+Phase 2 is complete.
 
 ---
 
@@ -186,17 +184,15 @@ Codebase used `sys.path.insert()` hacks to make imports work, which is fragile a
 
 ---
 
-## Step 2.3: Resolve Circular Import in `personality_rag.py`
+## Step 2.4: Delete Backward-Compat Shims
 
-### Problem
+### Deleted Files
 
-`personality_rag.py` imported `from api import app_state` creating a circular dependency. The `app_state["style_library"]` was never populated anywhere (dead code).
+**`agents/dataBase/connection.py`** — was a shim wrapping `pool.py`. No file imported it after Phase 1 + 2.2.
 
-### Fix
+**Root `api.py`** — was a 6-line shim (`from api.app import app`). Docker now uses `uvicorn api.app:app` directly.
 
-Removed the import and all dead code logic. Function now returns `protocol_text` unchanged with a TODO comment for future re-implementation.
+### Verified
 
-**Also cleaned up:**
-- Removed unused imports: `random`, `retrieve_style_examples`, `get_embedding`
-- Removed duplicate `EMOTION_MAP` (already exists in `profile.py`)
+Zero Python files import from either deleted file.
 

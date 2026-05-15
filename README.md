@@ -10,10 +10,6 @@ Before setting up the project, ensure you have the following installed:
 2.  **FFmpeg** - Required for audio playback.
     *   **Linux**: `sudo apt install ffmpeg`
     *   **Windows**: Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add to your system PATH.
-3.  **Database**:
-    *   **Docker Desktop** (Recommended for easiest setup) - [Get Docker](https://www.docker.com/products/docker-desktop/)
-    *   **OR**
-    *   **PostgreSQL 16+** with **pgvector** extension (Manual setup instructions below).
 
 ## Installation
 
@@ -35,67 +31,19 @@ conda activate agentes_ia
 
 ### 3. Database Setup
 
-You have two options for setting up the database. **Option A (Docker)** is recommended for simplicity, but **Option B (Manual)** is fully supported if you prefer not to use Docker.
-
-#### Option A: Docker (Recommended)
-
-If you have Docker installed, you can spin up the database with a single command. This automatically configures PostgreSQL with the `pgvector` extension.
-
-1.  Start the database container:
-    ```bash
-    docker-compose up -d db
-    ```
-2.  The database will be available at `localhost:5433`.
-
-#### Option B: Manual Installation (No Docker)
-
-If you cannot or do not want to use Docker, follow these steps to set up PostgreSQL and `pgvector` manually.
-
-**Linux:**
-
-1.  **Install PostgreSQL 16**:
-    ```bash
-    sudo apt install postgresql-16
-    ```
-2.  **Install pgvector**:
-    ```bash
-    # You might need to install build dependencies first
-    sudo apt install postgresql-server-dev-16 build-essential
-    
-    # Install pgvector (example for Debian/Ubuntu)
-    sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
-    sudo apt install postgresql-16-pgvector
-    ```
-3.  **Create User and Database**:
-    ```bash
-    sudo -u postgres psql
-    
-    # Inside psql shell:
-    CREATE USER lancelot WITH PASSWORD '9474609';
-    CREATE DATABASE chinese_tutor_db OWNER lancelot;
-    \q
-    ```
-
-**Windows:**
-
-1.  **Install PostgreSQL**: Download and install PostgreSQL 16 from the [official website](https://www.postgresql.org/download/windows/).
-2.  **Install pgvector**:
-    *   The easiest way on Windows is to use the official installer if available or follow the instructions on the [pgvector GitHub repository](https://github.com/pgvector/pgvector).
-    *   **Note**: `pgvector` support on Windows can be complex to build from source. Using the [Postgres.app](https://postgresapp.com/) (Mac) or a pre-packaged installer is recommended. 
-    *   If installing from source is required: requires Visual Studio C++ build tools.
-3.  **Create Database**: Use **pgAdmin 4** (installed with PostgreSQL) to create a new database named `chinese_tutor_db`.
+This project uses **Supabase** (hosted PostgreSQL with pgvector). No local database is needed. The connection details are stored in the `.env` file.
 
 ### 4. Configuration
 
 Create a `.env` file in the root directory. You can use the following template:
 
 ```ini
-# Database Connection
-DB_HOST=localhost
-DB_PORT=5433          # Use 5433 for Docker, likely 5432 for manual install
-DB_NAME=chinese_tutor_db
-DB_USER=lancelot
-DB_PASS=9474609
+# Database Connection (Supabase)
+DB_HOST=aws-1-us-east-1.pooler.supabase.com
+DB_PORT=5432
+DB_NAME=postgres
+DB_USER=postgres.<your-project-ref>
+DB_PASS=<your-db-password>
 
 # API Keys
 OPENAI_API_KEY=your_openai_api_key
@@ -109,34 +57,36 @@ GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/your/google_credentials.json
 ```
 
 **Important**: 
-- If using **Docker**, set `DB_PORT=5433`.
-- If using **Manual Install**, functionality usually defaults to `DB_PORT=5432`. Check your PostgreSQL configuration.
+- **Never commit the `.env` file** — it contains credentials.
+- **Never commit Google service account keys** — `tars.json` and `*-service-account.json` are in `.gitignore`.
 
-### 5. Database Initialization
+## Running the Application
 
-After setting up the database and `.env` file, you need to create the required tables.
+### Local Development (Recommended)
 
-Run the provided SQL script using `psql` or a database tool (like pgAdmin or DBeaver), or simply copy-paste the commands:
+The fastest way to develop. Auto-reloads on file changes — no Docker rebuild needed.
 
-**Using psql:**
 ```bash
-psql -h localhost -p 5433 -U lancelot -d chinese_tutor_db -f setup_db.sql
+# Terminal 1 - Backend
+conda activate agentes_ia
+pip install -e .
+uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload \
+  --ssl-keyfile=certs/key.pem --ssl-certfile=certs/cert.pem \
+  --reload-dir api --reload-dir agents --reload-dir scripts
+
+# Terminal 2 - Frontend
+cd frontend && npm install && npm run dev
 ```
-*(Replace `5433` with `5432` if using manual installation)*
 
-## Execution
+Backend runs at `https://localhost:8000`, frontend at `http://localhost:5173`.
 
-To run the application:
+### Docker (Deployment)
 
-1.  Ensure your Conda environment is active:
-    ```bash
-    conda activate agentes_ia
-    ```
+For production or when you want to run the full stack:
 
-2.  Run the main agent node:
-    ```bash
-    python agents/brain/nodes.py
-    ```
+```bash
+docker compose up --build -d  # backend + frontend + gitea + runner
+```
 
 ## Troubleshooting
 
@@ -144,5 +94,5 @@ To run the application:
     -   Ensure `ffmpeg` is installed and `ffplay` is available in your terminal path.
     -   Error: `FileNotFoundError: [Errno 2] No such file or directory: 'ffplay'` -> Install FFmpeg.
 -   **Database Connection Error**:
-    -   Check if the database is running (`docker ps` or `sudo service postgresql status`).
-    -   Verify the `DB_PORT` in your `.env` file matches your setup (Docker maps to **5433**, standard install uses **5432**).
+    -   Verify the Supabase credentials in your `.env` file are correct.
+    -   Check your Supabase project settings for the connection string.
