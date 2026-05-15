@@ -34,9 +34,9 @@ from agents.RAG.save_memory import get_db_uri, save_long_term_memory
 from agents.RAG.utils import clear_turn_cache, get_embedding
 from agents.RAG.vacuum import create_vacuum_job, run_vacuum_job, get_vacuum_job_status
 from agents.RAG.ingest_document import ingest_pdf
-from dataBase.main_queries import get_user_id_from_username, get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile, delete_document_by_filename
-from dataBase.user_management import get_or_create_active_conversation
-from dataBase.auth_queries import get_user_by_username, get_user_by_email, get_user_by_username_simple, create_user, get_user_by_id, update_user_profile
+from agents.dataBase.main_queries import  get_roleplay_contexts, get_scene_from_filename, get_user_hsk_level, get_user_profile, delete_document_by_filename
+from agents.dataBase.conversations import get_or_create_active_conversation
+from agents.dataBase.auth_queries import get_user_by_username, get_user_by_email, get_user_by_username_simple, create_user, get_user_by_id, update_user_profile
 from auth.security import hash_password, verify_password, create_access_token, get_current_user
 from auth.schemas import RegisterRequest, RegisterResponse, LoginRequest, TokenResponse, UserProfile, ProfileUpdateRequest
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
@@ -47,15 +47,16 @@ DB_URI = get_db_uri()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # --- Lógica de INICIO ---
-    # Context manager of AsyncPostgresSaver yields the checkpointer instance
     async with AsyncPostgresSaver.from_conn_string(DB_URI) as checkpointer:
         await checkpointer.setup()
-        
-        # Lo guardamos para que esté accesible en toda la app
+
         app_state["checkpointer"] = checkpointer
         app_state["app_instance"] = workflow.compile(checkpointer=checkpointer)
-        yield
+        try:
+            yield
+        finally:
+            from agents.dataBase.pool import close_pool
+            close_pool()
 
 app = FastAPI(title="Tars API", lifespan=lifespan)
 
@@ -138,16 +139,16 @@ async def upload_roleplay_file(file: UploadFile = File(...), current_user_id: in
         temp_file_path = f"temp_{file.filename}"
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-            
+
         print(f"Archivo {file.filename} guardado temporalmente. Iniciando procesamiento RAG...")
-        
+
         await asyncio.to_thread(ingest_pdf, temp_file_path, current_user_id)
-        
+
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-            
+
         return {"status": "success", "filename": file.filename, "message": "Documento procesado correctamente"}
-        
+
     except Exception as e:
         print(f"Error procesando el archivo subido: {e}")
         if temp_file_path and os.path.exists(temp_file_path):
@@ -163,7 +164,7 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
         thread_id = f"{current_user_id}_roleplay_{uuid.uuid4().hex[:8]}"
     else:
         thread_id = f"{current_user_id}_normal"
-        
+
     conversation_id = get_or_create_active_conversation(current_user_id, req.mode)
 
     cfg = {**base_config, "configurable": {"thread_id": thread_id}}
@@ -182,7 +183,7 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
                     doc_id, scene = res
 
             sys_msg_text = f"SYSTEM UPDATE: User has initiated a roleplay.\nSCENE: {scene}\nUSER ROLE: {req.user_role}\nTARS ROLE: {req.tars_role}\n\n PLEASE ADOPT THIS PERSONA IMMEDIATELY."
-                
+
             init_state = {
                     "user_mode": "tars_roleplay",
                     "active_expert": "tars_roleplay",
@@ -212,7 +213,7 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
             }
         await app_instance.aupdate_state(cfg, init_state)
         tars_message = ""
-    
+
     else:
         # Existing session — resume appropriately per mode
         last_msgs = snapshot.values.get("messages", [])
@@ -253,10 +254,10 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
             tars_message = ""
         else:
             tars_message = "¡Bienvenido de vuelta! Continuemos donde nos quedamos."
-    
+
     if tars_message:
         await asyncio.to_thread(save_long_term_memory, conversation_id, "assistant", tars_message)
-    
+
     audio_b64 = None
     if tars_message:
         audio_bytes = await get_mixed_audio_bytes(tars_message)
@@ -296,7 +297,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int):
                 active_tasks[user_id] = task
     except WebSocketDisconnect:
         if user_id in active_tasks:
-            active_tasks[user_id].cancel()    
+            active_tasks[user_id].cancel()
 
 async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_id, mode="tars_normal"):
     import time
@@ -307,10 +308,10 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
     sentence_buffer = ""
     app_instance = app_state["app_instance"]
     clear_turn_cache()
-    
+
     try:
         audio_queue = asyncio.Queue()
-        
+
         async def audio_worker():
             while True:
                 text_chunk = await audio_queue.get()
@@ -324,7 +325,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
                     print(f"Error en TTS: {e}")
                 finally:
                     audio_queue.task_done()
-                    
+
         worker_task = asyncio.create_task(audio_worker())
 
         if mode == "tars_roleplay":
@@ -350,7 +351,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
 
         is_json_filtered = False
         first_tokens_buffer = ""
-        
+
         async for event in app_instance.astream_events(input_data, cfg, version="v2"):
             if event["event"] == "on_chat_model_stream":
                 token = event["data"]["chunk"].content
@@ -371,7 +372,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
                         full_response_content += token
                         sentence_buffer += token
                         await websocket.send_json({"type": "token", "text": token})
-                        
+
                         if re.search(r'[。！？.!?]', token):
                             text_to_process = sentence_buffer.strip()
                             sentence_buffer = ""
@@ -394,7 +395,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
 
         await websocket.send_json({"type": "tars_answer_end", "text": full_response_content})
         asyncio.create_task(asyncio.to_thread(save_long_term_memory, conv_id, "assistant", full_response_content))
-        
+
     except asyncio.CancelledError:
         await websocket.send_json({"type": "status", "message": "Interrumpido por el usuario."})
     except Exception as e:
@@ -528,7 +529,7 @@ async def stt_endpoint(audio: UploadFile = File(...)):
         # OpenAI expects a tuple with (filename, bytes) or a file-like object
         # The filename extension helps Whisper understand the audio format (e.g., webm from browsers)
         file_tuple = (audio.filename or "audio.webm", audio_bytes)
-        
+
         transcription = openai_client.audio.transcriptions.create(
             model="whisper-1",
             file=file_tuple,

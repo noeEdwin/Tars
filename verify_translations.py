@@ -4,7 +4,7 @@ import os
 import psycopg2
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
-from agents.dataBase.connection import get_db_connection
+from agents.dataBase.pool import get_db_connection
 from agents.brain.chains import get_embeddings_model
 
 load_dotenv()

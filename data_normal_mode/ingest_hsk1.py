@@ -8,7 +8,7 @@ import math
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from agents.brain.chains import get_embeddings_model
-from agents.dataBase.connection import get_db_connection
+from agents.dataBase.pool import get_db_connection
 
 load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), '../.env')))
 

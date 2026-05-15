@@ -1,24 +1,15 @@
 """
-Database connection factory for Tars.
+Deprecated: Use dataBase.pool.get_db_connection() context manager instead.
 
-Opens a new psycopg2 connection using environment variables.
-Required env vars: DB_HOST, DB_NAME, DB_USER, DB_PASS, DB_PORT (optional, default 5432)
+This shim exists for gradual migration and will be removed in Phase 2.
+It returns a raw connection that the caller must close manually (legacy behavior).
 """
-import os
-
-import psycopg2
-from dotenv import load_dotenv
-
-load_dotenv()
+from dataBase.pool import get_db_connection as _pool_get_conn
 
 
 def get_db_connection():
-    """Create and return a new database connection using environment variables."""
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASS"),
-        port=int(os.getenv("DB_PORT", "5432")),
-        sslmode="require",
-    )
+    """
+    Legacy: returns a raw connection (caller must close manually).
+    Prefer: with pool.get_db_connection() as conn:
+    """
+    return _pool_get_conn().__enter__()
