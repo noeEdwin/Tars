@@ -1,8 +1,8 @@
 import json
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from brain.chains import IDENTITY_PROFILER_PROMPT
-from dataBase.persona_db import insert_persona
+from agents.brain.chains import IDENTITY_PROFILER_PROMPT
+from agents.dataBase.persona_db import insert_persona
 
 def extract_cast_from_text(text: str, doc_id: int):
     """

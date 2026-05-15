@@ -11,7 +11,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from agents.brain.chains import get_embeddings_model
-from dataBase.pool import get_db_connection
+from agents.dataBase.pool import get_db_connection
 
 load_dotenv()
 

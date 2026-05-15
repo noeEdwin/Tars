@@ -4,9 +4,6 @@ import pandas as pd
 from dotenv import load_dotenv
 import math
 
-# Add project root to sys path to import TARS modules
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from agents.brain.chains import get_embeddings_model
 from agents.dataBase.pool import get_db_connection
 

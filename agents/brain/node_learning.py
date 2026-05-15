@@ -1,10 +1,10 @@
-from brain.schema import TarsState
-from brain.chains import PROTOCOLS, get_tars_expert, actor_prompt_template
-from brain.utils import load_lesson_json, is_phonetically_similar
-from brain.context_builders import _build_rag_context, _append_memory_context
-from brain.personality_rag import append_style_examples
-from brain.history import truncate_messages
-from RAG.utils import get_embedding
+from agents.brain.schema import TarsState
+from agents.brain.chains import PROTOCOLS, get_tars_expert, actor_prompt_template
+from agents.brain.utils import load_lesson_json, is_phonetically_similar
+from agents.brain.context_builders import _build_rag_context, _append_memory_context
+from agents.brain.personality_rag import append_style_examples
+from agents.brain.history import truncate_messages
+from agents.RAG.utils import get_embedding
 from langchain_core.runnables import RunnableConfig
 
 async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:

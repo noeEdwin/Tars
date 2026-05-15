@@ -44,9 +44,6 @@ def run_via_http():
 
 
 def run_direct():
-    project_root = str(Path(__file__).resolve().parent.parent)
-    sys.path.insert(0, project_root)
-
     from agents.RAG.vacuum import create_vacuum_job, run_vacuum_job, get_vacuum_job_status
 
     job_id = create_vacuum_job()

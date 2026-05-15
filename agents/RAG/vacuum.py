@@ -4,7 +4,7 @@ import time
 from psycopg2.extras import RealDictCursor
 
 from agents.RAG.filter import COMMON_GREETINGS
-from dataBase.pool import get_db_connection
+from agents.dataBase.pool import get_db_connection
 
 
 def _update_job(conn, job_id, status=None, progress=None, current_stage=None, stats=None, error_log=None):

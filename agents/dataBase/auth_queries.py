@@ -13,7 +13,7 @@ Table `users` schema (Supabase):
 """
 from psycopg2.extras import RealDictCursor
 
-from dataBase.pool import get_db_connection
+from agents.dataBase.pool import get_db_connection
 
 
 def get_user_by_username(username: str) -> dict | None:

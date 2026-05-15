@@ -1,10 +1,4 @@
-import sys
-from pathlib import Path
-
-# Add parent path to allow imports from sibling packages
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from brain.chains import get_embeddings_model
+from agents.brain.chains import get_embeddings_model
 
 _embedding_client = None
 _turn_cache: dict[str, list[float]] = {}

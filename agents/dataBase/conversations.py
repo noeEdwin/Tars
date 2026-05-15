@@ -6,7 +6,7 @@ import logging
 
 from psycopg2.extras import RealDictCursor
 
-from dataBase.pool import get_db_connection
+from agents.dataBase.pool import get_db_connection
 
 logger = logging.getLogger(__name__)
 

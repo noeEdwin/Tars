@@ -1,5 +1,5 @@
-from RAG.retrieve import retrieve_knowledge
-from RAG.save_memory import retrieve_user_memory
+from agents.RAG.retrieve import retrieve_knowledge
+from agents.RAG.save_memory import retrieve_user_memory
 
 def _build_rag_context(last_user_msg: str, current_lesson: int | None, query_embedding: list[float] = None) -> str:
     """Return a formatted RAG context string, or empty string on error."""

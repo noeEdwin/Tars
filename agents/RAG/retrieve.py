@@ -5,7 +5,7 @@ from pathlib import Path
 from psycopg2.extras import RealDictCursor
 
 from agents.RAG.utils import get_embedding
-from dataBase.pool import get_db_connection
+from agents.dataBase.pool import get_db_connection
 
 
 def retrieve_knowledge(user_query: str, current_lesson: int = 1, query_embedding: list[float] = None) -> list[dict]:

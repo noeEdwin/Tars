@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 from agents.brain.chains import get_embeddings_model
 from agents.brain.identity_agent import extract_cast_from_text
-from dataBase.pool import get_db_connection
+from agents.dataBase.pool import get_db_connection
 
 load_dotenv()
 

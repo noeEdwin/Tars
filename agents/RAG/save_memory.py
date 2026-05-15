@@ -2,7 +2,7 @@ from psycopg2.extras import RealDictCursor
 
 from agents.RAG.filter import normalize_text, contains_chinese, should_embed
 from agents.RAG.utils import get_embedding
-from dataBase.pool import get_db_connection
+from agents.dataBase.pool import get_db_connection
 
 
 def save_long_term_memory(conversation_id: int, role: str, content: str, embedding: list[float] = None):

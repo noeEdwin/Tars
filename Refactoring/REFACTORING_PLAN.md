@@ -29,8 +29,8 @@
 | Step | Status | Description |
 |------|--------|-------------|
 | 2.1 | ✅ | Split `api.py` (665 lines) into route modules |
-| 2.2 | ⏳ | Fix import system — remove `sys.path.insert()`, add `pyproject.toml` |
-| 2.3 | ⏳ | Resolve circular import in `personality_rag.py` |
+| 2.2 | ✅ | Fix import system — remove `sys.path.insert()`, add `pyproject.toml` |
+| 2.3 | ✅ | Resolve circular import in `personality_rag.py` |
 | 2.4 | ⏳ | Delete backward-compat shims: `agents/dataBase/connection.py`, root `api.py` |
 
 ### Step 2.1 Details

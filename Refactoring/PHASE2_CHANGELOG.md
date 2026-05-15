@@ -120,11 +120,83 @@ All endpoints maintain their original URLs:
 | `/admin/vacuum/status/{job_id}` | GET | `admin.py` |
 | `/health` | GET | `app.py` |
 
-### Remaining Work (Step 2.2, 2.3 & 2.4)
+### Remaining Work (Step 2.4)
 
-- **Step 2.2**: Fix import system — remove `sys.path.insert()`, add `pyproject.toml`
-- **Step 2.3**: Fix circular import in `personality_rag.py` (`from api import app_state`)
 - **Step 2.4**: Delete backward-compat shims:
   - `agents/dataBase/connection.py` — shim wrapping `pool.py`
   - Root `api.py` — 6-line shim (`from api.app import app`)
+
+---
+
+## Step 2.2: Fix Import System
+
+### Problem
+
+Codebase used `sys.path.insert()` hacks to make imports work, which is fragile and breaks in Docker.
+
+### Changes
+
+**Created `pyproject.toml`** with editable install — makes `agents/`, `api/`, etc. importable as packages from anywhere.
+
+**Removed all `sys.path.insert()` calls** from:
+- `agents/brain/nodes.py` (lines 6-7)
+- `agents/RAG/utils.py` (line 5)
+- `scripts/run_vacuum.py` (line 48)
+- `data_normal_mode/ingest_hsk1.py` (line 8)
+
+**Rewrote all imports** to use full package paths:
+
+| Before | After |
+|--------|-------|
+| `from brain.xxx` | `from agents.brain.xxx` |
+| `from RAG.xxx` | `from agents.RAG.xxx` |
+| `from dataBase.xxx` | `from agents.dataBase.xxx` |
+
+**Files with import changes:**
+- `agents/brain/nodes.py`
+- `agents/brain/node_learning.py`
+- `agents/brain/node_roleplay.py`
+- `agents/brain/context_builders.py`
+- `agents/brain/identity_agent.py`
+- `agents/RAG/utils.py`
+- `agents/RAG/ingest_document.py`
+- `agents/RAG/vacuum.py`
+- `agents/RAG/save_memory.py`
+- `agents/RAG/retrieve.py`
+- `agents/dataBase/conversations.py`
+- `agents/dataBase/persona_db.py`
+- `agents/dataBase/main_queries.py`
+- `agents/dataBase/auth_queries.py`
+- `scripts/ingest_hsk_csv.py`
+- `scripts/run_vacuum.py`
+- `data_normal_mode/ingest_hsk1.py`
+
+**Created `__init__.py`** files for:
+- `agents/brain/__init__.py`
+- `agents/RAG/__init__.py`
+- `agents/dataBase/__init__.py`
+
+**Updated Docker:**
+- `Dockerfile` — added `pip install -e .`, changed uvicorn to `api.app:app`
+- `docker-compose.yml` — changed uvicorn to `api.app:app`
+
+### Cleaned up unused imports
+- `agents/brain/nodes.py` — removed `sys`, `pathlib.Path`
+- `agents/RAG/utils.py` — removed `sys`, `pathlib.Path`
+
+---
+
+## Step 2.3: Resolve Circular Import in `personality_rag.py`
+
+### Problem
+
+`personality_rag.py` imported `from api import app_state` creating a circular dependency. The `app_state["style_library"]` was never populated anywhere (dead code).
+
+### Fix
+
+Removed the import and all dead code logic. Function now returns `protocol_text` unchanged with a TODO comment for future re-implementation.
+
+**Also cleaned up:**
+- Removed unused imports: `random`, `retrieve_style_examples`, `get_embedding`
+- Removed duplicate `EMOTION_MAP` (already exists in `profile.py`)
 
