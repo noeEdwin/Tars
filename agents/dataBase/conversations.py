@@ -38,7 +38,11 @@ def get_or_create_active_conversation(user_id: int, mode: str) -> int:
                 RETURNING id;
             """
             cur.execute(insert_query, (user_id, summary_name))
-            conv_id = cur.fetchone()["id"]
+            row = cur.fetchone()
+            if not row:
+                logger.error("Failed to create conversation for user %d", user_id)
+                return 1
+            conv_id = row["id"]
             conn.commit()
             logger.info("New semantic session %d started for user %d (%s).", conv_id, user_id, mode)
             return conv_id

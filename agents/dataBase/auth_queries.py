@@ -11,9 +11,13 @@ Table `users` schema (Supabase):
     hsk_level       INTEGER DEFAULT 1
     native_language TEXT    DEFAULT 'es'
 """
+import logging
+
 from psycopg2.extras import RealDictCursor
 
 from agents.dataBase.pool import get_db_connection
+
+logger = logging.getLogger(__name__)
 
 
 def get_user_by_username(username: str) -> dict | None:
@@ -28,31 +32,43 @@ def get_user_by_username(username: str) -> dict | None:
         WHERE username = %s
         LIMIT 1;
     """
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(sql, (username,))
-            row = cur.fetchone()
-            return dict(row) if row else None
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(sql, (username,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error("Error fetching user by username %s: %s", username, e)
+        return None
 
 
 def get_user_by_email(email: str) -> dict | None:
     """Look up a user by email. Used to verify uniqueness during registration."""
     sql = "SELECT id, username FROM users WHERE email = %s LIMIT 1;"
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(sql, (email,))
-            row = cur.fetchone()
-            return dict(row) if row else None
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(sql, (email,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error("Error fetching user by email %s: %s", email, e)
+        return None
 
 
 def get_user_by_username_simple(username: str) -> dict | None:
     """Check if a username already exists (for registration). No sensitive data returned."""
     sql = "SELECT id, username FROM users WHERE username = %s LIMIT 1;"
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(sql, (username,))
-            row = cur.fetchone()
-            return dict(row) if row else None
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(sql, (username,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error("Error checking username %s: %s", username, e)
+        return None
 
 
 def create_user(
@@ -65,7 +81,7 @@ def create_user(
     native_language: str = "es",
     learning_goals: str = "Travel",
     interests: str = "",
-) -> dict:
+) -> dict | None:
     """
     Insert a new user into the database.
     Returns the newly created record (without hashed_password).
@@ -80,15 +96,19 @@ def create_user(
         RETURNING id, username, first_name, last_name, email,
                   hsk_level, native_language, learning_goals, interests;
     """
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(sql, (
-                username, first_name, last_name, email, hashed_password,
-                hsk_level, native_language, learning_goals, interests,
-            ))
-            conn.commit()
-            row = cur.fetchone()
-            return dict(row)
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(sql, (
+                    username, first_name, last_name, email, hashed_password,
+                    hsk_level, native_language, learning_goals, interests,
+                ))
+                conn.commit()
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error("Error creating user %s: %s", username, e)
+        return None
 
 
 def get_user_by_id(user_id: int) -> dict | None:
@@ -100,11 +120,15 @@ def get_user_by_id(user_id: int) -> dict | None:
         WHERE id = %s
         LIMIT 1;
     """
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(sql, (user_id,))
-            row = cur.fetchone()
-            return dict(row) if row else None
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(sql, (user_id,))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error("Error fetching user by id %d: %s", user_id, e)
+        return None
 
 
 def update_user_profile(
@@ -129,12 +153,16 @@ def update_user_profile(
         RETURNING id, username, first_name, last_name, email,
                   hsk_level, native_language, learning_goals, interests;
     """
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(sql, (
-                first_name, last_name, hsk_level, native_language,
-                learning_goals, interests, user_id
-            ))
-            conn.commit()
-            row = cur.fetchone()
-            return dict(row) if row else None
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(sql, (
+                    first_name, last_name, hsk_level, native_language,
+                    learning_goals, interests, user_id
+                ))
+                conn.commit()
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        logger.error("Error updating profile for user %d: %s", user_id, e)
+        return None

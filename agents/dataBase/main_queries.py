@@ -92,9 +92,9 @@ def delete_document_by_filename(user_id: str, filename: str) -> bool:
     """Delete a document from the database by filename and user_id."""
     try:
         with get_db_connection() as conn:
-            cur = conn.cursor()
-            cur.execute("DELETE FROM document_store WHERE user_id = %s AND filename = %s", (int(user_id), filename))
-            conn.commit()
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("DELETE FROM document_store WHERE user_id = %s AND filename = %s", (int(user_id), filename))
+                conn.commit()
             return True
     except Exception as e:
         logger.error("Error deleting document %s: %s", filename, e)

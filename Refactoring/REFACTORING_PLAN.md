@@ -87,7 +87,7 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 | 3.1 | ✅ | Standardize to English — translate Spanish comments, variable names, print messages |
 | 3.2 | ✅ | Extract duplicated WebSocket `onmessage` logic in `ConversationContainer.tsx` into `useWebSocket` hook |
 | 3.3 | ✅ | Replace remaining `print()` with `logging` across all backend modules |
-| 3.4 | ⏳ | Consolidate DB query patterns — ensure `RealDictCursor` everywhere |
+| 3.4 | ✅ | Consolidate DB query patterns — ensure `RealDictCursor` everywhere |
 | 3.5 | ✅ | Add preload messages with lesson progress (normal) and in-character greeting (roleplay) |
 
 ---

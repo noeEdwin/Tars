@@ -68,18 +68,17 @@ def retrieve_style_examples(target_emotion: str, user_query_embedding: list, lim
     """
     try:
         with get_db_connection() as conn:
-            cur = conn.cursor()
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                query = """
+                    SELECT es
+                    FROM translations_mvp
+                    WHERE emocion = %s
+                    ORDER BY embedding::vector <=> %s::vector
+                    LIMIT %s;
+                """
 
-            query = """
-                SELECT es
-                FROM translations_mvp
-                WHERE emocion = %s
-                ORDER BY embedding::vector <=> %s::vector
-                LIMIT %s;
-            """
-
-            cur.execute(query, (target_emotion, user_query_embedding, limit))
-            return [row[0] for row in cur.fetchall()]
+                cur.execute(query, (target_emotion, user_query_embedding, limit))
+                return [row["es"] for row in cur.fetchall()]
     except Exception as e:
         logger.error("Error in style RAG (retrieve_style_examples): %s", e)
         return []
@@ -156,35 +155,34 @@ def retrieve_character_context(character_name: str, doc_id: int = None) -> str:
         query_embedding = get_embedding(query_text)
 
         with get_db_connection() as conn:
-            cur = conn.cursor()
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                if doc_id is not None:
+                    query = """
+                        WITH target_doc AS (
+                            SELECT filename FROM document_store WHERE id = %s
+                        )
+                        SELECT content
+                        FROM document_store
+                        WHERE filename = (SELECT filename FROM target_doc)
+                        ORDER BY embedding::vector <=> %s::vector
+                        LIMIT 4;
+                    """
+                    cur.execute(query, (doc_id, query_embedding))
+                else:
+                    query = """
+                        SELECT content
+                        FROM document_store
+                        ORDER BY embedding::vector <=> %s::vector
+                        LIMIT 4;
+                    """
+                    cur.execute(query, (query_embedding,))
 
-            if doc_id is not None:
-                query = """
-                    WITH target_doc AS (
-                        SELECT filename FROM document_store WHERE id = %s
-                    )
-                    SELECT content
-                    FROM document_store
-                    WHERE filename = (SELECT filename FROM target_doc)
-                    ORDER BY embedding::vector <=> %s::vector
-                    LIMIT 4;
-                """
-                cur.execute(query, (doc_id, query_embedding))
-            else:
-                query = """
-                    SELECT content
-                    FROM document_store
-                    ORDER BY embedding::vector <=> %s::vector
-                    LIMIT 4;
-                """
-                cur.execute(query, (query_embedding,))
+                results = cur.fetchall()
 
-            results = cur.fetchall()
+                if results:
+                    return "\n...\n".join([row["content"] for row in results])
 
-            if results:
-                return "\n...\n".join([row[0] for row in results])
-
-            return f"No specific details found for character {character_name} in the document."
+                return f"No specific details found for character {character_name} in the document."
     except Exception as e:
         logger.error("Error retrieving document context for character: %s", e)
         return "Error reading document."

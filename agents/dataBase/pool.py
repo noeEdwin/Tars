@@ -6,19 +6,14 @@ All database modules should import from here.
 
 Usage:
     with get_db_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(...)
-
-    with get_db_cursor() as (conn, cur):
-        cur.execute(...)
-        row = cur.fetchone()
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(...)
 """
 import os
 from contextlib import contextmanager
 from typing import Generator
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
 from psycopg2.pool import ThreadedConnectionPool
 from dotenv import load_dotenv
 
@@ -58,20 +53,6 @@ def get_db_connection() -> Generator:
     try:
         yield conn
     finally:
-        _get_pool().putconn(conn)
-
-
-@contextmanager
-def get_db_cursor():
-    """
-    Convenience context manager that yields (conn, cur) with RealDictCursor.
-    """
-    conn = _get_pool().getconn()
-    try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        yield conn, cur
-    finally:
-        cur.close()
         _get_pool().putconn(conn)
 
 

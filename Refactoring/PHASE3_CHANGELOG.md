@@ -208,3 +208,51 @@ Replaced all `print()` statements with proper `logging` calls using appropriate 
 - Error prints use `logger.error()` with `exc_info=True` for traceback logging where needed
 - CLI scripts (`run_vacuum.py`, `ingest_hsk1.py`) have `logging.basicConfig()` configured for standalone use
 - Usage messages in `ingest_hsk_csv.py` and `ingest_document.py` kept as `print()` (appropriate for CLI entry points)
+
+---
+
+## Step 3.4: Consolidate DB Query Patterns
+
+### Problem
+
+DB modules used inconsistent cursor patterns:
+- Some used plain `conn.cursor()` while others used `RealDictCursor`
+- Cursors were not always wrapped in context managers (risk of leaks)
+- `fetchone()` results were subscripted without null guards (crash if no row)
+- `auth_queries.py` had zero `try/except` error handling
+
+### Solution
+
+Standardized all DB modules to a single pattern:
+
+```python
+with get_db_connection() as conn:
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(...)
+        row = cur.fetchone()
+        if row:
+            return row["column_name"]
+```
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `agents/RAG/save_memory.py` | Converted to `RealDictCursor`, removed unused import |
+| `agents/RAG/retrieve.py` | Converted `retrieve_style_examples` and `retrieve_character_context` |
+| `agents/RAG/vacuum.py` | Full rewrite with `RealDictCursor`, fixed ambiguous column aliases (`id_a`, `id_b`, `acc_a`, `acc_b`) |
+| `agents/RAG/ingest_document.py` | Added `RealDictCursor`, context manager |
+| `agents/dataBase/main_queries.py` | Fixed `delete_document_by_filename` plain cursor → `RealDictCursor` |
+| `agents/dataBase/conversations.py` | Added null guard before `fetchone()["id"]` access |
+| `agents/dataBase/auth_queries.py` | Wrapped all 6 functions in `try/except` + `logger.error()`, added null guard to `create_user` |
+| `agents/dataBase/pool.py` | Removed unused `get_db_cursor()` context manager, updated docstring |
+
+### Key Fixes
+
+1. **`vacuum.py` ambiguous aliases** — Original code used `row["b"]` and `row["b_1"]` which were ambiguous SQL aliases. Fixed to explicit `id_a`, `id_b`, `acc_a`, `acc_b`.
+
+2. **`conversations.py:41` crash** — `cur.fetchone()["id"]` would crash with `TypeError` if `INSERT ... RETURNING` yielded no row. Added null guard with fallback to `1`.
+
+3. **`auth_queries.py` error handling** — All 6 functions now catch exceptions, log errors, and return `None` on failure. `create_user` return type changed from `dict` to `dict | None`.
+
+4. **Dead code removal** — `pool.py` defined `get_db_cursor()` but zero files imported it. Removed the function and updated the module docstring.
