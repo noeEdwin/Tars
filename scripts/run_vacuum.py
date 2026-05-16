@@ -6,25 +6,29 @@ Usage:
     python scripts/run_vacuum.py --direct     # runs vacuum logic directly (no server needed)
 """
 import argparse
+import json
+import logging
 import sys
 import time
 from pathlib import Path
 
 API_BASE = "http://localhost:8000"
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 
 def run_via_http():
     import urllib.request
-    import json
 
     req = urllib.request.Request(f"{API_BASE}/admin/vacuum", method="POST", data=b"")
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
             result = json.loads(resp.read())
             job_id = result["job_id"]
-            print(f"Vacuum job created: {job_id}")
+            logger.info("Vacuum job created: %s", job_id)
     except Exception as e:
-        print(f"Failed to trigger vacuum: {e}")
+        logger.error("Failed to trigger vacuum: %s", e)
         sys.exit(1)
 
     while True:
@@ -32,28 +36,28 @@ def run_via_http():
         try:
             with urllib.request.urlopen(f"{API_BASE}/admin/vacuum/status/{job_id}", timeout=10) as resp:
                 status = json.loads(resp.read())
-                print(f"  [{status['status']}] progress={status['progress']}% stage={status.get('current_stage', '-')}")
+                logger.info("[%s] progress=%s%% stage=%s", status['status'], status['progress'], status.get('current_stage', '-'))
                 if status["status"] in ("completed", "failed"):
-                    print(f"Final stats: {json.dumps(status.get('stats', {}), indent=2)}")
+                    logger.info("Final stats: %s", json.dumps(status.get('stats', {}), indent=2))
                     if status["status"] == "failed":
-                        print(f"Error: {status.get('error_log', 'unknown')}")
+                        logger.error("Error: %s", status.get('error_log', 'unknown'))
                         sys.exit(1)
                     break
         except Exception as e:
-            print(f"Poll error: {e}")
+            logger.error("Poll error: %s", e)
 
 
 def run_direct():
     from agents.RAG.vacuum import create_vacuum_job, run_vacuum_job, get_vacuum_job_status
 
     job_id = create_vacuum_job()
-    print(f"Vacuum job created: {job_id}")
+    logger.info("Vacuum job created: %s", job_id)
     run_vacuum_job(job_id)
     status = get_vacuum_job_status(job_id)
-    print(f"Status: {status['status']}")
-    print(f"Stats: {json.dumps(status.get('stats', {}), indent=2)}")
+    logger.info("Status: %s", status['status'])
+    logger.info("Stats: %s", json.dumps(status.get('stats', {}), indent=2))
     if status["status"] == "failed":
-        print(f"Error: {status.get('error_log', 'unknown')}")
+        logger.error("Error: %s", status.get('error_log', 'unknown'))
         sys.exit(1)
 
 

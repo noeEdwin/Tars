@@ -171,7 +171,7 @@ async def get_preload_message(current_user_id: int = Depends(get_current_user)):
         )
 
     prompt = (
-        f"You are TARS. Greet {username} (HSK{hsk_level}, fandom: {interest}) "
+        f"You are TARS. Greet {username}"
         f"in ONE brief sentence. {files_tip} "
         f"Give them a nickname based on their fandom. Include 一个汉字 (pīnyīn). "
         f"{word_context} "

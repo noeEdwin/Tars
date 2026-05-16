@@ -6,11 +6,14 @@ from agents.brain.personality_rag import append_style_examples
 from agents.brain.history import truncate_messages
 from agents.RAG.utils import get_embedding
 from langchain_core.runnables import RunnableConfig
+import logging
+import time
+
+logger = logging.getLogger(__name__)
 
 async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:
-    import time
     t_n = time.time()
-    print(f"[TIMER NODE] 1. lesson_prompt_node started")
+    logger.debug("[TIMER NODE] 1. lesson_prompt_node started")
     llm_expert      = get_tars_expert(expert_type="tars_normal")
     current_lesson  = state.get("current_lesson", 1)
 
@@ -66,7 +69,7 @@ INSTRUCCIÓN OBLIGATORIA:
 """
 
     last_user_msg = (state["messages"][-1].content if state.get("messages") else "")
-    print(f"[TIMER NODE] 2. Pre-RAG ready: {time.time() - t_n:.2f}s")
+    logger.debug("[TIMER NODE] 2. Pre-RAG ready: %.2fs", time.time() - t_n)
 
     import asyncio
     query_embedding = get_embedding(last_user_msg) if last_user_msg and len(last_user_msg) > 10 else None
@@ -74,14 +77,14 @@ INSTRUCCIÓN OBLIGATORIA:
     protocol_text += mem_ctx
     
     protocol_text = append_style_examples(last_user_msg, "INTRODUCE", protocol_text)
-    print(f"[TIMER NODE] 3. RAG completed: {time.time() - t_n:.2f}s")
+    logger.debug("[TIMER NODE] 3. RAG completed: %.2fs", time.time() - t_n)
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
-    print(f"[TIMER NODE] 4. Calling OpenAI ainvoke...")
+    logger.debug("[TIMER NODE] 4. Calling OpenAI ainvoke...")
     t_llm = time.time()
     truncated_state = {**state, "messages": truncate_messages(state["messages"])}
     response = await dynamic_chain.ainvoke(truncated_state, config=config)
-    print(f"[TIMER NODE] 5. LLM ainvoke completed: {time.time() - t_llm:.2f}s")
+    logger.debug("[TIMER NODE] 5. LLM ainvoke completed: %.2fs", time.time() - t_llm)
 
     return {
         "messages":        [response],

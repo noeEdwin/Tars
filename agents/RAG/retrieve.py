@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -6,6 +7,8 @@ from psycopg2.extras import RealDictCursor
 
 from agents.RAG.utils import get_embedding
 from agents.dataBase.pool import get_db_connection
+
+logger = logging.getLogger(__name__)
 
 
 def retrieve_knowledge(user_query: str, current_lesson: int = 1, query_embedding: list[float] = None) -> list[dict]:
@@ -54,7 +57,7 @@ def retrieve_knowledge(user_query: str, current_lesson: int = 1, query_embedding
                 for row in results
             ]
     except Exception as e:
-        print(f"Error retrieving knowledge: {e}")
+        logger.error("Error retrieving knowledge: %s", e)
         return []
 
 
@@ -78,7 +81,7 @@ def retrieve_style_examples(target_emotion: str, user_query_embedding: list, lim
             cur.execute(query, (target_emotion, user_query_embedding, limit))
             return [row[0] for row in cur.fetchall()]
     except Exception as e:
-        print(f"Error in style RAG (retrieve_style_examples): {e}")
+        logger.error("Error in style RAG (retrieve_style_examples): %s", e)
         return []
 
 
@@ -109,7 +112,7 @@ def get_lesson_plan_context(lesson_id: int) -> str:
                 return blueprint + "======================================="
         return f"=== CURRENT LESSON BLUEPRINT (Lesson {lesson_id}) ===\n(Lesson not found)\n======================================="
     except Exception as e:
-        print(f"Error reading JSON lesson map: {e}")
+        logger.error("Error reading JSON lesson map: %s", e)
         return ""
 
 
@@ -139,7 +142,7 @@ def get_all_knowledge_for_lesson(lesson_id: int) -> str:
                 db_context += f"- {zh} ({pinyin}) - Meaning: {trad}, POS: {pos}, Ref: {grammar}\n"
             return db_context + "=================================================\n"
     except Exception as e:
-        print(f"Error retrieving complete lesson knowledge: {e}")
+        logger.error("Error retrieving complete lesson knowledge: %s", e)
         return ""
 
 
@@ -183,5 +186,5 @@ def retrieve_character_context(character_name: str, doc_id: int = None) -> str:
 
             return f"No specific details found for character {character_name} in the document."
     except Exception as e:
-        print(f"Error retrieving document context for character: {e}")
+        logger.error("Error retrieving document context for character: %s", e)
         return "Error reading document."

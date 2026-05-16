@@ -7,7 +7,10 @@ from agents.brain.context_builders import _build_rag_context, _append_memory_con
 from agents.brain.history import truncate_messages
 from agents.RAG.utils import get_embedding
 from langchain_core.runnables import RunnableConfig
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
     expert_type   = state.get("user_mode", "tars_roleplay")
@@ -31,7 +34,7 @@ async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
                 persona_data = fetch_persona_from_db(char_name, None)
 
             if not persona_data:
-                print(f"⚠️ Persona '{char_name}' not found in DB. Triggering JIT Profiling...")
+                logger.warning("Persona '%s' not found in DB. Triggering JIT Profiling...", char_name)
                 try:
                     # Read directly from the book using doc_id
                     char_fragments_str = retrieve_character_context(char_name, doc_id_int)
@@ -39,9 +42,8 @@ async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
                     # Generate and save the character to the database (character_personas)
                     persona_data = generate_persona(char_name, doc_id_int, char_fragments_str)
                 except Exception as e:
-                    import traceback
-                    print(f"JIT Profiling failed for {char_name}: {e}")
-                    traceback.print_exc()
+                    logger.error("JIT Profiling failed for %s: %s", char_name, e)
+                    logger.debug("JIT Profiling traceback:", exc_info=True)
 
             fmt_kwargs = dict(
                 selected_role=char_name,

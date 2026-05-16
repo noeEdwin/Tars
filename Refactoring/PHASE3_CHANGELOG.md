@@ -166,3 +166,45 @@ function useWebSocket(options: UseWebSocketOptions) {
 |----------|--------|--------------|-------------|
 | `/preload_message` | GET | — | Normal mode greeting with lesson context |
 | `/preload_message_roleplay` | GET | `tars_role`, `filename` | In-character roleplay greeting |
+
+---
+
+## Step 3.3: Replace `print()` with `logging`
+
+### Problem
+
+74 `print()` statements across 14 backend Python files provided no log levels, no timestamps, and no structured output.
+
+### Solution
+
+Replaced all `print()` statements with proper `logging` calls using appropriate log levels:
+
+| Level | Use Case | Count |
+|-------|----------|-------|
+| `logger.error()` | Error handling in `except` blocks | 29 |
+| `logger.info()` | Progress/status messages | 28 |
+| `logger.debug()` | Timer/performance metrics | 5 |
+| `logger.warning()` | Warnings | 1 |
+| CLI `print()` | Usage messages in standalone scripts | 2 (kept) |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `agents/brain/node_roleplay.py` | 2 prints → logging |
+| `agents/brain/identity_agent.py` | 6 prints → logging |
+| `agents/brain/context_builders.py` | 2 prints → logging |
+| `agents/brain/node_learning.py` | 5 prints → logging (debug level for timers) |
+| `agents/dataBase/persona_db.py` | 2 prints → logging |
+| `agents/dataBase/main_queries.py` | 6 prints → logging |
+| `agents/RAG/retrieve.py` | 5 prints → logging |
+| `agents/RAG/save_memory.py` | 2 prints → logging |
+| `scripts/run_vacuum.py` | 10 prints → logging |
+| `data_normal_mode/ingest_hsk1.py` | 9 prints → logging |
+
+### Notes
+
+- Timer prints in `node_learning.py` use `logger.debug()` to avoid noise in production
+- Error prints use `logger.error()` with `exc_info=True` for traceback logging where needed
+- CLI scripts (`run_vacuum.py`, `ingest_hsk1.py`) have `logging.basicConfig()` configured for standalone use
+- Usage messages in `ingest_hsk_csv.py` and `ingest_document.py` kept as `print()` (appropriate for CLI entry points)

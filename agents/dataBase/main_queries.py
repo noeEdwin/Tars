@@ -1,6 +1,9 @@
 from psycopg2.extras import RealDictCursor
+import logging
 
 from agents.dataBase.pool import get_db_connection
+
+logger = logging.getLogger(__name__)
 
 
 def get_user_id_from_username(username: str) -> int | None:
@@ -11,7 +14,7 @@ def get_user_id_from_username(username: str) -> int | None:
             row = cur.fetchone()
             return row["id"] if row else None
     except Exception as e:
-        print(f"Error fetching user_id for {username}: {e}")
+        logger.error("Error fetching user_id for %s: %s", username, e)
         return None
 
 
@@ -23,7 +26,7 @@ def get_user_hsk_level(user_id: int) -> int:
             row = cur.fetchone()
             return row["hsk_level"] if row and row["hsk_level"] else 1
     except Exception as e:
-        print(f"Error fetching hsk_level for user {user_id}: {e}")
+        logger.error("Error fetching hsk_level for user %s: %s", user_id, e)
         return 1
 
 
@@ -47,7 +50,7 @@ def get_user_profile(user_id: int) -> dict:
                 }
             return defaults
     except Exception as e:
-        print(f"Error fetching profile for user {user_id}: {e}")
+        logger.error("Error fetching profile for user %s: %s", user_id, e)
         return defaults
 
 
@@ -58,7 +61,7 @@ def get_roleplay_contexts(user_id: str) -> list[str]:
             cur.execute("SELECT DISTINCT filename FROM document_store WHERE user_id = %s", (int(user_id),))
             return [row["filename"] for row in cur.fetchall()]
     except Exception as e:
-        print(f"Error fetching from document_store: {e}")
+        logger.error("Error fetching from document_store: %s", e)
         return []
 
 
@@ -81,7 +84,7 @@ def get_scene_from_filename(user_id: str, filename: str) -> tuple[int | None, st
 
             return doc_id, f"Roleplay based on document: {filename}\nExcerpt:\n{excerpt}"
     except Exception as e:
-        print(f"Error fetching scene content: {e}")
+        logger.error("Error fetching scene content: %s", e)
         return None, filename
 
 
@@ -94,5 +97,5 @@ def delete_document_by_filename(user_id: str, filename: str) -> bool:
             conn.commit()
             return True
     except Exception as e:
-        print(f"Error deleting document {filename}: {e}")
+        logger.error("Error deleting document %s: %s", filename, e)
         return False

@@ -1,8 +1,11 @@
 import json
+import logging
 
 from psycopg2.extras import RealDictCursor
 
 from agents.dataBase.pool import get_db_connection
+
+logger = logging.getLogger(__name__)
 
 
 def fetch_persona_from_db(name: str, doc_id: int) -> dict | None:
@@ -39,7 +42,7 @@ def fetch_persona_from_db(name: str, doc_id: int) -> dict | None:
                 }
             return None
     except Exception as e:
-        print(f"Error fetching persona for {name}: {e}")
+        logger.error("Error fetching persona for %s: %s", name, e)
         return None
 
 
@@ -112,5 +115,5 @@ def insert_persona(data: dict, doc_id: int, is_auto_generated: bool = True) -> i
 
             return result["id"] if result else None
     except Exception as e:
-        print(f"Error inserting persona {data.get('name')}: {e}")
+        logger.error("Error inserting persona %s: %s", data.get('name'), e)
         return None
