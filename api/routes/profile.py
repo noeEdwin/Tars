@@ -12,6 +12,7 @@ from agents.brain.utils import load_lesson_json
 from auth.security import get_current_user
 from auth.schemas import UserProfile, ProfileUpdateRequest
 from agents.dataBase.auth_queries import get_user_by_id, update_user_profile
+from agents.errors import AuthenticationError
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ async def update_profile(
         profile_data.interests,
     )
     if not updated_user:
-        raise HTTPException(status_code=500, detail="Error updating profile")
+        raise AuthenticationError.UserNotFound("User not found")
     return UserProfile(**updated_user)
 
 

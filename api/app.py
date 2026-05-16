@@ -19,6 +19,7 @@ from api.routes import (
     stt_router,
     admin_router,
 )
+from api.exceptions import register_exception_handlers
 
 load_dotenv()
 
@@ -51,6 +52,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Tars API", lifespan=lifespan)
+
+register_exception_handlers(app)
 
 app.add_middleware(
     CORSMiddleware,

@@ -3,10 +3,12 @@ import logging
 import os
 from pathlib import Path
 
+import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from agents.RAG.utils import get_embedding
 from agents.dataBase.pool import get_db_connection
+from agents.errors import RAGError
 
 logger = logging.getLogger(__name__)
 
@@ -19,46 +21,47 @@ def retrieve_knowledge(user_query: str, current_lesson: int = 1, query_embedding
     try:
         embedding = query_embedding or get_embedding(user_query)
         with get_db_connection() as conn:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                query = r"""
+                    WITH ranked_knowledge AS (
+                        SELECT
+                            contenido_zh, pinyin, traduccion_es, nivel_hsk, pos, grammar_ref,
+                            1 - (embedding::vector <=> %s::vector) AS cosine_similarity,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY contenido_zh
+                                ORDER BY 1 - (embedding::vector <=> %s::vector) DESC
+                            ) as rn
+                        FROM public.base_conocimiento
+                        WHERE 1 - (embedding::vector <=> %s::vector) >= %s
+                        AND NULLIF(regexp_replace(lesson_id::text, '\D', '', 'g'), '')::integer <= %s
+                    )
+                    SELECT contenido_zh, pinyin, traduccion_es, nivel_hsk, pos, grammar_ref, cosine_similarity
+                    FROM ranked_knowledge
+                    WHERE rn = 1
+                    ORDER BY cosine_similarity DESC
+                    LIMIT 5;
+                """
 
-            query = r"""
-                WITH ranked_knowledge AS (
-                    SELECT
-                        contenido_zh, pinyin, traduccion_es, nivel_hsk, pos, grammar_ref,
-                        1 - (embedding::vector <=> %s::vector) AS cosine_similarity,
-                        ROW_NUMBER() OVER (
-                            PARTITION BY contenido_zh
-                            ORDER BY 1 - (embedding::vector <=> %s::vector) DESC
-                        ) as rn
-                    FROM public.base_conocimiento
-                    WHERE 1 - (embedding::vector <=> %s::vector) >= %s
-                    AND NULLIF(regexp_replace(lesson_id::text, '\D', '', 'g'), '')::integer <= %s
-                )
-                SELECT contenido_zh, pinyin, traduccion_es, nivel_hsk, pos, grammar_ref, cosine_similarity
-                FROM ranked_knowledge
-                WHERE rn = 1
-                ORDER BY cosine_similarity DESC
-                LIMIT 5;
-            """
+                cur.execute(query, (embedding, embedding, embedding, 0.50, current_lesson))
+                results = cur.fetchall()
 
-            cur.execute(query, (embedding, embedding, embedding, 0.50, current_lesson))
-            results = cur.fetchall()
-
-            return [
-                {
-                    "contenido_zh": row["contenido_zh"],
-                    "pinyin": row["pinyin"],
-                    "traduccion_es": row["traduccion_es"],
-                    "hsk_level": row["nivel_hsk"],
-                    "pos": row["pos"],
-                    "grammar_ref": row["grammar_ref"],
-                    "similarity": row["cosine_similarity"],
-                }
-                for row in results
-            ]
-    except Exception as e:
+                return [
+                    {
+                        "contenido_zh": row["contenido_zh"],
+                        "pinyin": row["pinyin"],
+                        "traduccion_es": row["traduccion_es"],
+                        "hsk_level": row["nivel_hsk"],
+                        "pos": row["pos"],
+                        "grammar_ref": row["grammar_ref"],
+                        "similarity": row["cosine_similarity"],
+                    }
+                    for row in results
+                ]
+    except RAGError:
+        raise
+    except psycopg2.Error as e:
         logger.error("Error retrieving knowledge: %s", e)
-        return []
+        raise RAGError.RetrievalError("Failed to retrieve knowledge from database", original=e) from e
 
 
 def retrieve_style_examples(target_emotion: str, user_query_embedding: list, limit: int = 3) -> list[str]:
@@ -79,9 +82,11 @@ def retrieve_style_examples(target_emotion: str, user_query_embedding: list, lim
 
                 cur.execute(query, (target_emotion, user_query_embedding, limit))
                 return [row["es"] for row in cur.fetchall()]
-    except Exception as e:
+    except RAGError:
+        raise
+    except psycopg2.Error as e:
         logger.error("Error in style RAG (retrieve_style_examples): %s", e)
-        return []
+        raise RAGError.RetrievalError("Failed to retrieve style examples", original=e) from e
 
 
 def get_lesson_plan_context(lesson_id: int) -> str:
@@ -110,39 +115,44 @@ def get_lesson_plan_context(lesson_id: int) -> str:
                     blueprint += f"Grammar to Enforce: {grammar}\n"
                 return blueprint + "======================================="
         return f"=== CURRENT LESSON BLUEPRINT (Lesson {lesson_id}) ===\n(Lesson not found)\n======================================="
+    except FileNotFoundError as e:
+        logger.error("Lesson map file not found: %s", e)
+        raise RAGError.RetrievalError("Lesson plan file missing", original=e) from e
     except Exception as e:
         logger.error("Error reading JSON lesson map: %s", e)
-        return ""
+        raise RAGError.RetrievalError("Failed to read lesson plan", original=e) from e
 
 
 def get_all_knowledge_for_lesson(lesson_id: int) -> str:
     """Fetch all vocabulary and grammar for a specific lesson from the database."""
     try:
         with get_db_connection() as conn:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            query = r"""
-                SELECT contenido_zh, pinyin, traduccion_es, pos, grammar_ref
-                FROM public.base_conocimiento
-                WHERE NULLIF(regexp_replace(lesson_id::text, '\D', '', 'g'), '')::integer = %s;
-            """
-            cur.execute(query, (lesson_id,))
-            results = cur.fetchall()
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                query = r"""
+                    SELECT contenido_zh, pinyin, traduccion_es, pos, grammar_ref
+                    FROM public.base_conocimiento
+                    WHERE NULLIF(regexp_replace(lesson_id::text, '\D', '', 'g'), '')::integer = %s;
+                """
+                cur.execute(query, (lesson_id,))
+                results = cur.fetchall()
 
-            if not results:
-                return ""
+                if not results:
+                    return ""
 
-            db_context = f"\n=== DATABASE KNOWLEDGE FOR LESSON {lesson_id} ===\n"
-            for row in results:
-                zh = row["contenido_zh"]
-                pinyin = row["pinyin"]
-                trad = row["traduccion_es"]
-                pos = row["pos"]
-                grammar = row["grammar_ref"]
-                db_context += f"- {zh} ({pinyin}) - Meaning: {trad}, POS: {pos}, Ref: {grammar}\n"
-            return db_context + "=================================================\n"
-    except Exception as e:
+                db_context = f"\n=== DATABASE KNOWLEDGE FOR LESSON {lesson_id} ===\n"
+                for row in results:
+                    zh = row["contenido_zh"]
+                    pinyin = row["pinyin"]
+                    trad = row["traduccion_es"]
+                    pos = row["pos"]
+                    grammar = row["grammar_ref"]
+                    db_context += f"- {zh} ({pinyin}) - Meaning: {trad}, POS: {pos}, Ref: {grammar}\n"
+                return db_context + "=================================================\n"
+    except RAGError:
+        raise
+    except psycopg2.Error as e:
         logger.error("Error retrieving complete lesson knowledge: %s", e)
-        return ""
+        raise RAGError.RetrievalError(f"Failed to retrieve knowledge for lesson {lesson_id}", original=e) from e
 
 
 def retrieve_character_context(character_name: str, doc_id: int = None) -> str:
@@ -183,6 +193,8 @@ def retrieve_character_context(character_name: str, doc_id: int = None) -> str:
                     return "\n...\n".join([row["content"] for row in results])
 
                 return f"No specific details found for character {character_name} in the document."
-    except Exception as e:
+    except RAGError:
+        raise
+    except psycopg2.Error as e:
         logger.error("Error retrieving document context for character: %s", e)
-        return "Error reading document."
+        raise RAGError.RetrievalError(f"Failed to retrieve context for character '{character_name}'", original=e) from e

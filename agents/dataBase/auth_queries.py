@@ -13,9 +13,11 @@ Table `users` schema (Supabase):
 """
 import logging
 
+import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from agents.dataBase.pool import get_db_connection
+from agents.errors import DatabaseError, AuthenticationError
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,7 @@ def get_user_by_username(username: str) -> dict | None:
     """
     Look up a user by username.
     Includes hashed_password — only use during login for verification.
+    Returns None if user does not exist.
     """
     sql = """
         SELECT id, username, first_name, last_name, email,
@@ -38,13 +41,13 @@ def get_user_by_username(username: str) -> dict | None:
                 cur.execute(sql, (username,))
                 row = cur.fetchone()
                 return dict(row) if row else None
-    except Exception as e:
+    except psycopg2.Error as e:
         logger.error("Error fetching user by username %s: %s", username, e)
-        return None
+        raise DatabaseError.QueryError(f"Failed to fetch user '{username}'", original=e) from e
 
 
 def get_user_by_email(email: str) -> dict | None:
-    """Look up a user by email. Used to verify uniqueness during registration."""
+    """Look up a user by email. Used to verify uniqueness during registration. Returns None if not found."""
     sql = "SELECT id, username FROM users WHERE email = %s LIMIT 1;"
     try:
         with get_db_connection() as conn:
@@ -52,13 +55,13 @@ def get_user_by_email(email: str) -> dict | None:
                 cur.execute(sql, (email,))
                 row = cur.fetchone()
                 return dict(row) if row else None
-    except Exception as e:
+    except psycopg2.Error as e:
         logger.error("Error fetching user by email %s: %s", email, e)
-        return None
+        raise DatabaseError.QueryError(f"Failed to fetch user by email '{email}'", original=e) from e
 
 
 def get_user_by_username_simple(username: str) -> dict | None:
-    """Check if a username already exists (for registration). No sensitive data returned."""
+    """Check if a username already exists (for registration). No sensitive data returned. Returns None if not found."""
     sql = "SELECT id, username FROM users WHERE username = %s LIMIT 1;"
     try:
         with get_db_connection() as conn:
@@ -66,9 +69,9 @@ def get_user_by_username_simple(username: str) -> dict | None:
                 cur.execute(sql, (username,))
                 row = cur.fetchone()
                 return dict(row) if row else None
-    except Exception as e:
+    except psycopg2.Error as e:
         logger.error("Error checking username %s: %s", username, e)
-        return None
+        raise DatabaseError.QueryError(f"Failed to check username '{username}'", original=e) from e
 
 
 def create_user(
@@ -81,13 +84,14 @@ def create_user(
     native_language: str = "es",
     learning_goals: str = "Travel",
     interests: str = "",
-) -> dict | None:
+) -> dict:
     """
     Insert a new user into the database.
     Returns the newly created record (without hashed_password).
 
     Raises:
-        psycopg2.errors.UniqueViolation if username or email already exist.
+        AuthenticationError.DuplicateUser if username or email already exist.
+        DatabaseError.QueryError on other database failures.
     """
     sql = """
         INSERT INTO users (username, first_name, last_name, email, hashed_password,
@@ -105,14 +109,21 @@ def create_user(
                 ))
                 conn.commit()
                 row = cur.fetchone()
-                return dict(row) if row else None
-    except Exception as e:
+                if not row:
+                    raise DatabaseError.QueryError("User creation returned no row")
+                return dict(row)
+    except psycopg2.errors.UniqueViolation as e:
+        logger.error("Duplicate user creation attempt for %s: %s", username, e)
+        raise AuthenticationError.DuplicateUser(
+            f"Username '{username}' or email '{email}' is already in use", original=e
+        ) from e
+    except psycopg2.Error as e:
         logger.error("Error creating user %s: %s", username, e)
-        return None
+        raise DatabaseError.QueryError(f"Failed to create user '{username}'", original=e) from e
 
 
 def get_user_by_id(user_id: int) -> dict | None:
-    """Get all public/profile data for a user by ID."""
+    """Get all public/profile data for a user by ID. Returns None if not found."""
     sql = """
         SELECT id, username, first_name, last_name, email,
                hsk_level, native_language, learning_goals, interests
@@ -126,9 +137,9 @@ def get_user_by_id(user_id: int) -> dict | None:
                 cur.execute(sql, (user_id,))
                 row = cur.fetchone()
                 return dict(row) if row else None
-    except Exception as e:
+    except psycopg2.Error as e:
         logger.error("Error fetching user by id %d: %s", user_id, e)
-        return None
+        raise DatabaseError.QueryError(f"Failed to fetch user id {user_id}", original=e) from e
 
 
 def update_user_profile(
@@ -140,7 +151,7 @@ def update_user_profile(
     learning_goals: str,
     interests: str,
 ) -> dict | None:
-    """Update an existing user's profile."""
+    """Update an existing user's profile. Returns None if user does not exist."""
     sql = """
         UPDATE users
         SET first_name = %s,
@@ -163,6 +174,6 @@ def update_user_profile(
                 conn.commit()
                 row = cur.fetchone()
                 return dict(row) if row else None
-    except Exception as e:
+    except psycopg2.Error as e:
         logger.error("Error updating profile for user %d: %s", user_id, e)
-        return None
+        raise DatabaseError.QueryError(f"Failed to update profile for user {user_id}", original=e) from e

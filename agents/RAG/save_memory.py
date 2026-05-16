@@ -1,10 +1,12 @@
 import logging
 
+import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from agents.RAG.filter import normalize_text, contains_chinese, should_embed
 from agents.RAG.utils import get_embedding
 from agents.dataBase.pool import get_db_connection
+from agents.errors import DatabaseError
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +42,10 @@ def save_long_term_memory(conversation_id: int, role: str, content: str, embeddi
                 """
                 cur.execute(query, (conversation_id, role, content, vector, normalized, has_zh))
                 conn.commit()
-        except Exception as e:
+        except psycopg2.Error as e:
+            conn.rollback()
             logger.error("Error saving message: %s", e)
+            raise DatabaseError.QueryError("Failed to save long-term memory", original=e) from e
 
 
 def retrieve_user_memory(user_id: int, query_text: str, limit: int = 5, query_embedding: list[float] = None) -> list[str]:
@@ -70,8 +74,10 @@ def retrieve_user_memory(user_id: int, query_text: str, limit: int = 5, query_em
                     )
 
                 conn.commit()
-        except Exception as e:
+        except psycopg2.Error as e:
+            conn.rollback()
             logger.error("Error retrieving memory for user %s: %s", user_id, e)
+            raise DatabaseError.QueryError("Failed to retrieve user memory", original=e) from e
 
     return past_memories
 

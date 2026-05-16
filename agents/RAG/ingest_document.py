@@ -15,11 +15,13 @@ from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
+import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from agents.brain.chains import get_embeddings_model
 from agents.brain.identity_agent import extract_cast_from_text
 from agents.dataBase.pool import get_db_connection
+from agents.errors import RAGError
 
 load_dotenv()
 
@@ -64,44 +66,52 @@ def ingest_pdf(file_path: str, user_id: int = None):
         filename = raw_filename[5:] if raw_filename.startswith("temp_") else raw_filename
 
         with get_db_connection() as conn:
-            with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                for chunk, embedding in zip(chunks, embeddings):
-                    if user_id is not None:
-                        query = """
-                            INSERT INTO document_store (filename, content, embedding, user_id)
-                            VALUES (%s, %s, %s, %s)
-                        """
-                        cur.execute(query, (filename, chunk, embedding, user_id))
-                    else:
-                        query = """
-                            INSERT INTO document_store (filename, content, embedding)
-                            VALUES (%s, %s, %s)
-                        """
-                        cur.execute(query, (filename, chunk, embedding))
+            try:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    for chunk, embedding in zip(chunks, embeddings):
+                        if user_id is not None:
+                            query = """
+                                INSERT INTO document_store (filename, content, embedding, user_id)
+                                VALUES (%s, %s, %s, %s)
+                            """
+                            cur.execute(query, (filename, chunk, embedding, user_id))
+                        else:
+                            query = """
+                                INSERT INTO document_store (filename, content, embedding)
+                                VALUES (%s, %s, %s)
+                            """
+                            cur.execute(query, (filename, chunk, embedding))
 
-                conn.commit()
+                    conn.commit()
 
-                try:
-                    if user_id is not None:
-                        cur.execute(
-                            "SELECT id FROM document_store WHERE filename = %s AND user_id = %s LIMIT 1",
-                            (filename, user_id)
-                        )
-                    else:
-                        cur.execute("SELECT id FROM document_store WHERE filename = %s LIMIT 1", (filename,))
-                    row = cur.fetchone()
+                    try:
+                        if user_id is not None:
+                            cur.execute(
+                                "SELECT id FROM document_store WHERE filename = %s AND user_id = %s LIMIT 1",
+                                (filename, user_id)
+                            )
+                        else:
+                            cur.execute("SELECT id FROM document_store WHERE filename = %s LIMIT 1", (filename,))
+                        row = cur.fetchone()
 
-                    if row:
-                        doc_id = row["id"]
-                        sweep_text = text[:3000]
-                        extract_cast_from_text(sweep_text, doc_id)
-                except Exception as e:
-                    logger.warning("Could not perform Cast Sweep: %s", e)
+                        if row:
+                            doc_id = row["id"]
+                            sweep_text = text[:3000]
+                            extract_cast_from_text(sweep_text, doc_id)
+                    except Exception as e:
+                        logger.warning("Could not perform Cast Sweep: %s", e)
+            except psycopg2.Error as e:
+                conn.rollback()
+                logger.error("Error during PDF ingestion: %s", e, exc_info=True)
+                raise RAGError.IngestionError(f"Failed to ingest PDF '{filename}'", original=e) from e
 
         logger.info("Successfully ingested %d chunks from %s into document_store.", len(chunks), filename)
 
+    except RAGError:
+        raise
     except Exception as e:
         logger.error("Error during PDF ingestion: %s", e, exc_info=True)
+        raise RAGError.IngestionError(f"Failed to process PDF '{file_path}'", original=e) from e
 
 
 if __name__ == "__main__":

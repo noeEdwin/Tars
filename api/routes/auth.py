@@ -40,25 +40,18 @@ async def register(req: RegisterRequest):
 
     hashed = await asyncio.to_thread(hash_password, req.password)
 
-    try:
-        new_user = await asyncio.to_thread(
-            create_user,
-            req.username,
-            req.first_name,
-            req.last_name,
-            req.email,
-            hashed,
-            req.hsk_level,
-            req.native_language,
-            req.learning_goals,
-            req.interests,
-        )
-    except Exception as exc:
-        logger.error("Error creating user: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal error creating user. Please try again.",
-        )
+    new_user = await asyncio.to_thread(
+        create_user,
+        req.username,
+        req.first_name,
+        req.last_name,
+        req.email,
+        hashed,
+        req.hsk_level,
+        req.native_language,
+        req.learning_goals,
+        req.interests,
+    )
 
     return RegisterResponse(
         message="Account created successfully. Welcome to Tars!",

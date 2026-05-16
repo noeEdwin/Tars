@@ -78,7 +78,7 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 
 ---
 
-## Phase 3: Code Quality 🔄 IN PROGRESS
+## Phase 3: Code Quality ✅ COMPLETE
 
 **Goal:** Standardize language, deduplicate code, improve patterns.
 
@@ -92,13 +92,13 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 
 ---
 
-## Phase 4: Architecture ⏳ NOT STARTED
+## Phase 4: Architecture 🔄 IN PROGRESS
 
 **Goal:** Error handling, typing, separation of concerns.
 
 | Step | Status | Description |
 |------|--------|-------------|
-| 4.1 | ⏳ | Add custom exception classes (`TarsError`, `DatabaseError`, `RAGError`, `AuthenticationError`) |
+| 4.1 | ✅ | Add custom exception classes (`TarsError`, `DatabaseError`, `RAGError`, `AuthenticationError`) |
 | 4.2 | ⏳ | Convert `TarsState` from `TypedDict` to Pydantic `BaseModel` |
 | 4.3 | ⏳ | Add return type annotations to all DB functions |
 | 4.4 | ⏳ | Extract protocol text building from `node_learning.py` and `node_roleplay.py` into `protocol_builder.py` |
@@ -121,3 +121,5 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 
 - `Refactoring/PHASE1_CHANGELOG.md` — Phase 1 detailed changelog
 - `Refactoring/PHASE2_CHANGELOG.md` — Phase 2 detailed changelog
+- `Refactoring/PHASE3_CHANGELOG.md` — Phase 3 detailed changelog
+- `Refactoring/PHASE4_CHANGELOG.md` — Phase 4 detailed changelog

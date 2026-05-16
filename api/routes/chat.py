@@ -14,6 +14,7 @@ from agents.RAG.save_memory import save_long_term_memory
 from agents.RAG.utils import clear_turn_cache, get_embedding
 from agents.dataBase.main_queries import get_user_hsk_level, get_scene_from_filename
 from agents.dataBase.conversations import get_or_create_active_conversation
+from agents.errors import TarsError
 from auth.security import get_current_user
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
 from api.models import StartSessionRequest, StartSessionResponse
@@ -278,6 +279,13 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
 
     except asyncio.CancelledError:
         await websocket.send_json({"type": "status", "message": "Interrupted by user."})
+    except TarsError as e:
+        logger.error("Tars error in WebSocket: %s", e.message)
+        await websocket.send_json({"type": "error", "code": e.code, "message": str(e)})
     except Exception as e:
-        logger.error("Error in Tars Response: %s", e)
-        await websocket.send_json({"type": "error", "message": str(e)})
+        logger.exception("Unhandled error in WebSocket")
+        await websocket.send_json({
+            "type": "error",
+            "code": "internal_error",
+            "message": "An unexpected error occurred"
+        })
