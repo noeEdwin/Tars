@@ -41,15 +41,16 @@ interface UsePreWarmOptions {
  */
 export function usePreWarmSession({ mode, enabled, filename, user_role, tars_role }: UsePreWarmOptions) {
     const [session, setSession] = useState<PreWarmedSession | null>(null);
+    const [preloadMessage, setPreloadMessage] = useState<PreloadMessage | null>(null);
     const socketRef = useRef<WebSocket | null>(null);
     const sessionRef = useRef<PreWarmedSession | null>(null);
 
     const reset = useCallback(() => {
         // Do NOT close the socket here — after handoff ConversationContainer owns it.
         // Closing here would kill in-flight LangGraph tokens.
+        // Do NOT null out sessionRef — keep it alive for late preload patch
         socketRef.current = null;
         setSession(null);
-        sessionRef.current = null;
     }, []);
 
     useEffect(() => {
@@ -138,14 +139,14 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 // ── Phase 2: start BEFORE snapshot so it's always in-flight ──
                 // Uses its own flag independent of `cancelled` so the patch
                 // always lands even if `enabled` flips false mid-flight.
-                if (mode === 'tars_normal') {
-                    let patchSent = false;
-                    const token = localStorage.getItem('tars_token');
-                    const preloadUrl = `${API_BASE}/preload_message`;
-                    fetch(preloadUrl, {
-                        signal: controller.signal,
-                        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                    })
+                let patchSent = false;
+                const preloadUrl = mode === 'tars_roleplay'
+                    ? `${API_BASE}/preload_message_roleplay?tars_role=${encodeURIComponent(tars_role || '')}&filename=${encodeURIComponent(filename || '')}`
+                    : `${API_BASE}/preload_message`;
+                fetch(preloadUrl, {
+                    signal: controller.signal,
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                })
                         .then(r => {
                             if (r.status === 401) {
                                 clearAuth();
@@ -154,19 +155,20 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                             }
                             return r.json();
                         })
-                        .then(({ text, audio_b64 }: { text?: string; audio_b64?: string } | null) => {
-                            if (patchSent || !text) return;
+                        .then((data: { text?: string; audio_b64?: string } | null) => {
+                            if (!data || patchSent || !data.text) return;
                             patchSent = true;
-                            const pm: PreloadMessage = { text, audio_b64: audio_b64 ?? null };
+                            const pm: PreloadMessage = { text: data.text, audio_b64: data.audio_b64 ?? null };
                             // Always patch via ref — works even if `cancelled` is true
                             if (sessionRef.current) {
                                 const patched = { ...sessionRef.current, preloadMessage: pm };
                                 sessionRef.current = patched;
                                 setSession(patched);
                             }
+                            // Set separately so it persists across session consumption
+                            setPreloadMessage(pm);
                         })
                         .catch(() => { /* preload is cosmetic — never block on error */ });
-                }
 
                 // ── Snapshot: session is ready → unblocks home page ──────────
                 const snap: PreWarmedSession = {
@@ -198,5 +200,5 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
         };
     }, [enabled, mode, filename, user_role, tars_role]);
 
-    return { session, reset };
+    return { session, preloadMessage, reset };
 }

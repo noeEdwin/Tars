@@ -39,18 +39,19 @@ export interface SessionConfig {
 
 function App() {
     const [isLightMode, setIsLightMode] = useState(false);
-    
+
     // Si no hay token guardado, iniciamos directamente en la vista de login.
     // Si lo hay, iniciamos en 'loading' para hacer el pre-warm y pasar al 'home'.
     const [currentView, setCurrentView] = useState<ViewState>(() => {
         return isTokenValid() ? 'loading' : 'sign-in';
     });
-    
+
     const [sessionConfig, setSessionConfig] = useState<SessionConfig>({ mode: 'tars_normal' });
 
     // ── Pre-warm normal mode ────────────────────
     const {
         session: preWarmedSession,
+        preloadMessage: normalPreloadMessage,
         reset: resetPreWarm,
     } = usePreWarmSession({
         mode: 'tars_normal',
@@ -60,6 +61,7 @@ function App() {
     const [roleplayConfig, setRoleplayConfig] = useState<SessionConfig | null>(null);
     const {
         session: preWarmedRoleplaySession,
+        preloadMessage: roleplayPreloadMessage,
         reset: resetRoleplayPreWarm,
     } = usePreWarmSession({
         mode: 'tars_roleplay',
@@ -85,7 +87,7 @@ function App() {
     // Falls back after 5 s so a slow network never blocks indefinitely.
     useEffect(() => {
         if (currentView !== 'loading') return;
-        if (preWarmedSession?.preloadMessage) {
+        if (normalPreloadMessage) {
             setCurrentView('home');
             return;
         }
@@ -94,15 +96,16 @@ function App() {
             if (preWarmedSession) setCurrentView('home');
         }, 5000);
         return () => clearTimeout(fallback);
-    }, [currentView, preWarmedSession]);
+    }, [currentView, preWarmedSession, normalPreloadMessage]);
 
     // Transition: loading-conversation → conversation (roleplay only)
+    // Waits for session AND preloadMessage so the in-character greeting is ready.
     useEffect(() => {
         if (currentView !== 'loading-conversation') return;
-        if (preWarmedRoleplaySession) {
+        if (preWarmedRoleplaySession && roleplayPreloadMessage) {
             setCurrentView('conversation');
         }
-    }, [currentView, preWarmedRoleplaySession]);
+    }, [currentView, preWarmedRoleplaySession, roleplayPreloadMessage]);
 
     /**
      * Called by RoleplayScreen → lets us pre-warm the roleplay session
@@ -135,6 +138,13 @@ function App() {
             ? sessionConfig.mode === 'tars_normal'
                 ? preWarmedSession
                 : preWarmedRoleplaySession
+            : null;
+
+    const activePreloadMessage =
+        currentView === 'conversation'
+            ? sessionConfig.mode === 'tars_normal'
+                ? normalPreloadMessage
+                : roleplayPreloadMessage
             : null;
 
     return (
@@ -178,6 +188,7 @@ function App() {
                     setCurrentView={setCurrentView}
                     sessionConfig={sessionConfig}
                     preWarmedSession={activePreWarmedSession}
+                    preloadMessage={activePreloadMessage}
                     onSessionConsumed={handleSessionConsumed}
                 />
             )}

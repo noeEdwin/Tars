@@ -34,6 +34,7 @@ async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
                 print(f"⚠️ Persona '{char_name}' not found in DB. Triggering JIT Profiling...")
                 try:
                     # Read directly from the book using doc_id
+                    char_fragments_str = retrieve_character_context(char_name, doc_id_int)
                     
                     # Generate and save the character to the database (character_personas)
                     persona_data = generate_persona(char_name, doc_id_int, char_fragments_str)

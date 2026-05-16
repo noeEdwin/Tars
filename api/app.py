@@ -39,6 +39,10 @@ async def lifespan(app: FastAPI):
         from api.routes.chat import app_state as chat_state
         chat_state.update(app_state)
 
+        # Share app_state with the profile router (for lesson progress)
+        from api.routes.profile import app_state as profile_state
+        profile_state.update(app_state)
+
         try:
             yield
         finally:

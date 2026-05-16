@@ -54,7 +54,7 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
             sys_msg_text = (
                 f"SYSTEM UPDATE: User has initiated a roleplay.\n"
                 f"SCENE: {scene}\nUSER ROLE: {req.user_role}\nTARS ROLE: {req.tars_role}\n\n"
-                f"PLEASE ADOPT THIS PERSONA IMMEDIATELY."
+                f"ADOPT THIS PERSONA IMMEDIATELY."
             )
 
             init_state = {
@@ -149,16 +149,26 @@ async def websocket_endpoint(websocket: WebSocket, user_id: int):
     try:
         while True:
             data = await websocket.receive_json()
-            if data.get("type") == "interrupt":
+            msg_type = data.get("type")
+
+            if msg_type == "interrupt":
                 if user_id in active_tasks:
                     active_tasks[user_id].cancel()
                 continue
 
-            if data.get("type") in ["chat", "init_session"]:
+            if msg_type == "init_session":
+                logger.info(f"WebSocket vinculado silenciosamente para el usuario {user_id}")
+                continue
+
+            if msg_type == "chat":
                 user_input = data.get("text")
                 thread_id = data.get("thread_id")
                 conv_id = data.get("conversation_id")
                 mode = data.get("mode", "tars_roleplay")
+
+                if not user_input or str(user_input).strip() == "":
+                    logger.warning("Mensaje de chat vacío recibido y descartado.")
+                    continue
 
                 if user_id in active_tasks and not active_tasks[user_id].done():
                     active_tasks[user_id].cancel()
@@ -200,12 +210,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
         worker_task = asyncio.create_task(audio_worker())
 
         if mode == "tars_roleplay":
-            if not user_input or str(user_input).strip() in ["", "null", "None"]:
-                kickstart_msg = "[COMANDO_INTERNO]: iniciar_roleplay"
-                input_data = {"messages": [HumanMessage(content=kickstart_msg)]}
-                logger.debug("Sending Kickstart to LangGraph for Roleplay")
-            else:
-                input_data = {"messages": [HumanMessage(content=user_input)]}
+            input_data = {"messages": [HumanMessage(content=user_input)]}
         else:
             if user_input:
                 user_embedding = get_embedding(user_input)

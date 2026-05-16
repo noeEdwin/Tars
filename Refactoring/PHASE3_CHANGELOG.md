@@ -55,3 +55,114 @@
 | `api/routes/roleplay.py` | 4 status/error messages |
 | `data_normal_mode/ingest_hsk1.py` | 5 print messages |
 | `data_normal_mode/verify_translations.py` | 2 print messages + 1 LLM prompt |
+
+---
+
+## Step 3.2: Extract `useWebSocket` Hook
+
+### Problem
+
+The `socket.onmessage` handler was **duplicated in 3 places** within `ConversationContainer.tsx`:
+
+| Location | Lines | Context |
+|----------|-------|---------|
+| Pre-warmed session | 73-114 | Socket from pre-warmed session |
+| Main session | 158-201 | Fresh WebSocket connection |
+| Reconnect | 243-278 | Socket reconnection in `sendMessage()` |
+
+All three handled the same message types identically: `token`, `audio_chunk`/`tars_answer`, `tars_answer_end`, and `error`. ~90 lines of duplicated code.
+
+### Solution
+
+Created `frontend/src/hooks/useWebSocket.ts` — a custom React hook that encapsulates:
+
+1. **Shared message handler** — `handleSocketMessage()` processes all WebSocket message types in one place
+2. **Handler attachment** — `attachMessageHandler()` reusable function to wire up any WebSocket
+3. **Pre-warmed session adoption** — takes over an existing socket and buffered state
+4. **Fresh session creation** — creates WebSocket after session is ready
+5. **Reconnect logic** — handles socket reconnection in `sendMessage()`
+6. **State management** — messages, audio queue, processing state, teaching message tracking
+7. **Actions** — `sendMessage()`, `interruptTars()`
+
+### Results
+
+**`ConversationContainer.tsx`: 329 lines → 103 lines** (69% reduction)
+
+The component now focuses purely on:
+- Starting the session via `/start_session`
+- Routing between `VoiceConversationScreen` and `ConversationScreen`
+- Passing hook outputs as props
+
+### Files
+
+| File | Action | Lines |
+|------|--------|-------|
+| `frontend/src/hooks/useWebSocket.ts` | Created | 195 |
+| `frontend/src/components/ConversationContainer.tsx` | Rewritten | 103 (was 329) |
+
+### Hook API
+
+```typescript
+function useWebSocket(options: UseWebSocketOptions) {
+    return {
+        messages,           // Message[]
+        audioQueue,         // string[]
+        currentAudioIndex,  // number
+        setCurrentAudioIndex,
+        isProcessing,       // boolean
+        sendMessage,        // (text: string) => void
+        interruptTars,      // () => void
+    };
+}
+```
+
+---
+
+## Step 3.5: Preload Messages with Lesson Progress & Roleplay Greeting
+
+### Problem
+
+- Normal mode preload message (`/preload_message`) was a generic greeting — no lesson context
+- Roleplay mode had no preload message at all — the character greeting only arrived after WebSocket kickstart
+
+### Solution
+
+**Backend — `api/routes/profile.py`:**
+
+1. **Enhanced `/preload_message`** — Now reads the user's LangGraph state to get:
+   - `current_lesson` — which lesson the user is on
+   - `lesson_progress` — how many words completed
+   - `target_word` — the next word to practice
+   
+   The LLM prompt includes: *"The user's next word to learn is 你 (nǐ) — 'tú'. Weave this into the greeting."*
+   
+   Falls back to lesson 1, word 1 (`我` — "Yo") if no state exists.
+
+2. **New `/preload_message_roleplay`** — Accepts `tars_role` and `filename` as query params:
+   - Fetches persona from DB via `fetch_persona_from_db`
+   - Uses persona traits (archetype, speech style, rules) in the LLM prompt
+   - Generates an in-character greeting: *"You are {character}. Stay in character. End with a question."*
+   - Returns `{ text, audio_b64 }` same format as normal preload
+
+3. **Shared `app_state`** with profile module in `api/app.py` — enables reading LangGraph state
+
+**Frontend — `frontend/src/utils/usePreWarmSession.ts`:**
+
+4. Changed preload fetch from `if (mode === 'tars_normal')` to both modes:
+   - Normal: `GET /preload_message`
+   - Roleplay: `GET /preload_message_roleplay?tars_role=...&filename=...`
+
+### Files
+
+| File | Change |
+|------|--------|
+| `api/app.py` | Share `app_state` with profile module |
+| `api/routes/profile.py` | Enhanced `/preload_message` + new `/preload_message_roleplay` |
+| `frontend/src/utils/usePreWarmSession.ts` | Fetch preload for roleplay too |
+
+### API Endpoints
+
+| Endpoint | Method | Query Params | Description |
+|----------|--------|--------------|-------------|
+| `/preload_message` | GET | — | Normal mode greeting with lesson context |
+| `/preload_message_roleplay` | GET | `tars_role`, `filename` | In-character roleplay greeting |
