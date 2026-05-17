@@ -4,7 +4,7 @@ import './SignUpScreen.css';
 import { useSessionStore } from '../../stores/sessionStore';
 import darkLogo from '../../assets/dark_mode.png';
 import lightLogo from '../../assets/light_mode.png';
-import { API_BASE } from '../../apiConfig';
+import { authApi, ApiError } from '../../api';
 
 
 interface FieldErrors {
@@ -91,40 +91,26 @@ export default function SignUpScreen() {
 
         setIsLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username:         username.trim(),
-                    first_name:       firstName.trim(),
-                    last_name:        lastName.trim(),
-                    email:            email.trim().toLowerCase(),
-                    password,
-                    password_confirm: passwordConfirm,
-                    native_language:  nativeLanguage,
-                    hsk_level:        hskLevel,
-                    learning_goals:   learningGoals,
-                    interests:        interests.trim(),
-                }),
+            await authApi.register({
+                username: username.trim(),
+                first_name: firstName.trim(),
+                last_name: lastName.trim(),
+                email: email.trim().toLowerCase(),
+                password,
+                password_confirm: passwordConfirm,
+                native_language: nativeLanguage,
+                hsk_level: hskLevel,
+                learning_goals: learningGoals,
+                interests: interests.trim(),
             });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                // El backend puede devolver detail de Pydantic (array) o string
-                if (Array.isArray(data.detail)) {
-                    const msg = data.detail.map((e: { msg: string }) => e.msg).join(' ');
-                    setErrors({ general: msg });
-                } else {
-                    setErrors({ general: data.detail ?? 'Error al registrarse. Inténtalo de nuevo.' });
-                }
-                return;
-            }
-
             setSuccessMsg('¡Cuenta creada exitosamente! Redirigiendo al login…');
             setTimeout(() => setView('sign-in'), 1800);
-        } catch {
-            setErrors({ general: 'No se pudo conectar con el servidor. Verifica tu conexión.' });
+        } catch (err: unknown) {
+            if (err instanceof ApiError) {
+                setErrors({ general: err.message });
+            } else {
+                setErrors({ general: 'No se pudo conectar con el servidor. Verifica tu conexión.' });
+            }
         } finally {
             setIsLoading(false);
         }

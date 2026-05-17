@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { ChevronLeft, Info, CloudUpload, Calendar, Play, X, Trash2 } from 'lucide-react';
 import './RoleplayScreen.css';
-import { API_BASE } from '../../apiConfig';
-import { useAuthStore } from '../../stores/authStore';
+import { roleplayApi } from '../../api';
 import { useSessionStore } from '../../stores/sessionStore';
 
 export default function RoleplayScreen() {
@@ -14,7 +13,6 @@ export default function RoleplayScreen() {
     const [tarsRole, setTarsRole] = useState('');
     const [fileToDelete, setFileToDelete] = useState<string | null>(null);
 
-    const token = useAuthStore((s) => s.token);
     const setView = useSessionStore((s) => s.setView);
     const prepareRoleplaySession = useSessionStore((s) => s.prepareRoleplaySession);
 
@@ -22,16 +20,10 @@ export default function RoleplayScreen() {
         if (!fileToDelete) return;
 
         try {
-            const response = await fetch(`${API_BASE}/roleplay/files/${encodeURIComponent(fileToDelete)}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` },
-            });
-
-            if (response.ok) {
-                setFiles(prev => prev.filter(f => f !== fileToDelete));
-            }
+            await roleplayApi.deleteFile(fileToDelete);
+            setFiles(prev => prev.filter(f => f !== fileToDelete));
         } catch (error) {
-            console.error("Error al eliminar:", error);
+            console.error('Error deleting file:', error);
         } finally {
             setFileToDelete(null);
         }
@@ -48,19 +40,10 @@ export default function RoleplayScreen() {
         formData.append("file", file);
 
         try {
-            const response = await fetch(`${API_BASE}/roleplay/upload`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData,
-            });
-
-            if (response.ok) {
-                setFiles(prev => [file.name, ...prev]);
-            } else {
-                console.error("Error en el servidor");
-            }
+            await roleplayApi.uploadFile(formData);
+            setFiles(prev => [file.name, ...prev]);
         } catch (error) {
-            console.error("Error de conexión:", error);
+            console.error('Upload error:', error);
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -68,15 +51,12 @@ export default function RoleplayScreen() {
     };
 
     useEffect(() => {
-        fetch(`${API_BASE}/roleplay/files`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-        })
-            .then(res => res.json())
+        roleplayApi.listFiles()
             .then(data => {
                 if (data.files) setFiles(data.files);
             })
             .catch(err => console.error('Error fetching roleplay files:', err));
-    }, [token]);
+    }, []);
 
     const openModal = (filename: string) => {
         setModalFile(filename);

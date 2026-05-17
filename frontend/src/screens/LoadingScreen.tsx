@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Lottie from 'lottie-react';
 import { useTranslation } from 'react-i18next';
 import sleepAnimation from '../assets/animations/sleep.json';
-import { API_BASE } from '../apiConfig';
+import { profileApi, ApiError } from '../api';
 import { useAuthStore } from '../stores/authStore';
 import { useSessionStore } from '../stores/sessionStore';
 import './LoadingScreen.css';
@@ -20,26 +20,17 @@ export default function LoadingScreen({
     const [toastVisible, setToastVisible] = useState(false);
     const [toastDismissed, setToastDismissed] = useState(false);
 
-    const token = useAuthStore((s) => s.token);
     const logout = useAuthStore((s) => s.logout);
     const setView = useSessionStore((s) => s.setView);
 
     useEffect(() => {
         if (!personalised) return;
+
+        const token = useAuthStore.getState().token;
         if (!token) return;
 
         let cancelled = false;
-        fetch(`${API_BASE}/greeting`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-        })
-            .then(r => {
-                if (r.status === 401) {
-                    logout();
-                    setView('sign-in');
-                    return null;
-                }
-                return r.json();
-            })
+        profileApi.getGreeting()
             .then(data => {
                 if (!cancelled && data?.greeting) {
                     setGreeting(data.greeting);
@@ -49,10 +40,15 @@ export default function LoadingScreen({
                     }, 5000);
                 }
             })
-            .catch(() => { /* silently fall back */ });
+            .catch((err: unknown) => {
+                if (err instanceof ApiError && err.status === 401) {
+                    logout();
+                    setView('sign-in');
+                }
+            });
 
         return () => { cancelled = true; };
-    }, [personalised, token]);
+    }, [personalised]);
 
     const handleDismissToast = () => {
         setToastVisible(false);

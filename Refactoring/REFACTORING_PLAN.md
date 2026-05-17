@@ -113,7 +113,7 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 |------|--------|-------------|
 | 5.1 | ✅ | Add Zustand for state management (`authStore`, `sessionStore`) — deleted unused `chatStore` |
 | 5.2 | ✅ | Reorganize components into folders with barrel exports and co-located CSS (`auth/`, `chat/`, `roleplay/`, `profile/`, `layout/`) |
-| 5.3 | ⏳ | Create typed API client layer (`src/api/client.ts`) replacing scattered `fetch()` calls |
+| 5.3 | ✅ | Create typed API client layer (`src/api/`) replacing all 12 scattered `fetch()` calls |
 
 ---
 

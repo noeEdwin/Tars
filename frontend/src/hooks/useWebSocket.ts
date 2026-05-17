@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useAuthStore } from '../stores/authStore';
-import { API_BASE, WS_BASE } from '../apiConfig';
+import { WS_BASE } from '../apiConfig';
 import type { Message } from '../types/message';
 import type { PreWarmedSession, PreloadMessage } from './usePreWarmSession';
+import { chatApi } from '../api';
 
 interface UseWebSocketOptions {
     userId: number;
@@ -171,16 +171,7 @@ export default function useWebSocket({
         let cancelled = false;
 
         const startSession = async () => {
-            const token = useAuthStore.getState().token;
-            const res = await fetch(`${API_BASE}/start_session`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                },
-                body: JSON.stringify({ mode, filename, user_role, tars_role }),
-            });
-            const data = await res.json();
+            const data = await chatApi.startSession({ mode, filename, user_role, tars_role });
             if (cancelled) return;
 
             setThreadId(data.thread_id);

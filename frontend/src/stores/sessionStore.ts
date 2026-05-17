@@ -13,6 +13,19 @@ export type ViewState =
     | 'loading'
     | 'loading-conversation';
 
+function getInitialView(): ViewState {
+    try {
+        const raw = localStorage.getItem('tars-auth');
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.state?.token) return 'loading';
+        }
+    } catch {
+        // ignore
+    }
+    return 'sign-in';
+}
+
 export interface SessionConfig {
     mode: 'tars_normal' | 'tars_roleplay';
     filename?: string;
@@ -37,7 +50,7 @@ interface SessionState {
 }
 
 export const useSessionStore = create<SessionState>()((set) => ({
-    currentView: 'loading',
+    currentView: getInitialView(),
     sessionConfig: { mode: 'tars_normal' },
     roleplayConfig: null,
     isLightMode: false,

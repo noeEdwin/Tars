@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Message } from '../../types/message';
 import { parseTarsMessage } from '../../utils/messageParser';
-import { API_BASE } from '../../apiConfig';
+import { sttApi } from '../../api';
 import './VoiceConversationScreen.css';
 
 type UIState = 'idle' | 'listening' | 'speaking';
@@ -188,10 +188,6 @@ export default function VoiceConversationScreen({
                 }
 
                 const mimeType = mediaRecorderRef.current?.mimeType || 'audio/webm';
-                let ext = 'webm';
-                if (mimeType.includes('mp4') || mimeType.includes('m4a')) ext = 'm4a';
-                else if (mimeType.includes('ogg')) ext = 'ogg';
-                else if (mimeType.includes('wav')) ext = 'wav';
 
                 const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
 
@@ -199,24 +195,7 @@ export default function VoiceConversationScreen({
                 setUiState('idle');
 
                 try {
-                    const formData = new FormData();
-                    formData.append('audio', audioBlob, `voice_record.${ext}`);
-
-                    const response = await fetch(`${API_BASE}/stt`, {
-                        method: 'POST',
-                        body: formData,
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('STT request failed');
-                    }
-
-                    const data = await response.json();
-
-                    if (data.detail) {
-                        throw new Error(data.detail);
-                    }
-
+                    const data = await sttApi.transcribe(audioBlob);
                     const text = data.text;
 
                     if (text && text.trim()) {

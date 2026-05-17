@@ -226,7 +226,7 @@ Added missing `preloadMessage` to `UseWebSocketOptions` interface — previously
 |------|--------|
 | `frontend/src/stores/authStore.ts` | **Created** — Auth state with persist middleware |
 | `frontend/src/stores/sessionStore.ts` | **Created** — Session/navigation state |
-| `frontend/src/stores/chatStore.ts` | **Created** — Chat state (ready for future migration) |
+| `frontend/src/stores/chatStore.ts` | **Deleted** — dead code, never imported anywhere |
 | `frontend/src/App.tsx` | Replaced 4 `useState` with store selectors, removed props drilling |
 | `frontend/src/components/SignInScreen.tsx` | Uses `authStore.login()`, `sessionStore` selectors |
 | `frontend/src/components/SignUpScreen.tsx` | Uses `sessionStore` selectors |
@@ -243,3 +243,112 @@ Added missing `preloadMessage` to `UseWebSocketOptions` interface — previously
 | `frontend/src/components/LoadingScreen.tsx` | Uses `authStore.logout()`, `sessionStore.setView()` |
 | `frontend/src/hooks/useWebSocket.ts` | Uses `authStore.getState().token`, added `preloadMessage` to interface |
 | `frontend/src/utils/usePreWarmSession.ts` | Uses `authStore.getState()` for token and userId |
+
+---
+
+## Step 5.3: Create Typed API Client Layer
+
+### Problem
+
+12 `fetch()` calls scattered across 7 files with:
+- **No TypeScript types** for API responses — everything was `any`
+- **Duplicated auth headers** — `Authorization: Bearer ${token}` repeated 6 times
+- **Inconsistent error handling** — some checked `res.ok`, some didn't, some swallowed errors
+- **No request timeouts** — network failures could hang indefinitely
+- **No request/response validation** — backend Pydantic schemas weren't mirrored on frontend
+
+### Solution
+
+#### 1. TypeScript Types Mirroring Backend Pydantic Schemas
+
+**`src/api/types.ts`** — 10 interfaces matching `auth/schemas.py` and route response models:
+- `RegisterRequest`, `RegisterResponse`, `LoginRequest`, `TokenResponse`
+- `UserProfile`, `ProfileUpdateRequest`, `GreetingResponse`, `PreloadMessageResponse`
+- `RoleplayFilesResponse`, `STTResponse`, `StartSessionRequest`, `StartSessionResponse`
+
+#### 2. API Client with Auth Interceptor + Timeout
+
+**`src/api/client.ts`** — Centralized `ApiClient` class:
+- **Automatic token injection** — reads `useAuthStore.getState().token` per request
+- **10-second timeout** on all requests via `AbortController`
+- **Unified error handling** — parses `detail` from both string and Pydantic array formats
+- **Multipart support** — `upload()` skips `Content-Type: application/json` for `FormData`
+- **204 handling** — returns `undefined` for no-content responses
+
+```typescript
+class ApiError extends Error {
+    status: number;  // HTTP status code
+}
+
+const api = new ApiClient(API_BASE);
+
+api.get<T>(path)       // GET with auth
+api.post<T>(path, body) // POST with JSON + auth
+api.put<T>(path, body)  // PUT with JSON + auth
+api.delete<T>(path)     // DELETE with auth
+api.upload<T>(path, formData) // POST multipart with auth
+```
+
+#### 3. Typed Service Layer
+
+**`src/api/services/auth.ts`** — `authApi.login()`, `authApi.register()`
+**`src/api/services/profile.ts`** — `profileApi.getProfile()`, `updateProfile()`, `getGreeting()`, `getPreloadMessage()`, `getRoleplayPreloadMessage()`
+**`src/api/services/roleplay.ts`** — `roleplayApi.listFiles()`, `uploadFile()`, `deleteFile()`
+**`src/api/services/stt.ts`** — `sttApi.transcribe(audioBlob)`
+**`src/api/services/chat.ts`** — `chatApi.startSession()`
+
+**`src/api/index.ts`** — Barrel export for all services, types, and `ApiError`.
+
+#### 4. Migrated All 12 Fetch Calls
+
+| File | Before | After |
+|------|--------|-------|
+| `SignInScreen.tsx` | `fetch('/auth/login')` + manual JSON + error parsing | `authApi.login()` |
+| `SignUpScreen.tsx` | `fetch('/auth/register')` + manual JSON + Pydantic array handling | `authApi.register()` |
+| `PersonalInfoScreen.tsx` | `fetch('/api/user/profile')` × 2 + manual headers | `profileApi.getProfile()`, `profileApi.updateProfile()` |
+| `LoadingScreen.tsx` | `fetch('/greeting')` + manual 401 handling | `profileApi.getGreeting()` |
+| `usePreWarmSession.ts` | `fetch('/start_session')` + `fetch('/preload_message')` + manual auth | `chatApi.startSession()`, `profileApi.getPreloadMessage()` |
+| `useWebSocket.ts` | `fetch('/start_session')` + manual auth | `chatApi.startSession()` |
+| `RoleplayScreen.tsx` | `fetch('/roleplay/files')` × 3 + manual FormData + auth | `roleplayApi.listFiles()`, `uploadFile()`, `deleteFile()` |
+| `VoiceConversationScreen.tsx` | `fetch('/stt')` + manual FormData + error parsing | `sttApi.transcribe()` |
+
+### Bugs Fixed
+
+| # | Bug | Fix |
+|---|-----|-----|
+| 1 | No request timeouts — could hang indefinitely | 10s `AbortController` timeout on every request |
+| 2 | Auth headers duplicated 6× across files | Single `getHeaders()` method in `ApiClient` |
+| 3 | Inconsistent error parsing (string vs Pydantic array) | Unified in `fetchWithTimeout()` |
+| 4 | `RoleplayScreen` depended on `token` in effect deps | Removed — auth now automatic via interceptor |
+| 5 | `LoadingScreen` depended on `token` in effect deps | Removed — auth now automatic via interceptor |
+| 6 | `PersonalInfoScreen` profile fetch re-ran on token change | Removed `token` dependency — auth automatic |
+
+### Files Created
+
+| File | Description |
+|------|-------------|
+| `frontend/src/api/types.ts` | 10 TypeScript interfaces mirroring backend Pydantic schemas |
+| `frontend/src/api/client.ts` | `ApiClient` class with auth interceptor + 10s timeout |
+| `frontend/src/api/services/auth.ts` | Auth endpoint wrappers |
+| `frontend/src/api/services/profile.ts` | Profile endpoint wrappers |
+| `frontend/src/api/services/roleplay.ts` | Roleplay endpoint wrappers |
+| `frontend/src/api/services/stt.ts` | STT endpoint wrapper |
+| `frontend/src/api/services/chat.ts` | Chat/session endpoint wrapper |
+| `frontend/src/api/index.ts` | Barrel export for all services, types, and `ApiError` |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `frontend/src/components/auth/SignInScreen.tsx` | `authApi.login()` replaces `fetch()` |
+| `frontend/src/components/auth/SignUpScreen.tsx` | `authApi.register()` replaces `fetch()` |
+| `frontend/src/components/profile/PersonalInfoScreen.tsx` | `profileApi.getProfile()`, `updateProfile()` replace 2× `fetch()` |
+| `frontend/src/screens/LoadingScreen.tsx` | `profileApi.getGreeting()` replaces `fetch()` |
+| `frontend/src/components/roleplay/RoleplayScreen.tsx` | `roleplayApi.*` replaces 3× `fetch()` |
+| `frontend/src/components/chat/VoiceConversationScreen.tsx` | `sttApi.transcribe()` replaces `fetch()` |
+| `frontend/src/hooks/usePreWarmSession.ts` | `chatApi.startSession()`, `profileApi.getPreloadMessage()` replace `fetch()` |
+| `frontend/src/hooks/useWebSocket.ts` | `chatApi.startSession()` replaces `fetch()` |
+
+### Build Status
+
+✅ TypeScript + Vite production build passes clean. Zero `fetch()` calls remain outside `api/client.ts`.

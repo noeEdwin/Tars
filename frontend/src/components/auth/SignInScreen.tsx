@@ -3,7 +3,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader } from 'lucide-react';
 import './SignInScreen.css';
 import darkLogo from '../../assets/dark_mode.png';
 import lightLogo from '../../assets/light_mode.png';
-import { API_BASE } from '../../apiConfig';
+import { authApi, ApiError } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
 import { useSessionStore } from '../../stores/sessionStore';
 
@@ -28,23 +28,13 @@ export default function SignInScreen() {
 
         setIsLoading(true);
         try {
-            const res = await fetch(`${API_BASE}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: username.trim(), password }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                setError(data.detail ?? 'Error al iniciar sesión. Inténtalo de nuevo.');
-                return;
-            }
-
+            const data = await authApi.login({ username: username.trim(), password });
             login(data.access_token, data.user_id, data.username, data.first_name);
             setView('loading');
-        } catch (err: any) {
-            if (err instanceof TypeError && err.message?.includes('fetch')) {
+        } catch (err: unknown) {
+            if (err instanceof ApiError) {
+                setError(err.message);
+            } else if (err instanceof TypeError && err.message?.includes('fetch')) {
                 setError('No se pudo conectar con el servidor. Verifica que el backend esté corriendo con SSL.');
             } else {
                 setError('Error inesperado. Inténtalo de nuevo.');

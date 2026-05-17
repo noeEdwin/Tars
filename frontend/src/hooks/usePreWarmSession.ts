@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { API_BASE, WS_BASE } from '../apiConfig';
+import { WS_BASE } from '../apiConfig';
 import type { Message } from '../types/message';
 import { useAuthStore } from '../stores/authStore';
+import { chatApi, profileApi, ApiError } from '../api';
 
 function getUserId(): number {
     const userId = useAuthStore.getState().userId;
@@ -46,15 +47,16 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
     const sessionRef = useRef<PreWarmedSession | null>(null);
 
     const reset = useCallback(() => {
-        // Do NOT close the socket here — after handoff ConversationContainer owns it.
-        // Closing here would kill in-flight LangGraph tokens.
-        // Do NOT null out sessionRef — keep it alive for late preload patch
         socketRef.current = null;
         setSession(null);
     }, []);
 
     useEffect(() => {
         if (!enabled) return;
+
+        const token = useAuthStore.getState().token;
+        if (!token) return;
+
         let cancelled = false;
         const controller = new AbortController();
 
@@ -64,33 +66,8 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
 
         const run = async () => {
             try {
-                // ── Phase 1: session (blocks home-page transition) ────────────
-                const startUrl = `${API_BASE}/start_session`;
-                const token = useAuthStore.getState().token;
-                const sessionRes = await fetch(startUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                    },
-                    body: JSON.stringify({ mode, filename, user_role, tars_role }),
-                    signal: controller.signal,
-                });
-                if (!sessionRes.ok) {
-                    if (sessionRes.status === 401) {
-                        useAuthStore.getState().logout();
-                        window.location.href = '/';
-                        return;
-                    }
-                    const body = await sessionRes.text().catch(() => '');
-                    throw new Error(
-                        `[PreWarm] start_session failed (${sessionRes.status} ${sessionRes.statusText}) url=${startUrl} body=${body.slice(0, 500)}`,
-                    );
-                }
-                const data = await sessionRes.json().catch(async () => {
-                    const body = await sessionRes.text().catch(() => '');
-                    throw new Error(`[PreWarm] start_session invalid JSON url=${startUrl} body=${body.slice(0, 500)}`);
-                });
+                const data = await chatApi.startSession({ mode, filename, user_role, tars_role });
+
                 if (cancelled) return;
 
                 const socket = new WebSocket(`${WS_BASE}/ws/${getUserId()}`);
@@ -136,41 +113,25 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                     setSession(next);
                 };
 
-                // ── Phase 2: start BEFORE snapshot so it's always in-flight ──
-                // Uses its own flag independent of `cancelled` so the patch
-                // always lands even if `enabled` flips false mid-flight.
                 let patchSent = false;
-                const preloadUrl = mode === 'tars_roleplay'
-                    ? `${API_BASE}/preload_message_roleplay?tars_role=${encodeURIComponent(tars_role || '')}&filename=${encodeURIComponent(filename || '')}`
-                    : `${API_BASE}/preload_message`;
-                fetch(preloadUrl, {
-                    signal: controller.signal,
-                    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                })
-                        .then(r => {
-                            if (r.status === 401) {
-                                useAuthStore.getState().logout();
-                                window.location.href = '/';
-                                return null;
-                            }
-                            return r.json();
-                        })
-                        .then((data: { text?: string; audio_b64?: string } | null) => {
-                            if (!data || patchSent || !data.text) return;
-                            patchSent = true;
-                            const pm: PreloadMessage = { text: data.text, audio_b64: data.audio_b64 ?? null };
-                            // Always patch via ref — works even if `cancelled` is true
-                            if (sessionRef.current) {
-                                const patched = { ...sessionRef.current, preloadMessage: pm };
-                                sessionRef.current = patched;
-                                setSession(patched);
-                            }
-                            // Set separately so it persists across session consumption
-                            setPreloadMessage(pm);
-                        })
-                        .catch(() => { /* preload is cosmetic — never block on error */ });
+                const fetchPreload = mode === 'tars_roleplay'
+                    ? () => profileApi.getRoleplayPreloadMessage(tars_role || '', filename || '')
+                    : () => profileApi.getPreloadMessage();
 
-                // ── Snapshot: session is ready → unblocks home page ──────────
+                fetchPreload()
+                    .then((data) => {
+                        if (!data || patchSent || !data.text) return;
+                        patchSent = true;
+                        const pm: PreloadMessage = { text: data.text, audio_b64: data.audio_b64 ?? null };
+                        if (sessionRef.current) {
+                            const patched = { ...sessionRef.current, preloadMessage: pm };
+                            sessionRef.current = patched;
+                            setSession(patched);
+                        }
+                        setPreloadMessage(pm);
+                    })
+                    .catch(() => { /* preload is cosmetic — never block on error */ });
+
                 const snap: PreWarmedSession = {
                     threadId: data.thread_id,
                     conversationId: data.conversation_id,
@@ -185,10 +146,13 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 setSession(snap);
 
             } catch (err) {
-                // Fetch can throw TypeError("NetworkError...") for CORS/TLS/mixed-content/offline.
-                // Log the bases to make the root cause obvious.
+                if (err instanceof ApiError && err.status === 401) {
+                    useAuthStore.getState().logout();
+                    window.location.href = '/';
+                    return;
+                }
                 if (!cancelled) {
-                    console.error('[PreWarm] Failed:', err, { API_BASE, WS_BASE, mode });
+                    console.error('[PreWarm] Failed:', err);
                 }
             }
         };

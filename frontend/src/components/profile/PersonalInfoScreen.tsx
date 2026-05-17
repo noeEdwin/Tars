@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Camera, Loader } from 'lucide-react';
 import './PersonalInfoScreen.css';
-import { API_BASE } from '../../apiConfig';
+import { profileApi, ApiError } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
 import { useSessionStore } from '../../stores/sessionStore';
 
@@ -16,70 +16,50 @@ export default function PersonalInfoScreen() {
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
 
-    const token = useAuthStore((s) => s.token);
     const updateFirstName = useAuthStore((s) => s.updateFirstName);
     const setView = useSessionStore((s) => s.setView);
 
     useEffect(() => {
         const fetchProfile = async () => {
-            if (!token) return;
-
             try {
-                const res = await fetch(`${API_BASE}/api/user/profile`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setFullName(`${data.first_name} ${data.last_name}`.trim());
-                    setNativeLanguage(data.native_language || 'es');
-                    setHskLevel(data.hsk_level || 1);
-                    setLearningGoals(data.learning_goals || 'Travel');
-                    setInterests(data.interests || '');
-                }
+                const data = await profileApi.getProfile();
+                setFullName(`${data.first_name} ${data.last_name}`.trim());
+                setNativeLanguage(data.native_language || 'es');
+                setHskLevel(data.hsk_level || 1);
+                setLearningGoals(data.learning_goals || 'Travel');
+                setInterests(data.interests || '');
             } catch (err) {
-                console.error("Error fetching profile", err);
+                console.error('Error fetching profile', err);
             } finally {
                 setIsLoading(false);
             }
         };
         fetchProfile();
-    }, [token]);
+    }, []);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setMessage({ text: '', type: '' });
         setIsSaving(true);
 
-        const nameParts = fullName.trim().split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-
         try {
-            const res = await fetch(`${API_BASE}/api/user/profile`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    first_name: firstName,
-                    last_name: lastName,
-                    hsk_level: hskLevel,
-                    native_language: nativeLanguage,
-                    learning_goals: learningGoals,
-                    interests: interests
-                })
-            });
+            const nameParts = fullName.trim().split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
 
-            if (res.ok) {
-                const data = await res.json();
-                updateFirstName(data.first_name);
-                setMessage({ text: 'Profile updated successfully!', type: 'success' });
-            } else {
-                setMessage({ text: 'Failed to update profile.', type: 'error' });
-            }
-        } catch (err) {
-            setMessage({ text: 'Network error.', type: 'error' });
+            const data = await profileApi.updateProfile({
+                first_name: firstName,
+                last_name: lastName,
+                hsk_level: hskLevel,
+                native_language: nativeLanguage,
+                learning_goals: learningGoals,
+                interests,
+            });
+            updateFirstName(data.first_name);
+            setMessage({ text: 'Profile updated successfully!', type: 'success' });
+        } catch (err: unknown) {
+            const msg = err instanceof ApiError ? err.message : 'Network error.';
+            setMessage({ text: msg, type: 'error' });
         } finally {
             setIsSaving(false);
         }
