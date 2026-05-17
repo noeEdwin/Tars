@@ -1,7 +1,7 @@
 import { BookOpen, MessageSquare, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './ModeCards.css';
-import { useSessionStore } from '../stores/sessionStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 export default function ModeCards() {
     const { t } = useTranslation();

@@ -1,7 +1,7 @@
 import { Home, Layers, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './BottomNav.css';
-import { useSessionStore } from '../stores/sessionStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 export default function BottomNav() {
     const { t } = useTranslation();

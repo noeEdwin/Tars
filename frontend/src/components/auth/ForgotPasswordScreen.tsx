@@ -1,7 +1,7 @@
 import { ArrowLeft, Mail, Send } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import './ForgotPasswordScreen.css';
-import { useSessionStore } from '../stores/sessionStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 export default function ForgotPasswordScreen() {
     const { t } = useTranslation();

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader } from 'lucide-react';
 import './SignInScreen.css';
-import darkLogo from '../assets/dark_mode.png';
-import lightLogo from '../assets/light_mode.png';
-import { API_BASE } from '../apiConfig';
-import { useAuthStore } from '../stores/authStore';
-import { useSessionStore } from '../stores/sessionStore';
+import darkLogo from '../../assets/dark_mode.png';
+import lightLogo from '../../assets/light_mode.png';
+import { API_BASE } from '../../apiConfig';
+import { useAuthStore } from '../../stores/authStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 export default function SignInScreen() {
     const [username, setUsername]         = useState('');

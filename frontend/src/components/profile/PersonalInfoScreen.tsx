@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Camera, Loader } from 'lucide-react';
 import './PersonalInfoScreen.css';
-import { API_BASE } from '../apiConfig';
-import { useAuthStore } from '../stores/authStore';
-import { useSessionStore } from '../stores/sessionStore';
+import { API_BASE } from '../../apiConfig';
+import { useAuthStore } from '../../stores/authStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 export default function PersonalInfoScreen() {
     const [fullName, setFullName] = useState('');

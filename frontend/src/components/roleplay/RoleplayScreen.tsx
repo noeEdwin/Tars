@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
 import { ChevronLeft, Info, CloudUpload, Calendar, Play, X, Trash2 } from 'lucide-react';
 import './RoleplayScreen.css';
-import { API_BASE } from '../apiConfig';
-import { useAuthStore } from '../stores/authStore';
-import { useSessionStore } from '../stores/sessionStore';
+import { API_BASE } from '../../apiConfig';
+import { useAuthStore } from '../../stores/authStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 export default function RoleplayScreen() {
     const [files, setFiles] = useState<string[]>([]);

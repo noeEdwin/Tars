@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ArrowLeft, Mic, MicOff, Send, Settings2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Message } from './ConversationContainer';
-import { parseTarsMessage } from '../utils/messageParser';
+import type { Message } from '../../types/message';
+import { parseTarsMessage } from '../../utils/messageParser';
 import './ConversationScreen.css';
 
 declare global {

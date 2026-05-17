@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE, WS_BASE } from '../apiConfig';
-import type { Message } from '../components/ConversationContainer';
+import type { Message } from '../types/message';
 import { useAuthStore } from '../stores/authStore';
 
 function getUserId(): number {

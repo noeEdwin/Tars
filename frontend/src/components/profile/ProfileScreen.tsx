@@ -1,7 +1,7 @@
 import { ArrowLeft, Settings, TrendingUp, Sparkles, Flame, PlusCircle } from 'lucide-react';
 import './ProfileScreen.css';
-import { useAuthStore } from '../stores/authStore';
-import { useSessionStore } from '../stores/sessionStore';
+import { useAuthStore } from '../../stores/authStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 export default function ProfileScreen() {
     const firstName = useAuthStore((s) => s.firstName);

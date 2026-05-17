@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Message } from './ConversationContainer';
-import { parseTarsMessage } from '../utils/messageParser';
-import { API_BASE } from '../apiConfig';
+import type { Message } from '../../types/message';
+import { parseTarsMessage } from '../../utils/messageParser';
+import { API_BASE } from '../../apiConfig';
 import './VoiceConversationScreen.css';
 
 type UIState = 'idle' | 'listening' | 'speaking';

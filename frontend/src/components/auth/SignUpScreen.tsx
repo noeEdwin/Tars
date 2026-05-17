@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { ArrowLeft, User, Mail, Lock, Eye, EyeOff, ArrowRight, Loader, Globe, GraduationCap, Target, Lightbulb } from 'lucide-react';
 import './SignUpScreen.css';
-import { useSessionStore } from '../stores/sessionStore';
-import darkLogo from '../assets/dark_mode.png';
-import lightLogo from '../assets/light_mode.png';
-import { API_BASE } from '../apiConfig';
+import { useSessionStore } from '../../stores/sessionStore';
+import darkLogo from '../../assets/dark_mode.png';
+import lightLogo from '../../assets/light_mode.png';
+import { API_BASE } from '../../apiConfig';
 
 
 interface FieldErrors {

@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { API_BASE, WS_BASE } from '../apiConfig';
-import type { Message } from '../components/ConversationContainer';
-import type { PreWarmedSession, PreloadMessage } from '../utils/usePreWarmSession';
+import type { Message } from '../types/message';
+import type { PreWarmedSession, PreloadMessage } from './usePreWarmSession';
 
 interface UseWebSocketOptions {
     userId: number;

@@ -1,19 +1,11 @@
 import { useState } from 'react';
 import VoiceConversationScreen from './VoiceConversationScreen';
 import ConversationScreen from './ConversationScreen';
-import type { SessionConfig } from '../stores/sessionStore';
-import type { PreWarmedSession, PreloadMessage } from '../utils/usePreWarmSession';
-import useWebSocket from '../hooks/useWebSocket';
-import { useAuthStore } from '../stores/authStore';
-import { useSessionStore } from '../stores/sessionStore';
-
-export interface Message {
-    id: string;
-    role: 'tars' | 'user';
-    text: string;
-    audio_b64?: string[];
-    isTeaching?: boolean;
-}
+import type { SessionConfig } from '../../stores/sessionStore';
+import type { PreWarmedSession, PreloadMessage } from '../../hooks/usePreWarmSession';
+import useWebSocket from '../../hooks/useWebSocket';
+import { useAuthStore } from '../../stores/authStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 interface ConversationContainerProps {
     sessionConfig: SessionConfig;

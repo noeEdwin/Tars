@@ -1,7 +1,7 @@
 import { Flame, Smartphone, Sun, Moon } from 'lucide-react';
 import './Header.css';
-import { useAuthStore } from '../stores/authStore';
-import { useSessionStore } from '../stores/sessionStore';
+import { useAuthStore } from '../../stores/authStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 export default function Header() {
     const firstName = useAuthStore((s) => s.firstName);

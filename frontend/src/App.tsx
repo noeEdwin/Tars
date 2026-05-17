@@ -1,18 +1,11 @@
 import { useEffect } from 'react';
-import Header from './components/Header';
-import MicButton from './components/MicButton';
-import ModeCards from './components/ModeCards';
-import BottomNav from './components/BottomNav';
-import RoleplayScreen from './components/RoleplayScreen';
-import ProfileScreen from './components/ProfileScreen';
-import SettingsScreen from './components/SettingsScreen';
-import PersonalInfoScreen from './components/PersonalInfoScreen';
-import SignInScreen from './components/SignInScreen';
-import SignUpScreen from './components/SignUpScreen';
-import ForgotPasswordScreen from './components/ForgotPasswordScreen';
-import ConversationContainer from './components/ConversationContainer';
-import LoadingScreen from './components/LoadingScreen';
-import { usePreWarmSession } from './utils/usePreWarmSession';
+import { Header, MicButton, ModeCards, BottomNav } from './components/layout';
+import { RoleplayScreen } from './components/roleplay';
+import { ProfileScreen, SettingsScreen, PersonalInfoScreen } from './components/profile';
+import { SignInScreen, SignUpScreen, ForgotPasswordScreen } from './components/auth';
+import { ConversationContainer } from './components/chat';
+import { LoadingScreen } from './screens';
+import { usePreWarmSession } from './hooks/usePreWarmSession';
 import { useAuthStore } from './stores/authStore';
 import { useSessionStore } from './stores/sessionStore';
 import './index.css';
@@ -29,14 +22,12 @@ function App() {
     const isLightMode = useSessionStore((s) => s.isLightMode);
     const consumeSession = useSessionStore((s) => s.consumeSession);
 
-    // On mount: check if token is valid, set initial view
     useEffect(() => {
         if (!checkAuth()) {
             setView('sign-in');
         }
     }, []);
 
-    // Apply theme
     useEffect(() => {
         if (isLightMode) {
             document.documentElement.setAttribute('data-theme', 'light');
@@ -45,7 +36,6 @@ function App() {
         }
     }, [isLightMode]);
 
-    // ── Pre-warm normal mode ────────────────────
     const {
         session: preWarmedSession,
         preloadMessage: normalPreloadMessage,
@@ -55,7 +45,6 @@ function App() {
         enabled: currentView === 'loading' || currentView === 'home' || currentView === 'conversation',
     });
 
-    // ── Pre-warm roleplay mode ──────────────────
     const {
         session: preWarmedRoleplaySession,
         preloadMessage: roleplayPreloadMessage,
@@ -68,7 +57,6 @@ function App() {
         tars_role: roleplayConfig?.tars_role,
     });
 
-    // Transition: loading → home
     useEffect(() => {
         if (currentView !== 'loading') return;
         if (normalPreloadMessage) {
@@ -81,7 +69,6 @@ function App() {
         return () => clearTimeout(fallback);
     }, [currentView, preWarmedSession, normalPreloadMessage]);
 
-    // Transition: loading-conversation → conversation
     useEffect(() => {
         if (currentView !== 'loading-conversation') return;
         if (preWarmedRoleplaySession && roleplayPreloadMessage) {
@@ -89,7 +76,6 @@ function App() {
         }
     }, [currentView, preWarmedRoleplaySession, roleplayPreloadMessage]);
 
-    // Handle 401 from API calls — logout and redirect
     useEffect(() => {
         if (!checkAuth() && currentView !== 'sign-in' && currentView !== 'sign-up' && currentView !== 'forgot-password') {
             logout();
@@ -114,17 +100,11 @@ function App() {
     return (
         <div className="mobile-container">
             {currentView === 'loading' && (
-                <LoadingScreen
-                    personalised={true}
-                    fallbackMessage="Waking up TARS..."
-                />
+                <LoadingScreen personalised={true} fallbackMessage="Waking up TARS..." />
             )}
 
             {currentView === 'loading-conversation' && (
-                <LoadingScreen
-                    personalised={false}
-                    fallbackMessage="Preparing roleplay..."
-                />
+                <LoadingScreen personalised={false} fallbackMessage="Preparing roleplay..." />
             )}
 
             {currentView === 'home' && (
@@ -152,29 +132,17 @@ function App() {
                 />
             )}
 
-            {currentView === 'profile' && (
-                <ProfileScreen />
-            )}
+            {currentView === 'profile' && <ProfileScreen />}
 
-            {currentView === 'settings' && (
-                <SettingsScreen />
-            )}
+            {currentView === 'settings' && <SettingsScreen />}
 
-            {currentView === 'personal-info' && (
-                <PersonalInfoScreen />
-            )}
+            {currentView === 'personal-info' && <PersonalInfoScreen />}
 
-            {currentView === 'sign-in' && (
-                <SignInScreen />
-            )}
+            {currentView === 'sign-in' && <SignInScreen />}
 
-            {currentView === 'sign-up' && (
-                <SignUpScreen />
-            )}
+            {currentView === 'sign-up' && <SignUpScreen />}
 
-            {currentView === 'forgot-password' && (
-                <ForgotPasswordScreen />
-            )}
+            {currentView === 'forgot-password' && <ForgotPasswordScreen />}
 
             {currentView !== 'sign-in' &&
                 currentView !== 'sign-up' &&

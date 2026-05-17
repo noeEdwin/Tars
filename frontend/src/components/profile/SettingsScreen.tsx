@@ -1,7 +1,7 @@
 import { ArrowLeft, User, Award, Languages, Volume2, Moon, Sun, LogOut, ChevronRight, ChevronDown } from 'lucide-react';
 import './SettingsScreen.css';
-import { useAuthStore } from '../stores/authStore';
-import { useSessionStore } from '../stores/sessionStore';
+import { useAuthStore } from '../../stores/authStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 export default function SettingsScreen() {
     const logout = useAuthStore((s) => s.logout);

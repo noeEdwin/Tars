@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Mic } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './MicButton.css';
-import { useSessionStore } from '../stores/sessionStore';
+import { useSessionStore } from '../../stores/sessionStore';
 
 const HOLD_DURATION = 3000;
 
