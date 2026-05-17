@@ -127,3 +127,121 @@ except psycopg2.Error as e:
 | `api/routes/profile.py` | Changed `HTTPException(500)` → `AuthenticationError.UserNotFound` |
 | `api/routes/roleplay.py` | Removed redundant `try/except`, simplified delete route |
 | `api/routes/chat.py` | Sanitized WebSocket error responses, catch `TarsError` specifically |
+
+---
+
+## Step 4.2: Convert `TarsState` from `TypedDict` to Pydantic `BaseModel`
+
+### Problem
+
+`TarsState` was a `TypedDict` with zero runtime validation. The code relied on defensive `.get()` calls with defaults everywhere, and missing fields were silently tolerated. This made it impossible to catch invalid state mutations at runtime.
+
+### Solution
+
+#### 1. Redefined `TarsState` as Pydantic `BaseModel` (`agents/brain/schema.py`)
+
+**Before (TypedDict):**
+```python
+class TarsState(TypedDict):
+    messages: Annotated[List[BaseMessage], add_messages]
+    user_id: Optional[int]
+    active_expert: str
+    user_mode: Optional[str]
+    # ... 11 more Optional fields, no defaults
+```
+
+**After (BaseModel):**
+```python
+class TarsState(BaseModel):
+    # Core fields — required at session creation
+    messages: Annotated[List[BaseMessage], add_messages] = Field(default_factory=list)
+    user_id: int
+    active_expert: str
+    user_mode: str
+
+    # Optional fields with sensible defaults
+    working_context: List[Dict[str, str]] = Field(default_factory=list)
+    is_complete: bool = False
+    selected_role: Optional[str] = None
+    scene_context: Optional[str] = None
+    user_role: Optional[str] = None
+    selected_source: Optional[str] = None
+    current_lesson: int = Field(default=1, ge=1)
+    hsk_level: int = Field(default=1, ge=1, le=6)
+    lesson_progress: int = Field(default=0, ge=0)
+    target_word: Optional[str] = None
+    lesson_words: List[str] = Field(default_factory=list)
+    awaiting_answer: bool = False
+```
+
+Key changes:
+- **4 core fields required**: `messages`, `user_id`, `active_expert`, `user_mode`
+- **Validation constraints**: `hsk_level` must be 1-6, `current_lesson` >= 1, `lesson_progress` >= 0
+- **Mutable defaults**: `Field(default_factory=list)` for `messages`, `working_context`, `lesson_words`
+- **LangGraph reducer preserved**: `Annotated[List[BaseMessage], add_messages]` still works
+
+#### 2. Updated Node Access Patterns
+
+**Dict access → attribute access:**
+
+| Pattern | Before | After |
+|---------|--------|-------|
+| `.get(key, default)` | `state.get("current_lesson", 1)` | `state.current_lesson` |
+| `state["key"]` | `state["messages"]` | `state.messages` |
+| `{**state, ...}` | `{**state, "messages": truncated}` | `state.model_dump() \| {"messages": truncated}` |
+
+**Files updated:**
+- `agents/brain/nodes.py` — `route_lesson()` uses `state.user_mode`, `state.awaiting_answer`
+- `agents/brain/node_learning.py` — all `.get()` calls replaced with attribute access, `{**state}` → `state.model_dump() | {...}`
+- `agents/brain/node_roleplay.py` — same pattern
+
+#### 3. Strict Validation at API Boundary (`api/routes/chat.py`)
+
+Session initialization now validates state before passing to LangGraph:
+
+```python
+# Before: plain dict, no validation
+init_state = {"user_mode": "tars_roleplay", "active_expert": "tars_roleplay", ...}
+
+# After: validates required fields, constraints, then serializes
+init_state = TarsState(
+    user_mode="tars_roleplay",
+    active_expert="tars_roleplay",
+    user_id=current_user_id,
+    hsk_level=get_user_hsk_level(current_user_id),
+    messages=[HumanMessage(content=sys_msg_text)],
+).model_dump()
+```
+
+If any required field is missing or a constraint is violated (e.g., `hsk_level=0`), a `ValidationError` is raised immediately at the API boundary.
+
+#### 4. Snapshot Validation (`api/routes/profile.py`)
+
+Checkpointer snapshots are validated back into `TarsState` models:
+
+```python
+# Before: raw dict access with defaults
+current_lesson = snapshot.values.get("current_lesson", 1)
+
+# After: validates the snapshot shape, then uses typed attributes
+state = TarsState.model_validate(snapshot.values)
+current_lesson = state.current_lesson
+```
+
+#### 5. LangGraph Compatibility
+
+- `StateGraph(TarsState)` works unchanged — LangGraph accepts Pydantic models as state schemas
+- The `add_messages` reducer still functions correctly
+- Node return values remain plain `dict` — LangGraph merges them into the state
+- `AsyncPostgresSaver` serialization is unaffected (LangGraph handles `BaseMessage` serialization internally)
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `agents/brain/schema.py` | Replaced `TypedDict` with `BaseModel`, 4 required fields, validation constraints |
+| `agents/brain/nodes.py` | `route_lesson()` uses attribute access |
+| `agents/brain/node_learning.py` | All `.get()` → attribute access, `{**state}` → `model_dump() \| {...}` |
+| `agents/brain/node_roleplay.py` | Same pattern as `node_learning.py` |
+| `api/routes/chat.py` | Strict validation via `TarsState(...).model_dump()` for `init_state` |
+| `api/routes/profile.py` | Snapshot validation via `TarsState.model_validate(snapshot.values)` |

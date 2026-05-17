@@ -18,9 +18,9 @@ LESSON_CHECK  = "lesson_check"
 # ─────────────────────────────────────────────────────────────────────────────
 def route_lesson(state: TarsState) -> str:
     """Route to the correct node based on mode and lesson phase."""
-    if state.get("user_mode") != "tars_normal":
+    if state.user_mode != "tars_normal":
         return ACTOR
-    if state.get("awaiting_answer"):
+    if state.awaiting_answer:
         return LESSON_CHECK
     return LESSON_PROMPT
 

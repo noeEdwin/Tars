@@ -99,7 +99,7 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 | Step | Status | Description |
 |------|--------|-------------|
 | 4.1 | ✅ | Add custom exception classes (`TarsError`, `DatabaseError`, `RAGError`, `AuthenticationError`) |
-| 4.2 | ⏳ | Convert `TarsState` from `TypedDict` to Pydantic `BaseModel` |
+| 4.2 | ✅ | Convert `TarsState` from `TypedDict` to Pydantic `BaseModel` |
 | 4.3 | ⏳ | Add return type annotations to all DB functions |
 | 4.4 | ⏳ | Extract protocol text building from `node_learning.py` and `node_roleplay.py` into `protocol_builder.py` |
 

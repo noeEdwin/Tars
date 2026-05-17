@@ -9,6 +9,7 @@ from openai import OpenAI
 from agents.dataBase.main_queries import get_user_profile, get_roleplay_contexts
 from agents.dataBase.persona_db import fetch_persona_from_db
 from agents.brain.utils import load_lesson_json
+from agents.brain.schema import TarsState
 from auth.security import get_current_user
 from auth.schemas import UserProfile, ProfileUpdateRequest
 from agents.dataBase.auth_queries import get_user_by_id, update_user_profile
@@ -103,10 +104,11 @@ async def _get_next_lesson_word(user_id: int) -> dict:
             snapshot = await app_instance.aget_state(cfg)
 
             if snapshot.values:
-                current_lesson = snapshot.values.get("current_lesson", 1)
-                lesson_progress = snapshot.values.get("lesson_progress", 0)
-                target_word = snapshot.values.get("target_word")
-                lesson_words = snapshot.values.get("lesson_words", [])
+                state = TarsState.model_validate(snapshot.values)
+                current_lesson = state.current_lesson
+                lesson_progress = state.lesson_progress
+                target_word = state.target_word
+                lesson_words = state.lesson_words
 
                 if target_word and lesson_words:
                     lesson_data = load_lesson_json(current_lesson)

@@ -15,7 +15,7 @@ async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:
     t_n = time.time()
     logger.debug("[TIMER NODE] 1. lesson_prompt_node started")
     llm_expert      = get_tars_expert(expert_type="tars_normal")
-    current_lesson  = state.get("current_lesson", 1)
+    current_lesson  = state.current_lesson
 
     lesson_data = load_lesson_json(current_lesson)
     vocab_list  = lesson_data["vocabulary"]
@@ -23,12 +23,11 @@ async def lesson_prompt_node(state: TarsState, config: RunnableConfig) -> dict:
 
     state_updates: dict = {}
 
-    
     lesson_words    = [v["zh"] for v in vocab_list]
-    lesson_progress = state.get("lesson_progress", 0)
+    lesson_progress = state.lesson_progress
     if lesson_progress >= len(lesson_words):
         lesson_progress = 0
-    target_word = state.get("target_word")
+    target_word = state.target_word
     if not target_word or target_word not in lesson_words:
         target_word = lesson_words[lesson_progress]
     state_updates.update({
@@ -68,21 +67,21 @@ INSTRUCCIÓN OBLIGATORIA:
 4. NO avances hasta que el usuario diga la frase completa.
 """
 
-    last_user_msg = (state["messages"][-1].content if state.get("messages") else "")
+    last_user_msg = (state.messages[-1].content if state.messages else "")
     logger.debug("[TIMER NODE] 2. Pre-RAG ready: %.2fs", time.time() - t_n)
 
     import asyncio
     query_embedding = get_embedding(last_user_msg) if last_user_msg and len(last_user_msg) > 10 else None
-    mem_ctx = await asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, "", query_embedding)
+    mem_ctx = await asyncio.to_thread(_append_memory_context, state.user_id, last_user_msg, "", query_embedding)
     protocol_text += mem_ctx
-    
+
     protocol_text = append_style_examples(last_user_msg, "INTRODUCE", protocol_text)
     logger.debug("[TIMER NODE] 3. RAG completed: %.2fs", time.time() - t_n)
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
     logger.debug("[TIMER NODE] 4. Calling OpenAI ainvoke...")
     t_llm = time.time()
-    truncated_state = {**state, "messages": truncate_messages(state["messages"])}
+    truncated_state = state.model_dump() | {"messages": truncate_messages(state.messages)}
     response = await dynamic_chain.ainvoke(truncated_state, config=config)
     logger.debug("[TIMER NODE] 5. LLM ainvoke completed: %.2fs", time.time() - t_llm)
 
@@ -94,14 +93,14 @@ INSTRUCCIÓN OBLIGATORIA:
 
 async def lesson_check_node(state: TarsState, config: RunnableConfig) -> dict:
     llm_expert      = get_tars_expert(expert_type="tars_normal")
-    current_lesson  = state.get("current_lesson", 1)
-    lesson_progress = state.get("lesson_progress", 0)
-    target_word     = state.get("target_word", "")
-    last_user_msg   = (state["messages"][-1].content or "").strip()
+    current_lesson  = state.current_lesson
+    lesson_progress = state.lesson_progress
+    target_word     = state.target_word or ""
+    last_user_msg   = (state.messages[-1].content or "").strip()
 
     lesson_data = load_lesson_json(current_lesson)
     vocab_list  = lesson_data["vocabulary"]
-    lesson_words = [v["zh"] for v in vocab_list]  
+    lesson_words = [v["zh"] for v in vocab_list]
     vocab_by_zh = {v["zh"]: v for v in vocab_list}
 
     target_info    = vocab_by_zh.get(target_word, {})
@@ -179,16 +178,16 @@ INSTRUCCIÓN: ¡El usuario completó todas las palabras de la lección! Felicít
     import asyncio
     query_embedding = get_embedding(last_user_msg) if last_user_msg and len(last_user_msg) > 10 else None
     rag_task = asyncio.to_thread(_build_rag_context, last_user_msg, current_lesson, query_embedding)
-    mem_task = asyncio.to_thread(_append_memory_context, state.get("user_id"), last_user_msg, "", query_embedding)
+    mem_task = asyncio.to_thread(_append_memory_context, state.user_id, last_user_msg, "", query_embedding)
     rag_ctx, mem_ctx = await asyncio.gather(rag_task, mem_task)
-    
+
     if rag_ctx:
         protocol_text += f"\n\n### CONTEXTO ADICIONAL\n{rag_ctx}"
     protocol_text += mem_ctx
     protocol_text = append_style_examples(last_user_msg, feedback_type, protocol_text)
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
-    truncated_state = {**state, "messages": truncate_messages(state["messages"])}
+    truncated_state = state.model_dump() | {"messages": truncate_messages(state.messages)}
     response = await dynamic_chain.ainvoke(truncated_state, config=config)
 
     return {"messages": [response], **state_updates}

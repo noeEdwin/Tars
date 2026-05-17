@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 
 from agents.brain.nodes import workflow, config as base_config
+from agents.brain.schema import TarsState
 from agents.RAG.save_memory import save_long_term_memory
 from agents.RAG.utils import clear_turn_cache, get_embedding
 from agents.dataBase.main_queries import get_user_hsk_level, get_scene_from_filename
@@ -58,33 +59,33 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
                 f"ADOPT THIS PERSONA IMMEDIATELY."
             )
 
-            init_state = {
-                "user_mode": "tars_roleplay",
-                "active_expert": "tars_roleplay",
-                "user_id": current_user_id,
-                "hsk_level": get_user_hsk_level(current_user_id),
-                "current_lesson": 1,
-                "scene_context": scene,
-                "user_role": req.user_role,
-                "selected_role": req.tars_role,
-                "selected_source": str(doc_id) if doc_id else None,
-                "messages": [HumanMessage(content=sys_msg_text)],
-            }
+            init_state = TarsState(
+                user_mode="tars_roleplay",
+                active_expert="tars_roleplay",
+                user_id=current_user_id,
+                hsk_level=get_user_hsk_level(current_user_id),
+                current_lesson=1,
+                scene_context=scene,
+                user_role=req.user_role,
+                selected_role=req.tars_role,
+                selected_source=str(doc_id) if doc_id else None,
+                messages=[HumanMessage(content=sys_msg_text)],
+            ).model_dump()
         else:
-            init_state = {
-                "user_mode": req.mode,
-                "active_expert": req.mode,
-                "user_id": current_user_id,
-                "hsk_level": get_user_hsk_level(current_user_id),
-                "current_lesson": 1,
-                "awaiting_answer": False,
-                "messages": [HumanMessage(
+            init_state = TarsState(
+                user_mode=req.mode,
+                active_expert=req.mode,
+                user_id=current_user_id,
+                hsk_level=get_user_hsk_level(current_user_id),
+                current_lesson=1,
+                awaiting_answer=False,
+                messages=[HumanMessage(
                     content=(
                         "SYSTEM UPDATE: A new Chinese learning session has started. "
                         "Start the lesson immediately — introduce the first word."
                     )
                 )],
-            }
+            ).model_dump()
         await app_instance.aupdate_state(cfg, init_state)
         tars_message = ""
 

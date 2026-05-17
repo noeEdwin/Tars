@@ -13,14 +13,14 @@ import re
 logger = logging.getLogger(__name__)
 
 async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
-    expert_type   = state.get("user_mode", "tars_roleplay")
+    expert_type   = state.user_mode
     llm_expert    = get_tars_expert(expert_type=expert_type)
     protocol_text = PROTOCOLS.get(expert_type, "Standard operating procedures.")
 
     if expert_type == "tars_roleplay":
-        char_name  = state.get("selected_role")
-        user_role  = state.get("user_role", "User")
-        doc_id     = state.get("selected_source")
+        char_name  = state.selected_role
+        user_role  = state.user_role
+        doc_id     = state.selected_source
         doc_id_int = int(doc_id) if (doc_id and str(doc_id).isdigit()) else None
 
         if char_name:
@@ -36,10 +36,7 @@ async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
             if not persona_data:
                 logger.warning("Persona '%s' not found in DB. Triggering JIT Profiling...", char_name)
                 try:
-                    # Read directly from the book using doc_id
                     char_fragments_str = retrieve_character_context(char_name, doc_id_int)
-                    
-                    # Generate and save the character to the database (character_personas)
                     persona_data = generate_persona(char_name, doc_id_int, char_fragments_str)
                 except Exception as e:
                     logger.error("JIT Profiling failed for %s: %s", char_name, e)
@@ -88,7 +85,7 @@ async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
         protocol_text += STRICT_INSTRUCTION
 
         METAMORPHIC_PROMPT = """
-        
+
         INSTRUCCIONES ESTRICTAS DE IDENTIDAD Y COMPORTAMIENTO:
         1. Análisis de Rol: Identifica inmediatamente quién eres tú (el personaje que habla) y quién es el usuario (el receptor) basándose en el contexto del documento.
         2. Revelación de Identidad: NUNCA ocultes tu nombre ni te hagas el misterioso. Si el usuario pregunta '¿Quién eres?', responde claramente con tu nombre completo extraído del contexto, manteniendo la actitud de tu personaje.
@@ -98,21 +95,21 @@ async def actor_node(state: TarsState, config: RunnableConfig) -> dict:
         """
         protocol_text += METAMORPHIC_PROMPT
 
-        if state.get("scene_context"):
-            protocol_text += f"\nSCENE CONTEXT: {state.get('scene_context')}"
+        if state.scene_context:
+            protocol_text += f"\nSCENE CONTEXT: {state.scene_context}"
 
-    last_user_msg  = state["messages"][-1].content
-    current_lesson = state.get("current_lesson")
+    last_user_msg  = state.messages[-1].content
+    current_lesson = state.current_lesson
 
     query_embedding = get_embedding(last_user_msg) if last_user_msg and len(last_user_msg) > 10 else None
     rag_ctx = _build_rag_context(last_user_msg, current_lesson, query_embedding=query_embedding)
     protocol_text = protocol_text.replace(
         "{context}", rag_ctx or "No relevant memories found for this interaction."
     )
-    protocol_text = _append_memory_context(state.get("user_id"), last_user_msg, protocol_text, query_embedding=query_embedding)
+    protocol_text = _append_memory_context(state.user_id, last_user_msg, protocol_text, query_embedding=query_embedding)
 
     dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
-    truncated_state = {**state, "messages": truncate_messages(state["messages"])}
+    truncated_state = state.model_dump() | {"messages": truncate_messages(state.messages)}
     response = await dynamic_chain.ainvoke(truncated_state, config=config)
 
     cleaned_content = re.sub(r'^\{.*?\}(?=\s*[\w\[])', '', response.content, flags=re.DOTALL).strip()
