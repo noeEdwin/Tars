@@ -1,43 +1,31 @@
-import { useState, useEffect } from 'react';
 import { ArrowLeft, Settings, TrendingUp, Sparkles, Flame, PlusCircle } from 'lucide-react';
 import './ProfileScreen.css';
-import type { ViewState } from '../App';
+import { useAuthStore } from '../stores/authStore';
+import { useSessionStore } from '../stores/sessionStore';
 
-interface ProfileScreenProps {
-    setCurrentView: (view: ViewState) => void;
-}
+export default function ProfileScreen() {
+    const firstName = useAuthStore((s) => s.firstName);
+    const username = useAuthStore((s) => s.username);
+    const setView = useSessionStore((s) => s.setView);
 
-export default function ProfileScreen({ setCurrentView }: ProfileScreenProps) {
-    const [userName, setUserName] = useState('User');
-
-    useEffect(() => {
-        const firstName = localStorage.getItem('tars_first_name');
-        const username = localStorage.getItem('tars_username');
-        if (firstName && firstName !== 'null') {
-            setUserName(firstName);
-        } else if (username) {
-            setUserName(username);
-        }
-    }, []);
+    const displayName = (firstName && firstName !== 'null') ? firstName : (username || 'User');
 
     return (
         <div className="profile-container">
-            {/* Profile Header */}
             <header className="profile-header">
                 <button
                     className="icon-btn-glass"
-                    onClick={() => setCurrentView('home')}
+                    onClick={() => setView('home')}
                 >
                     <ArrowLeft size={24} color="var(--text-main)" />
                 </button>
                 <h1 className="profile-title">Scholar Profile</h1>
-                <button className="icon-btn-glass" onClick={() => setCurrentView('settings')}>
+                <button className="icon-btn-glass" onClick={() => setView('settings')}>
                     <Settings size={24} color="var(--text-main)" />
                 </button>
             </header>
 
             <main className="profile-main">
-                {/* User Info Section */}
                 <section className="user-info-section">
                     <div className="avatar-wrapper">
                         <div className="avatar-ring">
@@ -53,7 +41,7 @@ export default function ProfileScreen({ setCurrentView }: ProfileScreenProps) {
                     </div>
 
                     <div className="user-details">
-                        <h2 className="user-name">{userName}</h2>
+                        <h2 className="user-name">{displayName}</h2>
                         <p className="user-title">Imperial Scholar</p>
                         <div className="user-status">
                             <Sparkles size={18} color="var(--jade-accent)" fill="var(--jade-accent)" />
@@ -62,9 +50,7 @@ export default function ProfileScreen({ setCurrentView }: ProfileScreenProps) {
                     </div>
                 </section>
 
-                {/* Stats Grid */}
                 <section className="stats-grid">
-                    {/* Stat Card 1 */}
                     <div className="stat-card border-jade">
                         <p className="stat-label">Hours Spoken</p>
                         <p className="stat-value">128.5<span className="stat-unit unit-jade">h</span></p>
@@ -74,7 +60,6 @@ export default function ProfileScreen({ setCurrentView }: ProfileScreenProps) {
                         </div>
                     </div>
 
-                    {/* Stat Card 2 */}
                     <div className="stat-card border-gold">
                         <p className="stat-label">Mastery</p>
                         <p className="stat-value">45<span className="stat-unit unit-gold">%</span></p>
@@ -84,7 +69,6 @@ export default function ProfileScreen({ setCurrentView }: ProfileScreenProps) {
                         </div>
                     </div>
 
-                    {/* Stat Card 3 */}
                     <div className="stat-card border-primary">
                         <p className="stat-label">Current Streak</p>
                         <p className="stat-value">214<span className="stat-unit unit-primary">d</span></p>
@@ -94,7 +78,6 @@ export default function ProfileScreen({ setCurrentView }: ProfileScreenProps) {
                         </div>
                     </div>
 
-                    {/* Stat Card 4 */}
                     <div className="stat-card border-jade">
                         <p className="stat-label">Vocabulary</p>
                         <p className="stat-value">5,240</p>

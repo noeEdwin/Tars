@@ -92,7 +92,7 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 
 ---
 
-## Phase 4: Architecture 🔄 IN PROGRESS
+## Phase 4: Architecture ✅ COMPLETE
 
 **Goal:** Error handling, typing, separation of concerns.
 
@@ -111,7 +111,7 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 
 | Step | Status | Description |
 |------|--------|-------------|
-| 5.1 | ⏳ | Add Zustand for state management (`authStore`, `sessionStore`, `chatStore`) |
+| 5.1 | ✅ | Add Zustand for state management (`authStore`, `sessionStore`, `chatStore`) |
 | 5.2 | ⏳ | Reorganize components into folders with co-located CSS (`auth/`, `chat/`, `roleplay/`, `layout/`, `ui/`) |
 | 5.3 | ⏳ | Create typed API client layer (`src/api/client.ts`) replacing scattered `fetch()` calls |
 
@@ -123,3 +123,4 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 - `Refactoring/PHASE2_CHANGELOG.md` — Phase 2 detailed changelog
 - `Refactoring/PHASE3_CHANGELOG.md` — Phase 3 detailed changelog
 - `Refactoring/PHASE4_CHANGELOG.md` — Phase 4 detailed changelog
+- `Refactoring/PHASE5_CHANGELOG.md` — Phase 5 detailed changelog

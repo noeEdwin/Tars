@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import VoiceConversationScreen from './VoiceConversationScreen';
 import ConversationScreen from './ConversationScreen';
-import type { ViewState, SessionConfig } from '../App';
+import type { SessionConfig } from '../stores/sessionStore';
 import type { PreWarmedSession, PreloadMessage } from '../utils/usePreWarmSession';
 import useWebSocket from '../hooks/useWebSocket';
-
-function getUserId(): number {
-    const stored = localStorage.getItem('tars_user_id');
-    return stored ? parseInt(stored, 10) : 1;
-}
+import { useAuthStore } from '../stores/authStore';
+import { useSessionStore } from '../stores/sessionStore';
 
 export interface Message {
     id: string;
@@ -19,7 +16,6 @@ export interface Message {
 }
 
 interface ConversationContainerProps {
-    setCurrentView: (view: ViewState) => void;
     sessionConfig: SessionConfig;
     preWarmedSession?: PreWarmedSession | null;
     preloadMessage?: PreloadMessage | null;
@@ -27,7 +23,6 @@ interface ConversationContainerProps {
 }
 
 export default function ConversationContainer({
-    setCurrentView,
     sessionConfig,
     preWarmedSession,
     preloadMessage,
@@ -35,6 +30,9 @@ export default function ConversationContainer({
 }: ConversationContainerProps) {
     const { mode, filename, user_role, tars_role } = sessionConfig;
     const [subView, setSubView] = useState<'voice' | 'text'>('voice');
+
+    const userId = useAuthStore((s) => s.userId) || 1;
+    const setView = useSessionStore((s) => s.setView);
 
     const {
         sessionReady,
@@ -46,7 +44,7 @@ export default function ConversationContainer({
         sendMessage,
         interruptTars,
     } = useWebSocket({
-        userId: getUserId(),
+        userId,
         mode,
         filename,
         user_role,
@@ -68,7 +66,7 @@ export default function ConversationContainer({
                 setCurrentAudioIndex={setCurrentAudioIndex}
                 onSendMessage={sendMessage}
                 onInterrupt={interruptTars}
-                onBack={() => setCurrentView('home')}
+                onBack={() => setView('home')}
                 onSwitchToText={() => setSubView('text')}
             />
         );

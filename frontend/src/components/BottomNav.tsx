@@ -1,22 +1,19 @@
 import { Home, Layers, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './BottomNav.css';
-import type { ViewState } from '../App';
+import { useSessionStore } from '../stores/sessionStore';
 
-interface BottomNavProps {
-    currentView: ViewState;
-    setCurrentView: (view: ViewState) => void;
-}
-
-export default function BottomNav({ currentView, setCurrentView }: BottomNavProps) {
+export default function BottomNav() {
     const { t } = useTranslation();
+    const currentView = useSessionStore((s) => s.currentView);
+    const setView = useSessionStore((s) => s.setView);
 
     return (
         <div className="bottom-nav-container">
             <div className="nav-bar">
                 <div
                     className={`nav-item ${currentView === 'home' ? 'active' : ''}`}
-                    onClick={() => setCurrentView('home')}
+                    onClick={() => setView('home')}
                 >
                     <Home
                         size={24}
@@ -28,7 +25,7 @@ export default function BottomNav({ currentView, setCurrentView }: BottomNavProp
 
                 <div
                     className={`nav-item ${currentView === 'roleplay' ? 'active' : ''}`}
-                    onClick={() => setCurrentView('roleplay')}
+                    onClick={() => setView('roleplay')}
                 >
                     <div className="nav-icon-relative">
                         <Layers
@@ -43,7 +40,7 @@ export default function BottomNav({ currentView, setCurrentView }: BottomNavProp
 
                 <div
                     className={`nav-item ${currentView === 'profile' ? 'active' : ''}`}
-                    onClick={() => setCurrentView('profile')}
+                    onClick={() => setView('profile')}
                 >
                     <User
                         size={24}

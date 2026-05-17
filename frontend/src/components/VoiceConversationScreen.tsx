@@ -51,9 +51,9 @@ export default function VoiceConversationScreen({
     const teachingMsg = tarsMessages
         .filter(m => m.isTeaching && m.audio_b64 && m.audio_b64.length > 0)
         .pop();
-    console.log('[DEBUG] tarsMessages:', tarsMessages.map(m => ({ 
-        id: m.id, 
-        isTeaching: m.isTeaching, 
+    console.log('[DEBUG] tarsMessages:', tarsMessages.map(m => ({
+        id: m.id,
+        isTeaching: m.isTeaching,
         hasAudio: !!m.audio_b64,
         audioCount: m.audio_b64?.length || 0
     })));
@@ -267,7 +267,7 @@ export default function VoiceConversationScreen({
                         {t('voiceConversation.back')}
                     </button>
                     <h1 className="voice-title">
-                        Tài Sī · {mode === 'tars_normal' ? t('voiceConversation.focus') : t('voiceConversation.roleplay')}
+                        Tars · {mode === 'tars_normal' ? t('voiceConversation.focus') : t('voiceConversation.roleplay')}
                     </h1>
                 </header>
 

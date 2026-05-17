@@ -1,15 +1,11 @@
 import { useState } from 'react';
 import { ArrowLeft, User, Mail, Lock, Eye, EyeOff, ArrowRight, Loader, Globe, GraduationCap, Target, Lightbulb } from 'lucide-react';
 import './SignUpScreen.css';
-import type { ViewState } from '../App';
+import { useSessionStore } from '../stores/sessionStore';
 import darkLogo from '../assets/dark_mode.png';
 import lightLogo from '../assets/light_mode.png';
 import { API_BASE } from '../apiConfig';
 
-interface SignUpScreenProps {
-    setCurrentView: (view: ViewState) => void;
-    isLightMode: boolean;
-}
 
 interface FieldErrors {
     username?: string;
@@ -24,7 +20,10 @@ interface FieldErrors {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function SignUpScreen({ setCurrentView, isLightMode }: SignUpScreenProps) {
+export default function SignUpScreen() {
+    const setView = useSessionStore((s) => s.setView);
+    const isLightMode = useSessionStore((s) => s.isLightMode);
+
     const [username,         setUsername]         = useState('');
     const [firstName,        setFirstName]        = useState('');
     const [lastName,         setLastName]         = useState('');
@@ -123,7 +122,7 @@ export default function SignUpScreen({ setCurrentView, isLightMode }: SignUpScre
             }
 
             setSuccessMsg('¡Cuenta creada exitosamente! Redirigiendo al login…');
-            setTimeout(() => setCurrentView('sign-in'), 1800);
+            setTimeout(() => setView('sign-in'), 1800);
         } catch {
             setErrors({ general: 'No se pudo conectar con el servidor. Verifica tu conexión.' });
         } finally {
@@ -139,7 +138,7 @@ export default function SignUpScreen({ setCurrentView, isLightMode }: SignUpScre
 
             {/* Header */}
             <div className="signup-header">
-                <button className="signup-back-btn" onClick={() => setCurrentView('sign-in')} type="button">
+                <button className="signup-back-btn" onClick={() => setView('sign-in')} type="button">
                     <ArrowLeft size={24} color="var(--text-main)" />
                 </button>
                 <div className="signup-brand">
@@ -419,7 +418,7 @@ export default function SignUpScreen({ setCurrentView, isLightMode }: SignUpScre
                         Already have an account?{' '}
                         <button
                             className="signup-signin-link"
-                            onClick={() => setCurrentView('sign-in')}
+                            onClick={() => setView('sign-in')}
                             type="button"
                         >
                             Sign In

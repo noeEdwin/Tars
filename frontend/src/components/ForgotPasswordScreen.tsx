@@ -1,14 +1,11 @@
 import { ArrowLeft, Mail, Send } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import './ForgotPasswordScreen.css';
-import type { ViewState } from '../App';
+import { useSessionStore } from '../stores/sessionStore';
 
-interface ForgotPasswordScreenProps {
-    setCurrentView: (view: ViewState) => void;
-}
-
-export default function ForgotPasswordScreen({ setCurrentView }: ForgotPasswordScreenProps) {
+export default function ForgotPasswordScreen() {
     const { t } = useTranslation();
+    const setView = useSessionStore((s) => s.setView);
 
     return (
         <div className="fp-container">
@@ -18,7 +15,7 @@ export default function ForgotPasswordScreen({ setCurrentView }: ForgotPasswordS
 
             <div className="fp-inner">
                 <div className="fp-back-row">
-                    <button className="fp-back-btn" onClick={() => setCurrentView('sign-in')}>
+                    <button className="fp-back-btn" onClick={() => setView('sign-in')}>
                         <ArrowLeft size={22} />
                     </button>
                 </div>
@@ -57,7 +54,7 @@ export default function ForgotPasswordScreen({ setCurrentView }: ForgotPasswordS
                             {t('forgotPassword.rememberPassword')}{' '}
                             <button
                                 className="fp-login-link"
-                                onClick={() => setCurrentView('sign-in')}
+                                onClick={() => setView('sign-in')}
                             >
                                 {t('forgotPassword.logIn')}
                             </button>

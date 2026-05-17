@@ -1,32 +1,30 @@
 import { ArrowLeft, User, Award, Languages, Volume2, Moon, Sun, LogOut, ChevronRight, ChevronDown } from 'lucide-react';
 import './SettingsScreen.css';
-import type { ViewState } from '../App';
+import { useAuthStore } from '../stores/authStore';
+import { useSessionStore } from '../stores/sessionStore';
 
-interface SettingsScreenProps {
-    setCurrentView: (view: ViewState) => void;
-    isLightMode: boolean;
-    toggleTheme: () => void;
-}
+export default function SettingsScreen() {
+    const logout = useAuthStore((s) => s.logout);
+    const setView = useSessionStore((s) => s.setView);
+    const isLightMode = useSessionStore((s) => s.isLightMode);
+    const toggleTheme = useSessionStore((s) => s.toggleTheme);
 
-export default function SettingsScreen({ setCurrentView, isLightMode, toggleTheme }: SettingsScreenProps) {
     return (
         <div className="settings-container">
-            {/* Header */}
             <header className="settings-header">
-                <button className="icon-btn-glass" onClick={() => setCurrentView('profile')}>
+                <button className="icon-btn-glass" onClick={() => setView('profile')}>
                     <ArrowLeft size={24} color="var(--text-main)" />
                 </button>
                 <h1 className="settings-title">Settings</h1>
-                <div style={{ width: 40 }} /> {/* spacer to center title */}
+                <div style={{ width: 40 }} />
             </header>
 
             <div className="settings-main">
 
-                {/* Account Section */}
                 <section className="settings-section">
                     <h3 className="settings-section-label">Account</h3>
                     <div className="settings-group">
-                        <div className="settings-row border-bottom" onClick={() => setCurrentView('personal-info')}>
+                        <div className="settings-row border-bottom" onClick={() => setView('personal-info')}>
                             <div className="settings-icon-box icon-primary">
                                 <User size={20} />
                             </div>
@@ -49,7 +47,6 @@ export default function SettingsScreen({ setCurrentView, isLightMode, toggleThem
                     </div>
                 </section>
 
-                {/* Preferences Section */}
                 <section className="settings-section">
                     <h3 className="settings-section-label">Preferences</h3>
                     <div className="settings-group">
@@ -80,7 +77,6 @@ export default function SettingsScreen({ setCurrentView, isLightMode, toggleThem
                     </div>
                 </section>
 
-                {/* Display Section */}
                 <section className="settings-section">
                     <h3 className="settings-section-label">Display</h3>
                     <div className="settings-group">
@@ -102,14 +98,10 @@ export default function SettingsScreen({ setCurrentView, isLightMode, toggleThem
                     </div>
                 </section>
 
-                {/* Logout / Footer */}
                 <div className="settings-footer">
                     <button className="logout-btn" onClick={() => {
-                        localStorage.removeItem('tars_token');
-                        localStorage.removeItem('tars_user_id');
-                        localStorage.removeItem('tars_username');
-                        localStorage.removeItem('tars_first_name');
-                        setCurrentView('sign-in');
+                        logout();
+                        setView('sign-in');
                     }}>
                         <LogOut size={20} />
                         Log Out
@@ -119,7 +111,6 @@ export default function SettingsScreen({ setCurrentView, isLightMode, toggleThem
 
             </div>
 
-            {/* Decorative background blurs */}
             <div className="settings-decor top-right" />
             <div className="settings-decor bottom-left" />
         </div>

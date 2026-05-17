@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Camera, Loader } from 'lucide-react';
 import './PersonalInfoScreen.css';
-import type { ViewState } from '../App';
 import { API_BASE } from '../apiConfig';
+import { useAuthStore } from '../stores/authStore';
+import { useSessionStore } from '../stores/sessionStore';
 
-interface PersonalInfoScreenProps {
-    setCurrentView: (view: ViewState) => void;
-}
-
-export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScreenProps) {
+export default function PersonalInfoScreen() {
     const [fullName, setFullName] = useState('');
     const [nativeLanguage, setNativeLanguage] = useState('es');
     const [hskLevel, setHskLevel] = useState(1);
@@ -19,9 +16,12 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
 
+    const token = useAuthStore((s) => s.token);
+    const updateFirstName = useAuthStore((s) => s.updateFirstName);
+    const setView = useSessionStore((s) => s.setView);
+
     useEffect(() => {
         const fetchProfile = async () => {
-            const token = localStorage.getItem('tars_token');
             if (!token) return;
 
             try {
@@ -43,14 +43,13 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
             }
         };
         fetchProfile();
-    }, []);
+    }, [token]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setMessage({ text: '', type: '' });
         setIsSaving(true);
 
-        const token = localStorage.getItem('tars_token');
         const nameParts = fullName.trim().split(' ');
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
@@ -74,7 +73,7 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
 
             if (res.ok) {
                 const data = await res.json();
-                localStorage.setItem('tars_first_name', data.first_name);
+                updateFirstName(data.first_name);
                 setMessage({ text: 'Profile updated successfully!', type: 'success' });
             } else {
                 setMessage({ text: 'Failed to update profile.', type: 'error' });
@@ -96,19 +95,16 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
 
     return (
         <div className="pinfo-container">
-            {/* Header */}
             <header className="pinfo-header">
-                <button className="pinfo-back-btn" onClick={() => setCurrentView('settings')} type="button">
+                <button className="pinfo-back-btn" onClick={() => setView('settings')} type="button">
                     <ChevronLeft size={24} color="var(--text-muted)" />
                 </button>
                 <h1 className="pinfo-title">Personal Info</h1>
                 <div style={{ width: 40 }} />
             </header>
 
-            {/* Scrollable content */}
             <main className="pinfo-main">
 
-                {/* Avatar Section */}
                 <section className="pinfo-avatar-section">
                     <div className="pinfo-avatar-wrapper">
                         <div className="pinfo-avatar">
@@ -125,15 +121,13 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                     <p className="pinfo-avatar-label">Upload Profile Photo</p>
                 </section>
 
-                {/* Form */}
                 <form className="pinfo-form" onSubmit={handleSave}>
 
-                    {/* Messages */}
                     {message.text && (
-                        <div style={{ 
-                            padding: '10px', 
-                            marginBottom: '15px', 
-                            borderRadius: '8px', 
+                        <div style={{
+                            padding: '10px',
+                            marginBottom: '15px',
+                            borderRadius: '8px',
                             textAlign: 'center',
                             backgroundColor: message.type === 'success' ? 'rgba(46, 204, 113, 0.1)' : 'rgba(231, 76, 60, 0.1)',
                             color: message.type === 'success' ? '#2ecc71' : '#e74c3c'
@@ -142,7 +136,6 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                         </div>
                     )}
 
-                    {/* Full Name */}
                     <div className="pinfo-field">
                         <label className="pinfo-label">Full Name</label>
                         <div className="pinfo-input-box">
@@ -157,11 +150,10 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                         </div>
                     </div>
 
-                    {/* Native Language */}
                     <div className="pinfo-field">
                         <label className="pinfo-label">Native Language</label>
                         <div className="pinfo-input-box">
-                            <select 
+                            <select
                                 className="pinfo-input pinfo-select"
                                 value={nativeLanguage}
                                 onChange={e => setNativeLanguage(e.target.value)}
@@ -174,11 +166,10 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                         </div>
                     </div>
 
-                    {/* HSK Level */}
                     <div className="pinfo-field">
                         <label className="pinfo-label">Current HSK Level</label>
                         <div className="pinfo-input-box">
-                            <select 
+                            <select
                                 className="pinfo-input pinfo-select"
                                 value={hskLevel}
                                 onChange={e => setHskLevel(Number(e.target.value))}
@@ -193,11 +184,10 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                         </div>
                     </div>
 
-                    {/* Learning Goals */}
                     <div className="pinfo-field">
                         <label className="pinfo-label">Learning Goals</label>
                         <div className="pinfo-input-box">
-                            <select 
+                            <select
                                 className="pinfo-input pinfo-select"
                                 value={learningGoals}
                                 onChange={e => setLearningGoals(e.target.value)}
@@ -210,7 +200,6 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                         </div>
                     </div>
 
-                    {/* Interests */}
                     <div className="pinfo-field">
                         <label className="pinfo-label">Interests</label>
                         <div className="pinfo-input-box">
@@ -224,7 +213,6 @@ export default function PersonalInfoScreen({ setCurrentView }: PersonalInfoScree
                         </div>
                     </div>
 
-                    {/* Save Button */}
                     <div className="pinfo-save-wrapper">
                         <button type="submit" className="pinfo-save-btn" disabled={isSaving}>
                             {isSaving ? 'Saving...' : 'Save Changes'}

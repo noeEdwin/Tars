@@ -1,24 +1,15 @@
-import { useState, useEffect } from 'react';
 import { Flame, Smartphone, Sun, Moon } from 'lucide-react';
 import './Header.css';
+import { useAuthStore } from '../stores/authStore';
+import { useSessionStore } from '../stores/sessionStore';
 
-interface HeaderProps {
-    isLightMode: boolean;
-    toggleTheme: () => void;
-}
+export default function Header() {
+    const firstName = useAuthStore((s) => s.firstName);
+    const username = useAuthStore((s) => s.username);
+    const isLightMode = useSessionStore((s) => s.isLightMode);
+    const toggleTheme = useSessionStore((s) => s.toggleTheme);
 
-export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
-    const [userName, setUserName] = useState('User');
-
-    useEffect(() => {
-        const firstName = localStorage.getItem('tars_first_name');
-        const username = localStorage.getItem('tars_username');
-        if (firstName && firstName !== 'null') {
-            setUserName(firstName);
-        } else if (username) {
-            setUserName(username);
-        }
-    }, []);
+    const displayName = (firstName && firstName !== 'null') ? firstName : (username || 'User');
 
     return (
         <header className="app-header">
@@ -27,7 +18,7 @@ export default function Header({ isLightMode, toggleTheme }: HeaderProps) {
                     <Smartphone size={18} color="#ffffff" strokeWidth={2.5} />
                 </div>
                 <div className="profile-info">
-                    <h2 className="profile-name">{userName}</h2>
+                    <h2 className="profile-name">{displayName}</h2>
                     <p className="profile-level">LEVEL 24 • ADVANCED</p>
                 </div>
             </div>

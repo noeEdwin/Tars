@@ -1,28 +1,26 @@
 import { useEffect, useState, useRef } from 'react';
-import { ChevronLeft, Info, CloudUpload, Calendar, FileText, Play, X, Trash2 } from 'lucide-react';
+import { ChevronLeft, Info, CloudUpload, Calendar, Play, X, Trash2 } from 'lucide-react';
 import './RoleplayScreen.css';
-import type { ViewState, SessionConfig } from '../App';
 import { API_BASE } from '../apiConfig';
+import { useAuthStore } from '../stores/authStore';
+import { useSessionStore } from '../stores/sessionStore';
 
-interface RoleplayScreenProps {
-    setCurrentView: (view: ViewState) => void;
-    startConversation: (config: SessionConfig) => void;
-}
-
-export default function RoleplayScreen({ setCurrentView, startConversation }: RoleplayScreenProps) {
+export default function RoleplayScreen() {
     const [files, setFiles] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
 
-    // Modal state
     const [modalFile, setModalFile] = useState<string | null>(null);
     const [userRole, setUserRole] = useState('');
     const [tarsRole, setTarsRole] = useState('');
     const [fileToDelete, setFileToDelete] = useState<string | null>(null);
 
+    const token = useAuthStore((s) => s.token);
+    const setView = useSessionStore((s) => s.setView);
+    const prepareRoleplaySession = useSessionStore((s) => s.prepareRoleplaySession);
+
     const confirmDelete = async () => {
         if (!fileToDelete) return;
 
-        const token = localStorage.getItem('tars_token');
         try {
             const response = await fetch(`${API_BASE}/roleplay/files/${encodeURIComponent(fileToDelete)}`, {
                 method: 'DELETE',
@@ -49,7 +47,6 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
         const formData = new FormData();
         formData.append("file", file);
 
-        const token = localStorage.getItem('tars_token');
         try {
             const response = await fetch(`${API_BASE}/roleplay/upload`, {
                 method: 'POST',
@@ -71,7 +68,6 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
     };
 
     useEffect(() => {
-        const token = localStorage.getItem('tars_token');
         fetch(`${API_BASE}/roleplay/files`, {
             headers: { 'Authorization': `Bearer ${token}` },
         })
@@ -80,7 +76,7 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
                 if (data.files) setFiles(data.files);
             })
             .catch(err => console.error('Error fetching roleplay files:', err));
-    }, []);
+    }, [token]);
 
     const openModal = (filename: string) => {
         setModalFile(filename);
@@ -90,7 +86,7 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
 
     const handleConfirm = () => {
         if (!modalFile || !userRole.trim() || !tarsRole.trim()) return;
-        startConversation({
+        prepareRoleplaySession({
             mode: 'tars_roleplay',
             filename: modalFile,
             user_role: userRole.trim(),
@@ -101,11 +97,10 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
 
     return (
         <div className="roleplay-container">
-            {/* Header */}
             <header className="rp-header">
                 <button
                     className="icon-btn"
-                    onClick={() => setCurrentView('home')}
+                    onClick={() => setView('home')}
                 >
                     <ChevronLeft color="var(--text-main)" size={24} />
                 </button>
@@ -116,18 +111,17 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
             </header>
 
             <main className="rp-main">
-                {/* Upload Section */}
                 <div className="upload-section">
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        style={{ display: 'none' }} 
-                        accept=".pdf,.docx,.txt" 
-                        onChange={handleUpload} 
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        accept=".pdf,.docx,.txt"
+                        onChange={handleUpload}
                     />
-                    
-                    <button 
-                        className={`upload-btn group ${isUploading ? 'opacity-70 cursor-not-allowed' : ''}`} 
+
+                    <button
+                        className={`upload-btn group ${isUploading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         onClick={() => !isUploading && fileInputRef.current?.click()}
                         disabled={isUploading}
                     >
@@ -148,7 +142,6 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
                     </button>
                 </div>
 
-                {/* List Section */}
                 <div className="list-section">
                     <div className="list-header">
                         <h2 className="list-title">Your Knowledge Base</h2>
@@ -207,11 +200,9 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
                 </div>
             </main>
 
-            {/* Decorative gradients */}
             <div className="bg-decor top-right"></div>
             <div className="bg-decor bottom-left"></div>
 
-            {/* Role entry modal */}
             {modalFile && (
                 <div className="rp-modal-overlay" onClick={() => setModalFile(null)}>
                     <div className="rp-modal" onClick={e => e.stopPropagation()}>
@@ -253,7 +244,6 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
                 </div>
             )}
 
-            {/* Modal de Confirmación de Eliminación */}
             {fileToDelete && (
                 <div className="rp-modal-overlay" onClick={() => setFileToDelete(null)}>
                     <div className="rp-modal border-pink" onClick={e => e.stopPropagation()}>
@@ -263,21 +253,21 @@ export default function RoleplayScreen({ setCurrentView, startConversation }: Ro
                                 <X size={18} />
                             </button>
                         </div>
-                        
+
                         <p className="rp-modal-file">
-                            Estás a punto de borrar <strong>{fileToDelete}</strong>. 
+                            Estás a punto de borrar <strong>{fileToDelete}</strong>.
                             Esta acción eliminará también los personajes asociados en Supabase.
                         </p>
 
                         <div className="flex gap-4 mt-6">
-                            <button 
-                                className="rp-modal-confirm bg-gray-700 flex-1" 
+                            <button
+                                className="rp-modal-confirm bg-gray-700 flex-1"
                                 onClick={() => setFileToDelete(null)}
                             >
                                 Cancelar
                             </button>
-                            <button 
-                                className="rp-modal-confirm bg-red-600 flex-1 shadow-[0_0_15px_rgba(220,38,38,0.4)]" 
+                            <button
+                                className="rp-modal-confirm bg-red-600 flex-1 shadow-[0_0_15px_rgba(220,38,38,0.4)]"
                                 onClick={confirmDelete}
                             >
                                 Eliminar

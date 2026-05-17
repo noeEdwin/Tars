@@ -2,16 +2,13 @@ import { useRef, useState } from 'react';
 import { Mic } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './MicButton.css';
-import type { ViewState } from '../App';
+import { useSessionStore } from '../stores/sessionStore';
 
 const HOLD_DURATION = 3000;
 
-interface MicButtonProps {
-    setCurrentView: (view: ViewState) => void;
-}
-
-export default function MicButton({ setCurrentView }: MicButtonProps) {
+export default function MicButton() {
     const { t } = useTranslation();
+    const setView = useSessionStore((s) => s.setView);
     const [progress, setProgress] = useState(0);
     const [holding, setHolding] = useState(false);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -30,7 +27,7 @@ export default function MicButton({ setCurrentView }: MicButtonProps) {
                 clearInterval(intervalRef.current!);
                 setHolding(false);
                 setProgress(0);
-                setCurrentView('conversation');
+                setView('conversation');
             }
         }, 30);
     };

@@ -3,7 +3,8 @@ import Lottie from 'lottie-react';
 import { useTranslation } from 'react-i18next';
 import sleepAnimation from '../assets/animations/sleep.json';
 import { API_BASE } from '../apiConfig';
-import { clearAuth } from '../utils/auth';
+import { useAuthStore } from '../stores/authStore';
+import { useSessionStore } from '../stores/sessionStore';
 import './LoadingScreen.css';
 
 interface LoadingScreenProps {
@@ -19,10 +20,12 @@ export default function LoadingScreen({
     const [toastVisible, setToastVisible] = useState(false);
     const [toastDismissed, setToastDismissed] = useState(false);
 
+    const token = useAuthStore((s) => s.token);
+    const logout = useAuthStore((s) => s.logout);
+    const setView = useSessionStore((s) => s.setView);
+
     useEffect(() => {
         if (!personalised) return;
-
-        const token = localStorage.getItem('tars_token');
         if (!token) return;
 
         let cancelled = false;
@@ -31,8 +34,8 @@ export default function LoadingScreen({
         })
             .then(r => {
                 if (r.status === 401) {
-                    clearAuth();
-                    window.location.href = '/';
+                    logout();
+                    setView('sign-in');
                     return null;
                 }
                 return r.json();
@@ -49,7 +52,7 @@ export default function LoadingScreen({
             .catch(() => { /* silently fall back */ });
 
         return () => { cancelled = true; };
-    }, [personalised]);
+    }, [personalised, token]);
 
     const handleDismissToast = () => {
         setToastVisible(false);

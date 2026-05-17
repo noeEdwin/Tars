@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE, WS_BASE } from '../apiConfig';
 import type { Message } from '../components/ConversationContainer';
-import { clearAuth } from './auth';
+import { useAuthStore } from '../stores/authStore';
 
 function getUserId(): number {
-    const stored = localStorage.getItem('tars_user_id');
-    return stored ? parseInt(stored, 10) : 1;
+    const userId = useAuthStore.getState().userId;
+    return userId ?? 1;
 }
 
 export interface PreloadMessage {
@@ -66,7 +66,7 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
             try {
                 // ── Phase 1: session (blocks home-page transition) ────────────
                 const startUrl = `${API_BASE}/start_session`;
-                const token = localStorage.getItem('tars_token');
+                const token = useAuthStore.getState().token;
                 const sessionRes = await fetch(startUrl, {
                     method: 'POST',
                     headers: {
@@ -78,7 +78,7 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 });
                 if (!sessionRes.ok) {
                     if (sessionRes.status === 401) {
-                        clearAuth();
+                        useAuthStore.getState().logout();
                         window.location.href = '/';
                         return;
                     }
@@ -149,7 +149,7 @@ export function usePreWarmSession({ mode, enabled, filename, user_role, tars_rol
                 })
                         .then(r => {
                             if (r.status === 401) {
-                                clearAuth();
+                                useAuthStore.getState().logout();
                                 window.location.href = '/';
                                 return null;
                             }

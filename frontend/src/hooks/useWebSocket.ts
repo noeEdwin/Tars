@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useAuthStore } from '../stores/authStore';
 import { API_BASE, WS_BASE } from '../apiConfig';
 import type { Message } from '../components/ConversationContainer';
-import type { PreWarmedSession } from '../utils/usePreWarmSession';
+import type { PreWarmedSession, PreloadMessage } from '../utils/usePreWarmSession';
 
 interface UseWebSocketOptions {
     userId: number;
@@ -10,6 +11,7 @@ interface UseWebSocketOptions {
     user_role?: string;
     tars_role?: string;
     preWarmedSession?: PreWarmedSession | null;
+    preloadMessage?: PreloadMessage | null;
     onSessionConsumed?: () => void;
 }
 
@@ -169,7 +171,7 @@ export default function useWebSocket({
         let cancelled = false;
 
         const startSession = async () => {
-            const token = localStorage.getItem('tars_token');
+            const token = useAuthStore.getState().token;
             const res = await fetch(`${API_BASE}/start_session`, {
                 method: 'POST',
                 headers: {

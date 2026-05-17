@@ -1,15 +1,12 @@
 import { BookOpen, MessageSquare, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import './ModeCards.css';
-import type { ViewState, SessionConfig } from '../App';
+import { useSessionStore } from '../stores/sessionStore';
 
-interface ModeCardsProps {
-    setCurrentView: (view: ViewState) => void;
-    startConversation: (config: SessionConfig) => void;
-}
-
-export default function ModeCards({ setCurrentView, startConversation }: ModeCardsProps) {
+export default function ModeCards() {
     const { t } = useTranslation();
+    const setView = useSessionStore((s) => s.setView);
+    const startConversation = useSessionStore((s) => s.startNormalSession);
 
     return (
         <div className="mode-cards-container">
@@ -26,7 +23,7 @@ export default function ModeCards({ setCurrentView, startConversation }: ModeCar
                 </div>
             </div>
 
-            <div className="mode-card" onClick={() => setCurrentView('roleplay')}>
+            <div className="mode-card" onClick={() => setView('roleplay')}>
                 <div className="mode-icon-box roleplay-mode">
                     <MessageSquare strokeWidth={2.5} size={24} color="#d946ef" className="mode-icon" />
                 </div>
