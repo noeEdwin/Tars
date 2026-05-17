@@ -1,13 +1,25 @@
 import uuid
 import time
+import traceback
+from typing import Optional
 
+import psycopg2
+from psycopg2.extensions import connection
 from psycopg2.extras import RealDictCursor
 
 from agents.RAG.filter import COMMON_GREETINGS
 from agents.dataBase.pool import get_db_connection
 
 
-def _update_job(conn, job_id, status=None, progress=None, current_stage=None, stats=None, error_log=None):
+def _update_job(
+    conn: connection,
+    job_id: uuid.UUID,
+    status: Optional[str] = None,
+    progress: Optional[int] = None,
+    current_stage: Optional[str] = None,
+    stats: Optional[dict] = None,
+    error_log: Optional[str] = None,
+) -> None:
     parts = []
     values = []
     if status is not None:
@@ -34,14 +46,14 @@ def _update_job(conn, job_id, status=None, progress=None, current_stage=None, st
         conn.commit()
 
 
-def _get_job_stats(conn, job_id):
+def _get_job_stats(conn: connection, job_id: uuid.UUID) -> dict:
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("SELECT stats FROM vacuum_jobs WHERE job_id = %s", (str(job_id),))
         row = cur.fetchone()
         return dict(row["stats"]) if row and row["stats"] else {}
 
 
-def stage_a_dedup(conn, job_id) -> int:
+def stage_a_dedup(conn: connection, job_id: uuid.UUID) -> int:
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             SELECT a.id AS id_a, b.id AS id_b, a.access_count AS acc_a, b.access_count AS acc_b
@@ -77,7 +89,7 @@ def stage_a_dedup(conn, job_id) -> int:
     return deleted
 
 
-def stage_b_quality_filter(conn, job_id) -> int:
+def stage_b_quality_filter(conn: connection, job_id: uuid.UUID) -> int:
     greeting_list = ", ".join(f"'{g.replace(chr(39), chr(39)+chr(39))}'" for g in COMMON_GREETINGS)
     query = f"""
         DELETE FROM messages
@@ -97,7 +109,7 @@ def stage_b_quality_filter(conn, job_id) -> int:
     return deleted
 
 
-def stage_c_utility_decay(conn, job_id) -> int:
+def stage_c_utility_decay(conn: connection, job_id: uuid.UUID) -> int:
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             DELETE FROM messages
@@ -110,7 +122,7 @@ def stage_c_utility_decay(conn, job_id) -> int:
     return deleted
 
 
-def stage_d_n_limit(conn, job_id, n=500) -> int:
+def stage_d_n_limit(conn: connection, job_id: uuid.UUID, n: int = 500) -> int:
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("""
             DELETE FROM messages
@@ -129,15 +141,15 @@ def stage_d_n_limit(conn, job_id, n=500) -> int:
     return deleted
 
 
-def stage_e_db_optimization(conn):
+def stage_e_db_optimization(conn: connection) -> None:
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("VACUUM ANALYZE messages")
         conn.commit()
 
 
-def run_vacuum_job(job_id, n_limit=500):
+def run_vacuum_job(job_id: uuid.UUID, n_limit: int = 500) -> None:
     with get_db_connection() as conn:
-        stats = {}
+        stats: dict = {}
         try:
             _update_job(conn, job_id, status="in_progress", progress=0, current_stage="dedup")
 
@@ -167,7 +179,6 @@ def run_vacuum_job(job_id, n_limit=500):
 
             _update_job(conn, job_id, status="completed", progress=100, current_stage=None, stats=stats)
         except Exception as e:
-            import traceback
             _update_job(conn, job_id, status="failed", error_log=traceback.format_exc(), stats=stats)
 
 

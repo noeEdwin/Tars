@@ -11,7 +11,7 @@ from agents.errors import DatabaseError
 logger = logging.getLogger(__name__)
 
 
-def save_long_term_memory(conversation_id: int, role: str, content: str, embedding: list[float] = None):
+def save_long_term_memory(conversation_id: int, role: str, content: str, embedding: list[float] = None) -> None:
     with get_db_connection() as conn:
         try:
             normalized = normalize_text(content)

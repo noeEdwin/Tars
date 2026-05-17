@@ -4,7 +4,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 from agents.dataBase.pool import get_db_connection
-from agents.errors import DatabaseError
+from agents.errors import DatabaseError, AuthenticationError
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +22,17 @@ def get_user_id_from_username(username: str) -> int | None:
 
 
 def get_user_hsk_level(user_id: int) -> int:
+    """Return the user's HSK level. Raises AuthenticationError.UserNotFound if the user does not exist."""
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute("SELECT hsk_level FROM users WHERE id = %s LIMIT 1", (user_id,))
                 row = cur.fetchone()
-                return row["hsk_level"] if row and row["hsk_level"] else 1
+                if not row:
+                    raise AuthenticationError.UserNotFound(f"User {user_id} not found")
+                return row["hsk_level"] if row["hsk_level"] else 1
+    except AuthenticationError:
+        raise
     except psycopg2.Error as e:
         logger.error("Error fetching hsk_level for user %s: %s", user_id, e)
         raise DatabaseError.QueryError(f"Failed to fetch hsk_level for user {user_id}", original=e) from e
@@ -92,13 +97,13 @@ def get_scene_from_filename(user_id: str, filename: str) -> tuple[int | None, st
 
 
 def delete_document_by_filename(user_id: str, filename: str) -> bool:
-    """Delete a document from the database by filename and user_id."""
+    """Delete a document from the database by filename and user_id. Returns False if no rows were deleted."""
     try:
         with get_db_connection() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute("DELETE FROM document_store WHERE user_id = %s AND filename = %s", (int(user_id), filename))
                 conn.commit()
-            return True
+                return cur.rowcount > 0
     except psycopg2.Error as e:
         logger.error("Error deleting document %s: %s", filename, e)
         raise DatabaseError.QueryError(f"Failed to delete document '{filename}'", original=e) from e

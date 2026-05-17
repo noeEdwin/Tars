@@ -15,7 +15,7 @@ from agents.RAG.save_memory import save_long_term_memory
 from agents.RAG.utils import clear_turn_cache, get_embedding
 from agents.dataBase.main_queries import get_user_hsk_level, get_scene_from_filename
 from agents.dataBase.conversations import get_or_create_active_conversation
-from agents.errors import TarsError
+from agents.errors import TarsError, AuthenticationError
 from auth.security import get_current_user
 from ChatMessage.infraestructure.tts.google_tts import get_mixed_audio_bytes
 from api.models import StartSessionRequest, StartSessionResponse
@@ -26,6 +26,15 @@ router = APIRouter()
 # Shared state — populated by app lifespan
 app_state: dict = {}
 active_tasks: dict = {}
+
+
+def _get_hsk_level(user_id: int) -> int:
+    """Get user HSK level, defaulting to 1 if user not found."""
+    try:
+        return get_user_hsk_level(user_id)
+    except AuthenticationError.UserNotFound:
+        logger.warning("User %d not found in DB, defaulting to HSK 1", user_id)
+        return 1
 
 
 @router.post("/start_session", response_model=StartSessionResponse)
@@ -63,7 +72,7 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
                 user_mode="tars_roleplay",
                 active_expert="tars_roleplay",
                 user_id=current_user_id,
-                hsk_level=get_user_hsk_level(current_user_id),
+                hsk_level=_get_hsk_level(current_user_id),
                 current_lesson=1,
                 scene_context=scene,
                 user_role=req.user_role,
@@ -76,7 +85,7 @@ async def start_session(req: StartSessionRequest, current_user_id: int = Depends
                 user_mode=req.mode,
                 active_expert=req.mode,
                 user_id=current_user_id,
-                hsk_level=get_user_hsk_level(current_user_id),
+                hsk_level=_get_hsk_level(current_user_id),
                 current_lesson=1,
                 awaiting_answer=False,
                 messages=[HumanMessage(
@@ -223,7 +232,7 @@ async def handle_tars_response(websocket, user_id, user_input, thread_id, conv_i
                     "user_mode": mode,
                     "active_expert": mode,
                     "user_id": user_id,
-                    "hsk_level": get_user_hsk_level(user_id),
+                    "hsk_level": _get_hsk_level(user_id),
                     "messages": [HumanMessage(content=user_input)],
                 }
             else:

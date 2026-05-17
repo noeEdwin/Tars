@@ -245,3 +245,91 @@ current_lesson = state.current_lesson
 | `agents/brain/node_roleplay.py` | Same pattern as `node_learning.py` |
 | `api/routes/chat.py` | Strict validation via `TarsState(...).model_dump()` for `init_state` |
 | `api/routes/profile.py` | Snapshot validation via `TarsState.model_validate(snapshot.values)` |
+
+---
+
+## Step 4.3: Add Return Type Annotations to All DB Functions
+
+### Problem
+
+After auditing 39 functions across all DB modules, 7 were missing return type annotations, 1 had an overly broad `Generator` annotation, and 2 had sentinel value issues where the annotation didn't match the actual behavior.
+
+### Solution
+
+#### 1. Added Missing Return Annotations (7 functions)
+
+| File | Function | Added |
+|------|----------|-------|
+| `pool.py` | `close_pool()` | `-> None` |
+| `ingest_document.py` | `ingest_pdf(...)` | `-> None` |
+| `save_memory.py` | `save_long_term_memory(...)` | `-> None` |
+| `vacuum.py` | `_update_job(...)` | `-> None` |
+| `vacuum.py` | `_get_job_stats(...)` | `-> dict` |
+| `vacuum.py` | `stage_e_db_optimization(conn)` | `-> None` |
+| `vacuum.py` | `run_vacuum_job(job_id, n_limit)` | `-> None` |
+
+#### 2. Fixed Overly Broad Annotation
+
+| File | Function | Before | After |
+|------|----------|--------|-------|
+| `pool.py` | `get_db_connection()` | `Generator` | `Generator[psycopg2.extensions.connection, None, None]` |
+
+#### 3. Fixed Sentinel Value Issues
+
+**`get_user_hsk_level(user_id) -> int`** — Now raises `AuthenticationError.UserNotFound` when the user doesn't exist, instead of silently returning `1`. Callers can no longer confuse "user has HSK 1" with "user not found."
+
+**`delete_document_by_filename(user_id, filename) -> bool`** — Now returns `cur.rowcount > 0` instead of always `True`. Returns `False` when no rows were deleted (file didn't exist).
+
+#### 4. Added Parameter Type Annotations to `vacuum.py`
+
+```python
+def _update_job(
+    conn: psycopg2.extensions.connection,
+    job_id: uuid.UUID,
+    status: Optional[str] = None,
+    progress: Optional[int] = None,
+    current_stage: Optional[str] = None,
+    stats: Optional[dict] = None,
+    error_log: Optional[str] = None,
+) -> None:
+
+def _get_job_stats(conn: psycopg2.extensions.connection, job_id: uuid.UUID) -> dict:
+
+def run_vacuum_job(job_id: uuid.UUID, n_limit: int = 500) -> None:
+
+def stage_e_db_optimization(conn: psycopg2.extensions.connection) -> None:
+```
+
+Also added `import traceback` at module level (was previously imported inside the `except` block).
+
+#### 5. Updated Callers for Breaking Change
+
+**`api/routes/chat.py`** — Added `_get_hsk_level()` wrapper that catches `AuthenticationError.UserNotFound` and defaults to HSK 1. This preserves the existing graceful degradation behavior while still allowing the DB function to raise when appropriate:
+
+```python
+def _get_hsk_level(user_id: int) -> int:
+    try:
+        return get_user_hsk_level(user_id)
+    except AuthenticationError.UserNotFound:
+        logger.warning("User %d not found in DB, defaulting to HSK 1", user_id)
+        return 1
+```
+
+**`api/routes/roleplay.py`** — Updated `delete_roleplay_file` to check the return value and raise `HTTPException(404)` when the file doesn't exist:
+
+```python
+if not delete_document_by_filename(current_user_id, filename):
+    raise HTTPException(status_code=404, detail=f"Document {filename} not found")
+```
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `agents/dataBase/pool.py` | Added `-> None` to `close_pool()`, typed `Generator[connection, None, None]` |
+| `agents/dataBase/main_queries.py` | `get_user_hsk_level` raises `UserNotFound`, `delete_document_by_filename` returns `rowcount > 0` |
+| `agents/RAG/ingest_document.py` | Added `-> None` |
+| `agents/RAG/save_memory.py` | Added `-> None` |
+| `agents/RAG/vacuum.py` | Added return + parameter annotations to 7 functions, moved `traceback` import to module level |
+| `api/routes/chat.py` | Added `_get_hsk_level()` wrapper, imported `AuthenticationError` |
+| `api/routes/roleplay.py` | Check `delete_document_by_filename` return, raise 404 on not found |

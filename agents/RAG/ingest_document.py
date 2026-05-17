@@ -28,7 +28,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-def ingest_pdf(file_path: str, user_id: int = None):
+def ingest_pdf(file_path: str, user_id: int = None) -> None:
     """
     Read a PDF file, split it into chunks, generate embeddings,
     and store them in the document_store table.

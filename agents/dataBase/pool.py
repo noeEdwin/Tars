@@ -13,7 +13,7 @@ import os
 from contextlib import contextmanager
 from typing import Generator
 
-import psycopg2
+from psycopg2.extensions import connection
 from psycopg2.pool import ThreadedConnectionPool
 from dotenv import load_dotenv
 
@@ -44,7 +44,7 @@ def _get_pool() -> ThreadedConnectionPool:
 
 
 @contextmanager
-def get_db_connection() -> Generator:
+def get_db_connection() -> Generator[connection, None, None]:
     """
     Context manager for database connections.
     Automatically returns the connection to the pool when done.
@@ -56,7 +56,7 @@ def get_db_connection() -> Generator:
         _get_pool().putconn(conn)
 
 
-def close_pool():
+def close_pool() -> None:
     """Close all pooled connections. Call on application shutdown."""
     global _pool
     if _pool is not None:

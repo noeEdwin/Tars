@@ -3,7 +3,7 @@ import logging
 import os
 
 import asyncio
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 
 from agents.dataBase.main_queries import (
     get_roleplay_contexts,
@@ -25,7 +25,8 @@ def get_roleplay_files(current_user_id: int = Depends(get_current_user)):
 @router.delete("/files/{filename:path}")
 def delete_roleplay_file(filename: str, current_user_id: int = Depends(get_current_user)):
     """Delete a roleplay document."""
-    delete_document_by_filename(current_user_id, filename)
+    if not delete_document_by_filename(current_user_id, filename):
+        raise HTTPException(status_code=404, detail=f"Document {filename} not found")
     return {"status": "success", "message": f"Document {filename} deleted"}
 
 
