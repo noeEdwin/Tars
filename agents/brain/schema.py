@@ -1,38 +1,34 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Annotated
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
-from typing_extensions import TypedDict
-from enum import Enum
-from typing import List, Optional, Dict, Annotated
 
-class TarsState(TypedDict):
-    # 1. History: The conversation between you and TARS
-    messages: Annotated[List[BaseMessage], add_messages]
 
-    
-    # 4. Memory: Files TARS has "seen" or read in this session
-    working_context: List[Dict[str, str]] 
-    
-    is_complete: bool
+class TarsState(BaseModel):
+    """LangGraph state schema for the Tars AI agent."""
+
+    # Core fields — required at session creation
+    messages: Annotated[List[BaseMessage], add_messages] = Field(default_factory=list)
+    user_id: int
     active_expert: str
-    
-    # 6. Explicit Mode: User-selected mode (e.g., "engineer", "roleplay", "coder")
-    user_mode: Optional[str]
-    
-    # 7. Roleplay Spec: Specific persona for Roleplay mode
-    selected_role: Optional[str]
-    scene_context: Optional[str]
-    user_role: Optional[str]
-    selected_source: Optional[str] # Or doc_id, useful for fetching DB personas
-    
-    # User Identification for Memory Isolation
-    user_id: Optional[int]
-    
-    # Educational Context
-    current_lesson: Optional[int]
-    hsk_level: Optional[int]
-    lesson_progress: Optional[int]
-    target_word: Optional[str]
-    lesson_words: Optional[List[str]]
-    awaiting_answer: Optional[bool]  # True while waiting for the user to say the target word
+    user_mode: str
+
+    # Memory: files TARS has "seen" or read in this session
+    working_context: List[Dict[str, str]] = Field(default_factory=list)
+
+    # Graph control
+    is_complete: bool = False
+
+    # Roleplay spec
+    selected_role: Optional[str] = None
+    scene_context: Optional[str] = None
+    user_role: Optional[str] = None
+    selected_source: Optional[str] = None
+
+    # Educational context
+    current_lesson: int = Field(default=1, ge=1)
+    hsk_level: int = Field(default=1, ge=1, le=6)
+    lesson_progress: int = Field(default=0, ge=0)
+    target_word: Optional[str] = None
+    lesson_words: List[str] = Field(default_factory=list)
+    awaiting_answer: bool = False

@@ -4,8 +4,8 @@
         "preparingRoleplay": "Preparando roleplay..."
     },
     "header": {
-        "level": "NIVEL 24 • AVANZADO",
-        "days": "12 DÍAS"
+        "level": "NIVEL 0 • Principiante",
+        "days": "2 DÍAS"
     },
     "bottomNav": {
         "home": "Inicio",
@@ -155,7 +155,7 @@
         "transcribing": "Transcribiendo audio...",
         "processing": "Procesando...",
         "back": "← Atrás",
-        "focus": "Concentración",
+        "focus": "Focus",
         "roleplay": "Roleplay",
         "couldNotHear": "No pude escucharte claramente.",
         "connectionError": "Error de conexión:",

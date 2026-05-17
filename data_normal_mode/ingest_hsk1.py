@@ -2,18 +2,19 @@ import sys
 import os
 import pandas as pd
 from dotenv import load_dotenv
+import logging
 import math
 
-# Add project root to sys path to import TARS modules
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from agents.brain.chains import get_embeddings_model
-from agents.dataBase.connection import get_db_connection
+from agents.dataBase.pool import get_db_connection
 
 load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), '../.env')))
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 def setup_database(cur):
-    print("Migrating Database Schema...")
+    logger.info("Migrating Database Schema...")
     alter_queries = [
         "ALTER TABLE base_conocimiento ADD COLUMN IF NOT EXISTS lesson_id VARCHAR(50);",
         "ALTER TABLE base_conocimiento ADD COLUMN IF NOT EXISTS grammar_ref TEXT;",
@@ -23,9 +24,9 @@ def setup_database(cur):
     for q in alter_queries:
         cur.execute(q)
         
-    print("Cleaning up old HSK 1 test data...")
+    logger.info("Cleaning up old HSK 1 test data...")
     cur.execute("DELETE FROM base_conocimiento WHERE nivel_hsk = 1 OR lesson_id IS NOT NULL;")
-    print(f"Deleted old rows.")
+    logger.info("Deleted old rows.")
 
 def ingest_hsk1_knowledge_base(file_path):
     conn = get_db_connection()
@@ -35,7 +36,7 @@ def ingest_hsk1_knowledge_base(file_path):
         setup_database(cur)
         conn.commit()
     except Exception as e:
-        print(f"Error during schema migration: {e}")
+        logger.error("Error during schema migration: %s", e)
         conn.rollback()
         cur.close()
         conn.close()
@@ -46,7 +47,7 @@ def ingest_hsk1_knowledge_base(file_path):
         df = pd.read_csv(file_path)
         df = df.fillna('')
 
-        print(f"🚀 Iniciando ingesta semántica BATCH de {len(df)} filas...")
+        logger.info("Starting BATCH semantic ingestion of %d rows...", len(df))
 
         batch_size = 100
         total_batches = math.ceil(len(df) / batch_size)
@@ -56,7 +57,7 @@ def ingest_hsk1_knowledge_base(file_path):
             end_idx = min(start_idx + batch_size, len(df))
             batch_df = df.iloc[start_idx:end_idx]
 
-            print(f"Procesando lote {i+1}/{total_batches}...")
+            logger.info("Processing batch %d/%d...", i+1, total_batches)
 
             # Prepare texts for batch embedding
             texts_to_embed = []
@@ -85,8 +86,8 @@ def ingest_hsk1_knowledge_base(file_path):
                     row['Pinyin'], 
                     row['traduccion_es'], 
                     nivel_hsk, 
-                    "Vocabulario", 
-                    "Palabra", 
+                    "Vocabulary",
+                    "Word", 
                     embeddings[j],
                     lesson_id,
                     row['grammar_ref'],
@@ -95,12 +96,12 @@ def ingest_hsk1_knowledge_base(file_path):
                 ))
 
             conn.commit()
-            print(f"Lote {i+1} insertado.")
+            logger.info("Batch %d inserted.", i+1)
 
-        print("✅ Ingesta semántica completada con éxito en Postgres.")
+        logger.info("Semantic ingestion completed successfully in Postgres.")
 
     except Exception as e:
-        print(f"❌ Error durante la ingesta: {e}")
+        logger.error("Error during ingestion: %s", e)
         conn.rollback()
     finally:
         cur.close()

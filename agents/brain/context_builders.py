@@ -1,5 +1,8 @@
-from RAG.retrieve import retrieve_knowledge
-from RAG.save_memory import retrieve_user_memory
+from agents.RAG.retrieve import retrieve_knowledge
+from agents.RAG.save_memory import retrieve_user_memory
+import logging
+
+logger = logging.getLogger(__name__)
 
 def _build_rag_context(last_user_msg: str, current_lesson: int | None, query_embedding: list[float] = None) -> str:
     """Return a formatted RAG context string, or empty string on error."""
@@ -22,16 +25,16 @@ def _build_rag_context(last_user_msg: str, current_lesson: int | None, query_emb
                     trad    = item.get("traduccion_es", "")
                     pos     = item.get("pos", "")
                     grammar = item.get("grammar_ref", "")
-                    s = f"- {zh} ({pinyin}) - Significado: {trad}"
+                    s = f"- {zh} ({pinyin}) - Meaning: {trad}"
                     if pos:
                         s += f", POS: {pos}"
                     if grammar:
-                        s += f", Regla HSK: {grammar}"
+                        s += f", HSK Rule: {grammar}"
                     formatted.append(s)
             return "\n".join(formatted)
         return str(context_docs)
     except Exception as e:
-        print(f"RAG Error (Ignored): {e}")
+        logger.error("RAG Error (Ignored): %s", e)
         return ""
 
 def _append_memory_context(user_id, last_user_msg: str, protocol_text: str, query_embedding: list[float] = None) -> str:
@@ -44,5 +47,5 @@ def _append_memory_context(user_id, last_user_msg: str, protocol_text: str, quer
             memory_context = "\n=== RELEVANT PAST MEMORIES ===\n" + "\n".join(memories) + "\n==============================\n"
             protocol_text += f"\n\n{memory_context}"
     except Exception as e:
-        print(f"Memory Retrieval Error: {e}")
+        logger.error("Memory Retrieval Error: %s", e)
     return protocol_text

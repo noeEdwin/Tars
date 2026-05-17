@@ -1,17 +1,11 @@
-import sys
-from pathlib import Path
 from dotenv import load_dotenv
 
-# Add the agents directory to sys.path so sibling packages can be found
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-
 from langgraph.graph import END, START, StateGraph
-from brain.schema import TarsState
+from agents.brain.schema import TarsState
 
-# Importamos los nodos modularizados
-from brain.node_learning import lesson_prompt_node, lesson_check_node
-from brain.node_roleplay import actor_node
+# Import modularized nodes
+from agents.brain.node_learning import lesson_prompt_node, lesson_check_node
+from agents.brain.node_roleplay import actor_node
 
 load_dotenv()
 
@@ -24,9 +18,9 @@ LESSON_CHECK  = "lesson_check"
 # ─────────────────────────────────────────────────────────────────────────────
 def route_lesson(state: TarsState) -> str:
     """Route to the correct node based on mode and lesson phase."""
-    if state.get("user_mode") != "tars_normal":
+    if state.user_mode != "tars_normal":
         return ACTOR
-    if state.get("awaiting_answer"):
+    if state.awaiting_answer:
         return LESSON_CHECK
     return LESSON_PROMPT
 

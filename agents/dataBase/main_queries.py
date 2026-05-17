@@ -1,97 +1,109 @@
-from dataBase.connection import get_db_connection
+import logging
 
-def get_user_id_from_username(username: str):
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT id FROM users WHERE username = %s LIMIT 1", (username,))
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        return row[0] if row else None
-    except Exception as e:
-        print(f"Error fetching user_id for {username}: {e}")
-        return None
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-def get_user_hsk_level(user_id: int):
+from agents.dataBase.pool import get_db_connection
+from agents.errors import DatabaseError, AuthenticationError
+
+logger = logging.getLogger(__name__)
+
+
+def get_user_id_from_username(username: str) -> int | None:
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT hsk_level FROM users WHERE id = %s LIMIT 1", (user_id,))
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        return row[0] if row else 1
-    except Exception as e:
-        print(f"Error fetching hsk_level for user {user_id}: {e}")
-        return 1
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("SELECT id FROM users WHERE username = %s LIMIT 1", (username,))
+                row = cur.fetchone()
+                return row["id"] if row else None
+    except psycopg2.Error as e:
+        logger.error("Error fetching user_id for %s: %s", username, e)
+        raise DatabaseError.QueryError(f"Failed to fetch user id for '{username}'", original=e) from e
+
+
+def get_user_hsk_level(user_id: int) -> int:
+    """Return the user's HSK level. Raises AuthenticationError.UserNotFound if the user does not exist."""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("SELECT hsk_level FROM users WHERE id = %s LIMIT 1", (user_id,))
+                row = cur.fetchone()
+                if not row:
+                    raise AuthenticationError.UserNotFound(f"User {user_id} not found")
+                return row["hsk_level"] if row["hsk_level"] else 1
+    except AuthenticationError:
+        raise
+    except psycopg2.Error as e:
+        logger.error("Error fetching hsk_level for user %s: %s", user_id, e)
+        raise DatabaseError.QueryError(f"Failed to fetch hsk_level for user {user_id}", original=e) from e
+
 
 def get_user_profile(user_id: int) -> dict:
-    """Returns username, hsk_level, interest_area, native_language for greeting generation."""
+    """Return username, hsk_level, interest_area, native_language for greeting generation."""
+    defaults = {"username": "learner", "hsk_level": 1, "interest_area": "general", "native_language": "en"}
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute(
-            "SELECT username, hsk_level, interest_area, native_language FROM users WHERE id = %s LIMIT 1",
-            (user_id,)
-        )
-        row = cur.fetchone()
-        cur.close()
-        conn.close()
-        if row:
-            return {
-                "username":        row[0],
-                "hsk_level":       row[1] or 1,
-                "interest_area":   row[2] or "general",
-                "native_language": row[3] or "en",
-            }
-        return {"username": "learner", "hsk_level": 1, "interest_area": "general", "native_language": "en"}
-    except Exception as e:
-        print(f"Error fetching profile for user {user_id}: {e}")
-        return {"username": "learner", "hsk_level": 1, "interest_area": "general", "native_language": "en"}
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT username, hsk_level, interest_area, native_language FROM users WHERE id = %s LIMIT 1",
+                    (user_id,)
+                )
+                row = cur.fetchone()
+                if row:
+                    return {
+                        "username":        row["username"],
+                        "hsk_level":       row["hsk_level"] or 1,
+                        "interest_area":   row["interest_area"] or "general",
+                        "native_language": row["native_language"] or "en",
+                    }
+                return defaults
+    except psycopg2.Error as e:
+        logger.error("Error fetching profile for user %s: %s", user_id, e)
+        raise DatabaseError.QueryError(f"Failed to fetch profile for user {user_id}", original=e) from e
 
-def get_roleplay_contexts(user_id: str):
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        # Get distinct filenames
-        cur.execute("SELECT DISTINCT filename FROM document_store WHERE user_id = %s", (int(user_id),))
-        docs = [row[0] for row in cur.fetchall()]
-        cur.close()
-        conn.close()
-        return docs
-    except Exception as e:
-        print(f"Error fetching from document_store: {e}")
-        return []
 
-def get_scene_from_filename(user_id: str, filename: str):
+def get_roleplay_contexts(user_id: str) -> list[str]:
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("SELECT id, content FROM document_store WHERE user_id = %s AND filename = %s ORDER BY id LIMIT 3", (int(user_id), filename))
-        rows = cur.fetchall()
-        cur.close()
-        conn.close()
-        
-        doc_id = rows[0][0] if rows else None
-        chunks = [row[1] for row in rows]
-        excerpt = "\n".join(chunks)
-        
-        return doc_id, f"Roleplay based on document: {filename}\nExcerpt:\n{excerpt}"
-    except Exception as e:
-        print(f"Error fetching scene content: {e}")
-        return None, filename
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("SELECT DISTINCT filename FROM document_store WHERE user_id = %s", (int(user_id),))
+                return [row["filename"] for row in cur.fetchall()]
+    except psycopg2.Error as e:
+        logger.error("Error fetching from document_store: %s", e)
+        raise DatabaseError.QueryError(f"Failed to fetch roleplay contexts for user {user_id}", original=e) from e
+
+
+def get_scene_from_filename(user_id: str, filename: str) -> tuple[int | None, str]:
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT id, content FROM document_store WHERE user_id = %s AND filename = %s ORDER BY id LIMIT 3",
+                    (int(user_id), filename)
+                )
+                rows = cur.fetchall()
+
+                if not rows:
+                    return None, filename
+
+                doc_id = rows[0]["id"]
+                chunks = [row["content"] for row in rows]
+                excerpt = "\n".join(chunks)
+
+                return doc_id, f"Roleplay based on document: {filename}\nExcerpt:\n{excerpt}"
+    except psycopg2.Error as e:
+        logger.error("Error fetching scene content: %s", e)
+        raise DatabaseError.QueryError(f"Failed to fetch scene for file '{filename}'", original=e) from e
+
 
 def delete_document_by_filename(user_id: str, filename: str) -> bool:
-    """Elimina un documento de la base de datos por su nombre y user_id."""
+    """Delete a document from the database by filename and user_id. Returns False if no rows were deleted."""
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("DELETE FROM document_store WHERE user_id = %s AND filename = %s", (int(user_id), filename))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return True
-    except Exception as e:
-        print(f"Error al eliminar el documento {filename}: {e}")
-        return False
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("DELETE FROM document_store WHERE user_id = %s AND filename = %s", (int(user_id), filename))
+                conn.commit()
+                return cur.rowcount > 0
+    except psycopg2.Error as e:
+        logger.error("Error deleting document %s: %s", filename, e)
+        raise DatabaseError.QueryError(f"Failed to delete document '{filename}'", original=e) from e

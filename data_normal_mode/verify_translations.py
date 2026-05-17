@@ -41,25 +41,25 @@ def verify_and_translate(csv_path):
             word = str(row['contenido_zh']).split('|')[0]
             pos = row['POS']
             titulo = row['titulo_es_leccion']
-            grammar = row['grammar_ref'] if pd.notna(row['grammar_ref']) else "Ninguna"
+            grammar = row['grammar_ref'] if pd.notna(row['grammar_ref']) else "None"
             
-            line = f"Palabra: {word} | POS: {pos} | Lección: {titulo} | Gramática: {grammar}"
+            line = f"Word: {word} | POS: {pos} | Lesson: {titulo} | Grammar: {grammar}"
             prompt_lines.append(line)
             
         words_text = "\n".join(prompt_lines)
         
         system_prompt = (
-            "Eres un experto profesor de chino mandarín estructurando un plan de estudios HSK 1. "
-            "Traduce las siguientes palabras al español asegurándote de que el significado encaje "
-            "PERFECTAMENTE con el contexto de la lección y su POS (Part of Speech). "
-            "REGLA MUY IMPORTANTE: Si POS es 'Aux' (partícula), no lo traduzcas como un objeto físico (ej. 'bar'), "
-            "sino como su función (ej: 'partícula indicadora de sugerencia'). "
-            "Si POS es 'Num', la traducción DEBE contener un número. "
-            "Devuelve ÚNICAMENTE un JSON con un arreglo de strings, donde cada string es la traducción correspondiente "
-            "en el mismo orden exacto. Ejemplo de salida: [\"amar\", \"papá\", \"partícula de sugerencia\"]. NO devuelvas NADA MÁS que el JSON."
+            "You are an expert Mandarin Chinese teacher structuring an HSK 1 curriculum. "
+            "Translate the following words to Spanish, ensuring the meaning fits "
+            "PERFECTLY with the lesson context and its POS (Part of Speech). "
+            "VERY IMPORTANT RULE: If POS is 'Aux' (particle), do not translate it as a physical object (e.g., 'bar'), "
+            "but as its function (e.g., 'suggestion indicator particle'). "
+            "If POS is 'Num', the translation MUST contain a number. "
+            "Return ONLY a JSON array of strings, where each string is the corresponding translation "
+            "in the exact same order. Example output: [\"amar\", \"papa\", \"particula de sugerencia\"]. Do NOT return anything other than the JSON."
         )
 
-        user_prompt = f"Aquí tienes las palabras a traducir (mantén el mismo orden exacto):\n\n{words_text}"
+        user_prompt = f"Here are the words to translate (keep the exact same order):\n\n{words_text}"
 
         try:
             response = client.chat.completions.create(
@@ -86,7 +86,7 @@ def verify_and_translate(csv_path):
             try:
                 translations = json.loads(content)
                 if isinstance(translations, dict):
-                    # Sometimes LLMs return {"traducciones": [...]}
+                    # Sometimes LLMs return {"translations": [...]}
                     translations = list(translations.values())[0]
                     
                 if len(translations) != len(batch_df):

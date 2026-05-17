@@ -1,87 +1,90 @@
-import os
-from dotenv import load_dotenv
-from agents.RAG.utils import get_embedding
+import logging
+
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 from agents.RAG.filter import normalize_text, contains_chinese, should_embed
-from dataBase.connection import get_db_connection
+from agents.RAG.utils import get_embedding
+from agents.dataBase.pool import get_db_connection
+from agents.errors import DatabaseError
+
+logger = logging.getLogger(__name__)
 
 
-def save_long_term_memory(conversation_id: int, role: str, content: str, embedding: list[float] = None):
-    conn = get_db_connection()
-    try:
-        normalized = normalize_text(content)
-        has_zh = contains_chinese(content)
+def save_long_term_memory(conversation_id: int, role: str, content: str, embedding: list[float] = None) -> None:
+    with get_db_connection() as conn:
+        try:
+            normalized = normalize_text(content)
+            has_zh = contains_chinese(content)
 
-        if not should_embed(content):
-            return
+            if not should_embed(content):
+                return
 
-        cur = conn.cursor()
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    "SELECT id FROM messages WHERE normalized_text = %s LIMIT 1",
+                    (normalized,)
+                )
+                existing = cur.fetchone()
+                if existing:
+                    cur.execute(
+                        "UPDATE messages SET last_used_timestamp = NOW() WHERE id = %s",
+                        (existing["id"],)
+                    )
+                    conn.commit()
+                    return
 
-        cur.execute(
-            "SELECT id FROM messages WHERE normalized_text = %s LIMIT 1",
-            (normalized,)
-        )
-        existing = cur.fetchone()
-        if existing:
-            cur.execute(
-                "UPDATE messages SET last_used_timestamp = NOW() WHERE id = %s",
-                (existing[0],)
-            )
-            conn.commit()
-            cur.close()
-            return
-
-        vector = embedding or get_embedding(content)
-        query = """
-            INSERT INTO messages (conversation_id, role, content, embedding,
-                                  normalized_text, has_chinese, access_count)
-            VALUES (%s, %s, %s, %s, %s, %s, 0)
-        """
-        cur.execute(query, (conversation_id, role, content, vector, normalized, has_zh))
-        conn.commit()
-        cur.close()
-    except Exception as e:
-        print(f"Error guardando mensaje: {e}")
-    finally:
-        conn.close()
+                vector = embedding or get_embedding(content)
+                query = """
+                    INSERT INTO messages (conversation_id, role, content, embedding,
+                                          normalized_text, has_chinese, access_count)
+                    VALUES (%s, %s, %s, %s, %s, %s, 0)
+                """
+                cur.execute(query, (conversation_id, role, content, vector, normalized, has_zh))
+                conn.commit()
+        except psycopg2.Error as e:
+            conn.rollback()
+            logger.error("Error saving message: %s", e)
+            raise DatabaseError.QueryError("Failed to save long-term memory", original=e) from e
 
 
 def retrieve_user_memory(user_id: int, query_text: str, limit: int = 5, query_embedding: list[float] = None) -> list[str]:
-    conn = get_db_connection()
     past_memories = []
-    try:
-        query_vector = query_embedding or get_embedding(query_text)
+    with get_db_connection() as conn:
+        try:
+            query_vector = query_embedding or get_embedding(query_text)
 
-        cur = conn.cursor()
-        query = """
-            SELECT m.id, m.role, m.content
-            FROM messages m
-            JOIN conversations c ON m.conversation_id = c.id
-            WHERE c.user_id = %s
-            ORDER BY m.embedding <-> %s::vector
-            LIMIT %s;
-        """
-        cur.execute(query, (user_id, query_vector, limit))
-        results = cur.fetchall()
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                query = """
+                    SELECT m.id, m.role, m.content
+                    FROM messages m
+                    JOIN conversations c ON m.conversation_id = c.id
+                    WHERE c.user_id = %s
+                    ORDER BY m.embedding <-> %s::vector
+                    LIMIT %s;
+                """
+                cur.execute(query, (user_id, query_vector, limit))
+                results = cur.fetchall()
 
-        for row in results:
-            msg_id, role, content = row
-            past_memories.append(f"[{role}]: {content}")
-            cur.execute(
-                "UPDATE messages SET access_count = access_count + 1 WHERE id = %s",
-                (msg_id,)
-            )
+                for row in results:
+                    past_memories.append(f"[{row['role']}]: {row['content']}")
+                    cur.execute(
+                        "UPDATE messages SET access_count = access_count + 1 WHERE id = %s",
+                        (row["id"],)
+                    )
 
-        conn.commit()
-        cur.close()
-    except Exception as e:
-        print(f"Error recuperando memoria para usuario {user_id}: {e}")
-    finally:
-        conn.close()
+                conn.commit()
+        except psycopg2.Error as e:
+            conn.rollback()
+            logger.error("Error retrieving memory for user %s: %s", user_id, e)
+            raise DatabaseError.QueryError("Failed to retrieve user memory", original=e) from e
 
     return past_memories
 
 
-def get_db_uri():
+def get_db_uri() -> str:
+    import os
+    from dotenv import load_dotenv
     load_dotenv()
     user = os.getenv("DB_USER")
     password = os.getenv("DB_PASS")

@@ -5,7 +5,7 @@ import subprocess
 import asyncio
 import re
 from google.cloud import texttospeech_v1 as texttospeech
-from google.oauth2 import service_account  # Nuevo: Para manejar el JSON directamente
+from google.oauth2 import service_account
 from dotenv import load_dotenv
 
 # Load environment variables to ensure GOOGLE_APPLICATION_CREDENTIALS is set if needed
@@ -21,22 +21,23 @@ _tts_client = None
 
 def get_credentials():
     """
-    Load the credentials from a json content string in env var GOOGLE_JSON_CREDENTIALS.
-    Returns None if not found, allowing fallback to GOOGLE_APPLICATION_CREDENTIALS file path.
+    Load Google Cloud credentials from environment.
+
+    Supports two methods (checked in order):
+    1. GOOGLE_JSON_CREDENTIALS — JSON string content of the service account key
+    2. GOOGLE_APPLICATION_CREDENTIALS — file path (handled automatically by Google SDK)
+
+    Returns None if neither is set, allowing the SDK to fall back to default credentials.
     """
     json_creds = os.getenv('GOOGLE_JSON_CREDENTIALS')
     if not json_creds:
-        # Fallback: Check if we have a local file and set GOOGLE_APPLICATION_CREDENTIALS if not set
-        credentials_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../tars.json'))
-        if not os.getenv('GOOGLE_APPLICATION_CREDENTIALS') and os.path.exists(credentials_path):
-            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credentials_path
         return None
-    
+
     try:
         info = json.loads(json_creds)
         return service_account.Credentials.from_service_account_info(info)
     except json.JSONDecodeError:
-        print("Warning: GOOGLE_JSON_CREDENTIALS is not valid JSON. Trying file-based auth.")
+        print("Warning: GOOGLE_JSON_CREDENTIALS is not valid JSON.")
         return None
 
 def is_installed(lib_name: str) -> bool:
@@ -52,7 +53,7 @@ def get_tts_client():
 
 async def get_tts_bytes_async(text: str, lang_type: str) -> bytes:
     """
-    Petición individual asíncrona a Google Cloud TTS.
+    Individual async request to Google Cloud TTS.
     """
     client = get_tts_client()
 
@@ -76,13 +77,13 @@ async def get_tts_bytes_async(text: str, lang_type: str) -> bytes:
         
 async def get_mixed_audio_bytes(text: str) -> bytes:
     """
-    Divide el texto y dispara todas las peticiones a Google SIMULTÁNEAMENTE.
+    Split text by language and fire all TTS requests to Google SIMULTANEOUSLY.
     """
-    # 1. Limpieza de texto (quitamos Pinyin entre paréntesis para el audio)
+    # 1. Clean text (remove pinyin in parentheses for audio output)
     clean_text = re.sub(r'\(.*?\)', '', text).replace('[', '').replace(']', '').replace('*', '')
     
-    # 2. Split inteligente (Chino vs Resto)
-    parts = re.split(r'([\u4e00-\u9fff，。？！“”]+)', clean_text)
+    # 2. Smart split (Chinese segments vs non-Chinese)
+    parts = re.split(r'([\u4e00-\u9fff，。？！"""]+)', clean_text)
     
     tasks = []
     for part in parts:
@@ -90,7 +91,7 @@ async def get_mixed_audio_bytes(text: str) -> bytes:
         if not stripped_part:
             continue
             
-        # 3. Creamos la lista de "Tareas" (sin ejecutarlas aún)
+        # 3. Build task list (not yet executed)
         if re.search(r'[\u4e00-\u9fff]', stripped_part):
             tasks.append(get_tts_bytes_async(stripped_part, "zh"))
         else:
@@ -100,11 +101,11 @@ async def get_mixed_audio_bytes(text: str) -> bytes:
     if not tasks:
         return b""
 
-    # 4. EL TURBO: Ejecutamos todas las tareas en paralelo y esperamos a que terminen
-    # asyncio.gather mantiene el orden de los resultados igual al de la lista 'tasks'
+    # 4. TURBO: Execute all tasks in parallel and wait for completion
+    # asyncio.gather preserves result order matching the task list order
     audio_segments = await asyncio.gather(*tasks)
 
-    # 5. Concatenamos los fragmentos de audio en uno solo
+    # 5. Concatenate audio segments into a single byte stream
     return b"".join(audio_segments)
     
 

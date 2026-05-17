@@ -1,0 +1,8 @@
+[project]
+name = "tars"
+version = "0.1.0"
+description = "AI agent framework with Chinese language tutor, RAG + TTS capabilities"
+requires-python = ">=3.12"
+
+[tool.setuptools.packages.find]
+include = ["agents*", "api*", "data_normal_mode*", "scripts*"]
