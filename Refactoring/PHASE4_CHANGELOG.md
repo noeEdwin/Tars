@@ -333,3 +333,115 @@ if not delete_document_by_filename(current_user_id, filename):
 | `agents/RAG/vacuum.py` | Added return + parameter annotations to 7 functions, moved `traceback` import to module level |
 | `api/routes/chat.py` | Added `_get_hsk_level()` wrapper, imported `AuthenticationError` |
 | `api/routes/roleplay.py` | Check `delete_document_by_filename` return, raise 404 on not found |
+
+---
+
+## Step 4.4: Extract Protocol Text Building into `protocol_builder.py`
+
+### Problem
+
+Both `node_learning.py` and `node_roleplay.py` followed a nearly identical protocol building pipeline, but the logic was duplicated and interleaved with domain-specific code. Each node:
+
+1. Retrieved the base protocol template from `PROTOCOLS`
+2. Filled in mode-specific variables (lesson data vs. persona data)
+3. Appended mode-specific instructions (3-word rule vs. character lock)
+4. Replaced `{context}` with RAG results
+5. Built RAG and memory context in parallel
+6. Appended style examples
+7. Created a dynamic chain and invoked it with truncated state
+
+This resulted in ~90 lines of duplicated pipeline logic across the two nodes, making it hard to modify the protocol building process without touching both files.
+
+### Solution
+
+#### 1. Created `ProtocolBuilder` Class (`agents/brain/protocol_builder.py`)
+
+A class that encapsulates the common protocol building pipeline:
+
+```python
+class ProtocolBuilder:
+    def __init__(self, expert_type: str, state):
+        # Initializes protocol text, extracts last user message, computes embedding
+
+    def set_context(self, context_text: str):
+        # Replaces {context} placeholder
+
+    def append(self, text: str):
+        # Appends arbitrary text to protocol
+
+    async def enrich_rag(self, current_lesson: int = None):
+        # Runs RAG and memory enrichment in parallel
+
+    def enrich_style(self, feedback_type: str = "DEFAULT"):
+        # Appends style examples
+
+    def build_chain(self):
+        # Creates the dynamic LLM chain
+
+    def get_truncated_state(self) -> dict:
+        # Returns state with truncated messages
+
+    async def invoke(self, config: RunnableConfig):
+        # Full pipeline: build chain → truncate → invoke
+```
+
+#### 2. Extracted Mode-Specific Protocol Text Functions
+
+Three pure functions that generate the domain-specific protocol text:
+
+| Function | Purpose |
+|----------|---------|
+| `build_lesson_introduce_protocol(...)` | "Introduce new word" instructions with 3-word rule |
+| `build_lesson_check_protocol(...)` | "Check user answer" instructions with feedback type |
+| `build_roleplay_protocol(...)` | Full roleplay protocol with persona, character lock, safety instructions |
+
+#### 3. Simplified Nodes
+
+**`node_learning.py` before (193 lines) → after (110 lines, 43% reduction)**
+
+Before:
+```python
+protocol_text = PROTOCOLS.get("tars_normal", "Standard operating procedures.")
+protocol_text = protocol_text.replace("{context}", "No relevant context for this turn.")
+protocol_text += f"""... 20 lines of lesson instructions ..."""
+# ... RAG calls ...
+dynamic_chain = actor_prompt_template.partial(protocol=protocol_text) | llm_expert
+truncated_state = state.model_dump() | {"messages": truncate_messages(state.messages)}
+response = await dynamic_chain.ainvoke(truncated_state, config=config)
+```
+
+After:
+```python
+builder = ProtocolBuilder("tars_normal", state)
+builder.append(build_lesson_introduce_protocol(...))
+await builder.enrich_rag(current_lesson)
+builder.enrich_style("INTRODUCE")
+response = await builder.invoke(config)
+```
+
+**`node_roleplay.py` before (119 lines) → after (65 lines, 45% reduction)**
+
+Before:
+```python
+# 60+ lines of persona fetching, protocol formatting, character lock,
+# safety instructions, metamorphic prompt, scene context, RAG, memory,
+# chain building, invocation, JSON cleanup
+```
+
+After:
+```python
+protocol_text = build_roleplay_protocol(char_name, user_role, persona_data, scene_context)
+builder = ProtocolBuilder("tars_roleplay", state)
+builder.protocol_text = protocol_text
+# ... RAG + memory enrichment ...
+response = await builder.invoke(config)
+# ... JSON cleanup ...
+```
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `agents/brain/protocol_builder.py` | **Created** — ProtocolBuilder class + 3 protocol text functions |
+| `agents/brain/node_learning.py` | Reduced from 193 → 110 lines, uses ProtocolBuilder |
+| `agents/brain/node_roleplay.py` | Reduced from 119 → 65 lines, uses ProtocolBuilder |
