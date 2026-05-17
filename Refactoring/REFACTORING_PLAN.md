@@ -105,14 +105,14 @@ After Step 2.2 completes (all imports fixed via `pyproject.toml`):
 
 ---
 
-## Phase 5: Frontend ⏳ NOT STARTED
+## Phase 5: Frontend ✅ COMPLETE
 
 **Goal:** State management, component organization, API client.
 
 | Step | Status | Description |
 |------|--------|-------------|
-| 5.1 | ✅ | Add Zustand for state management (`authStore`, `sessionStore`, `chatStore`) |
-| 5.2 | ⏳ | Reorganize components into folders with co-located CSS (`auth/`, `chat/`, `roleplay/`, `layout/`, `ui/`) |
+| 5.1 | ✅ | Add Zustand for state management (`authStore`, `sessionStore`) — deleted unused `chatStore` |
+| 5.2 | ✅ | Reorganize components into folders with barrel exports and co-located CSS (`auth/`, `chat/`, `roleplay/`, `profile/`, `layout/`) |
 | 5.3 | ⏳ | Create typed API client layer (`src/api/client.ts`) replacing scattered `fetch()` calls |
 
 ---

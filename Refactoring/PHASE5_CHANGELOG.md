@@ -53,19 +53,126 @@ interface SessionState {
 }
 ```
 
-**`chatStore`** — Chat and WebSocket state (created, ready for Phase D migration):
+**`chatStore`** — Created but **never imported anywhere**. Deleted as dead code. Chat state remains in `useWebSocket` hook via internal `useState`.
+
+### Step 5.2: Reorganize Components into Folders
+
+#### Problem
+
+All 15 components lived flat in `src/components/` with no grouping. Imports were verbose and unclear about component purpose.
+
+#### Solution
+
+##### 1. Folder Structure
+
+```
+frontend/src/
+├── components/
+│   ├── auth/
+│   │   ├── index.ts                    # barrel export
+│   │   ├── SignInScreen.tsx + .css
+│   │   ├── SignUpScreen.tsx + .css
+│   │   └── ForgotPasswordScreen.tsx + .css
+│   ├── chat/
+│   │   ├── index.ts                    # barrel export
+│   │   ├── ConversationContainer.tsx
+│   │   ├── ConversationScreen.tsx + .css
+│   │   └── VoiceConversationScreen.tsx + .css
+│   ├── roleplay/
+│   │   ├── index.ts                    # barrel export
+│   │   └── RoleplayScreen.tsx + .css
+│   ├── profile/
+│   │   ├── index.ts                    # barrel export
+│   │   ├── ProfileScreen.tsx + .css
+│   │   ├── SettingsScreen.tsx + .css
+│   │   └── PersonalInfoScreen.tsx + .css
+│   └── layout/
+│       ├── index.ts                    # barrel export
+│       ├── Header.tsx + .css
+│       ├── MicButton.tsx + .css
+│       ├── ModeCards.tsx + .css
+│       └── BottomNav.tsx + .css
+├── screens/
+│   ├── index.ts                        # barrel export
+│   └── LoadingScreen.tsx + .css
+├── types/
+│   └── message.ts                      # extracted Message interface
+├── hooks/
+│   ├── usePreWarmSession.ts            # moved from utils/
+│   └── useWebSocket.ts
+├── utils/
+│   └── messageParser.ts
+└── stores/
+    ├── authStore.ts
+    └── sessionStore.ts
+```
+
+##### 2. Barrel Exports
+
+Each subfolder has an `index.ts` re-exporting its components:
 ```typescript
-interface ChatState {
-    messages: Message[];
-    audioQueue: string[];
-    isProcessing: boolean;
-    sessionReady: boolean;
-    threadId: string | null;
-    conversationId: number | null;
-    preloadMessage: PreloadMessage | null;
-    // Actions: addMessage, pushAudio, setProcessing, clearChat, etc.
+// components/auth/index.ts
+export { default as SignInScreen } from './SignInScreen';
+export { default as SignUpScreen } from './SignUpScreen';
+export { default as ForgotPasswordScreen } from './ForgotPasswordScreen';
+```
+
+##### 3. Updated `App.tsx` Imports
+
+Before:
+```typescript
+import Header from './components/Header';
+import SignInScreen from './components/SignInScreen';
+import LoadingScreen from './components/LoadingScreen';
+```
+
+After:
+```typescript
+import { Header, MicButton, ModeCards, BottomNav } from './components/layout';
+import { SignInScreen, SignUpScreen, ForgotPasswordScreen } from './components/auth';
+import { LoadingScreen } from './screens';
+```
+
+##### 4. Extracted `Message` Type
+
+Moved from `ConversationContainer.tsx` to `types/message.ts`:
+```typescript
+export interface Message {
+    id: string;
+    role: 'tars' | 'user';
+    text: string;
+    audio_b64?: string[];
+    isTeaching?: boolean;
 }
 ```
+
+##### 5. Deleted Dead Code
+
+| File | Reason |
+|------|--------|
+| `stores/chatStore.ts` | Never imported — chat state managed by `useWebSocket` hook |
+| `utils/auth.ts` | Never imported — replaced by `authStore` |
+
+### Files Modified
+
+| File | Action |
+|------|--------|
+| `frontend/src/components/auth/` | Created, 3 components moved + barrel export |
+| `frontend/src/components/chat/` | Created, 3 components moved + barrel export |
+| `frontend/src/components/roleplay/` | Created, 1 component moved + barrel export |
+| `frontend/src/components/profile/` | Created, 3 components moved + barrel export |
+| `frontend/src/components/layout/` | Created, 4 components moved + barrel export |
+| `frontend/src/screens/` | Created, `LoadingScreen` moved + barrel export |
+| `frontend/src/types/message.ts` | Created — extracted `Message` interface |
+| `frontend/src/hooks/usePreWarmSession.ts` | Moved from `utils/`, fixed imports |
+| `frontend/src/hooks/useWebSocket.ts` | Fixed imports |
+| `frontend/src/App.tsx` | Updated to barrel imports |
+| `frontend/stores/chatStore.ts` | **Deleted** — dead code |
+| `frontend/utils/auth.ts` | **Deleted** — dead code |
+
+### Build Status
+
+✅ TypeScript + Vite production build passes clean.
 
 #### 2. Migrated Auth State (Phase B)
 
